@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "engines": {
-    "node": "22.x"
+    "node": "20.x"
   },
   "dependencies": {
     "@heroicons/react": "^2.0.18",
@@ -24,6 +24,7 @@
     "react-query": "^3.39.3",
     "react-router-dom": "^6.15.0",
     "react-scripts": "^5.0.1",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.15",
     "react-refresh": "^0.14.0",
     "web-vitals": "^2.1.4",
     "zustand": "^4.4.1"
