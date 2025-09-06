@@ -37,13 +37,14 @@
     "eject": "react-scripts eject"
   },
   "overrides": {
-    "ajv": "^8.12.0",
-    "ajv-keywords": "^5.1.0",
-    "webpack": "^5.88.0"
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
+    "fork-ts-checker-webpack-plugin": "^6.5.3",
+    "schema-utils": "^3.3.0"
   },
   "resolutions": {
-    "ajv": "^8.12.0",
-    "ajv-keywords": "^5.1.0"
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2"
   },
   "eslintConfig": {
     "extends": [
