@@ -22,7 +22,7 @@
     "bs58": "^5.0.0",
     "tweetnacl": "^1.0.3",
     "uuid": "^9.0.0",
-    "rate-limiter-flexible": "^3.0.8",
+    "express-rate-limit": "^6.7.0",
     "express-validator": "^7.0.1",
     "dotenv": "^16.3.1"
   },
