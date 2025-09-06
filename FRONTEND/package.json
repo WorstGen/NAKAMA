@@ -8,7 +8,7 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "react-router-dom": "^6.15.0",
     "@solana/web3.js": "^1.78.4",
     "@solana/wallet-adapter-base": "^0.9.23",
