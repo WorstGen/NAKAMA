@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
 const { body, validationResult } = require('express-validator');
-const { RateLimiterMemory } = require('rate-limiter-flexible');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 // Solana imports
@@ -23,10 +23,10 @@ const PORT = process.env.PORT || 3001;
 const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com');
 
 // Rate limiting
-const rateLimiter = new RateLimiterMemory({
-  keyGenerator: (req) => req.ip,
-  points: 100, // Number of requests
-  duration: 60, // Per 60 seconds
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too Many Requests'
 });
 
 // Middleware
@@ -38,15 +38,8 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
-// Rate limiting middleware
-app.use(async (req, res, next) => {
-  try {
-    await rateLimiter.consume(req.ip);
-    next();
-  } catch (rejRes) {
-    res.status(429).send('Too Many Requests');
-  }
-});
+// Apply rate limiting to all API routes
+app.use('/api/', limiter);
 
 // MongoDB Models
 const UserSchema = new mongoose.Schema({
