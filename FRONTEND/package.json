@@ -25,11 +25,14 @@
     "react-query": "^3.39.3",
     "react-router-dom": "^6.15.0",
     "react-scripts": "^5.0.1",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.15",
     "web-vitals": "^2.1.4",
     "zustand": "^4.4.1",
     "tailwindcss": "^3.3.3",
     "autoprefixer": "^10.4.15",
-    "postcss": "^8.4.29"
+    "postcss": "^8.4.29",
+    "ajv-keywords": "^5.1.0",
+    "schema-utils": "^4.2.0"
   },
   "scripts": {
     "start": "react-scripts start",
