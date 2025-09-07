@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
@@ -8,7 +8,6 @@ export const OAuth = () => {
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [authorized, setAuthorized] = useState(false);
 
   const clientId = searchParams.get('client_id');
   const redirectUri = searchParams.get('redirect_uri');
