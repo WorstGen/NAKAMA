@@ -23,14 +23,25 @@ export const WalletContextProvider = ({ children }) => {
   const network = WalletAdapterNetwork.Mainnet;
   const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
-  const wallets = [
-    new PhantomWalletAdapter(),
-    new SolflareWalletAdapter(),
-  ];
+  const wallets = React.useMemo(() => {
+    console.log('🔧 Initializing wallet adapters...');
+
+    const phantom = new PhantomWalletAdapter();
+    const solflare = new SolflareWalletAdapter();
+
+    console.log('✅ Phantom adapter:', phantom.name, phantom.readyState);
+    console.log('✅ Solflare adapter:', solflare.name, solflare.readyState);
+
+    return [phantom, solflare];
+  }, []);
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider
+        wallets={wallets}
+        autoConnect={false} // Disable auto-connect to prevent issues
+        localStorageKey="solconnect_wallet"
+      >
         <WalletModalProvider>
           <WalletContext.Provider value={{}}>
             {children}
