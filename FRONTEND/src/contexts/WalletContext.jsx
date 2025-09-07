@@ -5,8 +5,8 @@ import {
 } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
-  PhantomWalletAdapter,
   SolflareWalletAdapter,
+  getPhantomWallet,
 } from '@solana/wallet-adapter-wallets';
 import {
   WalletModalProvider,
@@ -24,16 +24,17 @@ export const WalletContextProvider = ({ children }) => {
   const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
   const wallets = React.useMemo(() => {
-    const phantom = new PhantomWalletAdapter();
+    const phantom = getPhantomWallet();
     const solflare = new SolflareWalletAdapter();
 
     // Force ready state check
     setTimeout(() => {
-      console.log('Phantom readyState:', phantom.readyState);
+      console.log('Phantom readyState:', phantom?.readyState || 'Not available');
       console.log('Solflare readyState:', solflare.readyState);
+      console.log('Phantom adapter:', phantom);
     }, 1000);
 
-    return [phantom, solflare];
+    return [phantom, solflare].filter(Boolean);
   }, []);
 
   return (
