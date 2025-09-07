@@ -1,15 +1,52 @@
 import axios from 'axios';
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+// Fix the base URL to use your Railway backend directly
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://nakama-production-1850.up.railway.app/api';
+
+console.log('API Base URL:', BASE_URL); // Debug log to verify URL
 
 class ApiService {
   constructor() {
     this.client = axios.create({
       baseURL: BASE_URL,
       timeout: 30000,
+      // Add CORS headers
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      }
     });
 
     this.authHeaders = {};
+
+    // Add request interceptor for debugging
+    this.client.interceptors.request.use(
+      (config) => {
+        console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        return config;
+      },
+      (error) => {
+        console.error('API Request Error:', error);
+        return Promise.reject(error);
+      }
+    );
+
+    // Add response interceptor for debugging
+    this.client.interceptors.response.use(
+      (response) => {
+        console.log(`API Response: ${response.status} ${response.config.url}`);
+        return response;
+      },
+      (error) => {
+        console.error('API Response Error:', {
+          status: error.response?.status,
+          url: error.config?.url,
+          message: error.message,
+          data: error.response?.data
+        });
+        return Promise.reject(error);
+      }
+    );
   }
 
   setAuthHeaders(headers) {
@@ -38,68 +75,78 @@ class ApiService {
       const response = await this.client(config);
       return response.data;
     } catch (error) {
+      console.error('API Service Error:', {
+        endpoint,
+        method,
+        error: error.response?.data || error.message
+      });
       throw error.response?.data || error.message;
     }
   }
 
   // Profile endpoints
   async getProfile() {
-    return this.request('GET', '/profile');
+    return this.request('GET', '/api/profile');
   }
 
   async updateProfile(profileData) {
-    return this.request('POST', '/profile', profileData);
+    return this.request('POST', '/api/profile', profileData);
   }
 
   async uploadProfilePicture(formData) {
-    const config = {
-      method: 'POST',
-      url: '/profile/picture',
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        ...this.authHeaders,
-      },
-      data: formData,
-    };
+    try {
+      const config = {
+        method: 'POST',
+        url: '/api/profile/picture',
+        headers: {
+          // Don't set Content-Type for FormData - let axios handle it
+          ...this.authHeaders,
+        },
+        data: formData,
+      };
 
-    const response = await this.client(config);
-    return response.data;
+      const response = await this.client(config);
+      return response.data;
+    } catch (error) {
+      console.error('Upload Profile Picture Error:', error.response?.data || error.message);
+      throw error.response?.data || error.message;
+    }
   }
 
   // User search
   async searchUser(username) {
-    return this.request('GET', `/users/search/${username}`);
+    return this.request('GET', `/api/users/search/${username}`);
   }
 
   // Contacts endpoints
   async getContacts() {
-    return this.request('GET', '/contacts');
+    return this.request('GET', '/api/contacts');
   }
 
   async addContact(username) {
-    return this.request('POST', '/contacts', { username });
+    return this.request('POST', '/api/contacts', { username });
   }
 
   async removeContact(username) {
-    return this.request('DELETE', `/contacts/${username}`);
+    return this.request('DELETE', `/api/contacts/${username}`);
   }
 
   // Transaction endpoints
   async prepareTransaction(transactionData) {
-    return this.request('POST', '/transactions/prepare', transactionData);
+    return this.request('POST', '/api/transactions/prepare', transactionData);
   }
 
   async submitTransaction(signedTransactionData) {
-    return this.request('POST', '/transactions/submit', signedTransactionData);
+    return this.request('POST', '/api/transactions/submit', signedTransactionData);
   }
 
   async getTransactions() {
-    return this.request('GET', '/transactions');
+    return this.request('GET', '/api/transactions');
   }
 
   // OAuth endpoints
   async authorizeOAuth(oauthData) {
-    return this.request('POST', '/oauth/authorize', oauthData);
+    return this.request('POST', '/api/oauth/authorize', oauthData);
   }
 }
 
