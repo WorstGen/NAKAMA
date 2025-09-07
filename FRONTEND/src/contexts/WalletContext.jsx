@@ -5,7 +5,6 @@ import {
 } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
-  PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import {
@@ -26,15 +25,14 @@ export const WalletContextProvider = ({ children }) => {
   const wallets = React.useMemo(() => {
     console.log('🔧 Initializing wallet adapters...');
 
-    const phantom = new PhantomWalletAdapter();
     const solflare = new SolflareWalletAdapter();
 
-    console.log('✅ Phantom adapter:', phantom.name, 'State:', phantom.readyState);
     console.log('✅ Solflare adapter:', solflare.name, 'State:', solflare.readyState);
+    console.log('ℹ️ Phantom adapter removed - using Standard Wallet API');
 
-    // Check if Phantom is actually available
+    // Check if Phantom is actually available as standard wallet
     console.log('🔍 Checking window.solana:', typeof window !== 'undefined' ? !!window.solana : 'N/A');
-    console.log('🔍 Checking window.phantom:', typeof window !== 'undefined' ? !!window.phantom : 'N/A');
+    console.log('🔍 Checking window.solana.isPhantom:', typeof window !== 'undefined' ? !!(window.solana && window.solana.isPhantom) : 'N/A');
 
     // Log all available wallets on window
     if (typeof window !== 'undefined') {
@@ -54,7 +52,7 @@ export const WalletContextProvider = ({ children }) => {
       console.log('🔍 Wallet injection status:', walletChecks);
     }
 
-    return [phantom, solflare];
+    return [solflare];
   }, []);
 
   return (
