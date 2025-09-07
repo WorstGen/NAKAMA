@@ -5,7 +5,6 @@ import {
 } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
-  PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import {
@@ -33,11 +32,16 @@ export const WalletContextProvider = ({ children }) => {
       console.log('Phantom installed:', typeof window !== 'undefined' && window.solana?.isPhantom);
       console.log('Standard wallets will be auto-detected');
       
-      // Additional debugging
+      // Additional debugging for Phantom state
       if (typeof window !== 'undefined' && window.solana) {
         console.log('Phantom version:', window.solana.version);
         console.log('Phantom publicKey:', window.solana.publicKey);
         console.log('Phantom isConnected:', window.solana.isConnected);
+        
+        // Test direct connection
+        window.solana.connect({ onlyIfTrusted: false })
+          .then(() => console.log('Direct Phantom connection works'))
+          .catch(err => console.log('Direct connection failed:', err));
       }
     }, 1000);
 
