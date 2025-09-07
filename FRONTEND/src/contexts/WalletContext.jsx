@@ -29,8 +29,30 @@ export const WalletContextProvider = ({ children }) => {
     const phantom = new PhantomWalletAdapter();
     const solflare = new SolflareWalletAdapter();
 
-    console.log('✅ Phantom adapter:', phantom.name, phantom.readyState);
-    console.log('✅ Solflare adapter:', solflare.name, solflare.readyState);
+    console.log('✅ Phantom adapter:', phantom.name, 'State:', phantom.readyState);
+    console.log('✅ Solflare adapter:', solflare.name, 'State:', solflare.readyState);
+
+    // Check if Phantom is actually available
+    console.log('🔍 Checking window.solana:', typeof window !== 'undefined' ? !!window.solana : 'N/A');
+    console.log('🔍 Checking window.phantom:', typeof window !== 'undefined' ? !!window.phantom : 'N/A');
+
+    // Log all available wallets on window
+    if (typeof window !== 'undefined') {
+      console.log('🔍 Available wallets on window:', Object.keys(window).filter(key =>
+        key.toLowerCase().includes('wallet') ||
+        key.toLowerCase().includes('solana') ||
+        key.toLowerCase().includes('phantom')
+      ));
+
+      // Check for common wallet injection patterns
+      const walletChecks = {
+        'window.solana': !!window.solana,
+        'window.solana.isPhantom': !!(window.solana && window.solana.isPhantom),
+        'window.phantom': !!window.phantom,
+        'window.solflare': !!window.solflare,
+      };
+      console.log('🔍 Wallet injection status:', walletChecks);
+    }
 
     return [phantom, solflare];
   }, []);
