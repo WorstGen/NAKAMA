@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [authToken, setAuthToken] = useState(null);
 
-  const authenticate = async () => {
+  const authenticate = useCallback(async () => {
     if (!publicKey || !signMessage) return;
 
     setLoading(true);
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [publicKey, signMessage]);
 
   const logout = () => {
     setUser(null);
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       logout();
     }
-  }, [connected, publicKey]);
+  }, [connected, publicKey, authenticate]);
 
   const value = {
     user,
