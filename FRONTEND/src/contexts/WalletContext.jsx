@@ -24,15 +24,14 @@ export const WalletContextProvider = ({ children }) => {
   const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
   const wallets = React.useMemo(() => {
-    console.log('🔧 Initializing wallet adapters...');
-
     const phantom = new PhantomWalletAdapter();
     const solflare = new SolflareWalletAdapter();
 
-    console.log('✅ Phantom adapter:', phantom.name, 'State:', phantom.readyState);
-    console.log('✅ Solflare adapter:', solflare.name, 'State:', solflare.readyState);
-
-    console.log('🔍 Checking window.solana:', typeof window !== 'undefined' ? !!window.solana : 'N/A');
+    // Force ready state check
+    setTimeout(() => {
+      console.log('Phantom readyState:', phantom.readyState);
+      console.log('Solflare readyState:', solflare.readyState);
+    }, 1000);
 
     return [phantom, solflare];
   }, []);
@@ -42,6 +41,7 @@ export const WalletContextProvider = ({ children }) => {
       <WalletProvider
         wallets={wallets}
         autoConnect={false}
+        onError={(error) => console.error('Wallet error:', error)}
       >
         <WalletModalProvider>
           <WalletContext.Provider value={{}}>
