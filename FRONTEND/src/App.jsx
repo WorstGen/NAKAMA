@@ -1,35 +1,39 @@
 import React from 'react';
-import './App.css';
 
 function App() {
-  console.log('App component rendering...');
+  console.log('🚀 React App is rendering!');
 
-  return (
-    <div style={{
+  return React.createElement('div', {
+    style: {
       padding: '20px',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       minHeight: '100vh',
-      color: 'white'
-    }}>
-      <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-        🚀 SolConnect is Working!
-      </h1>
-      <p style={{ fontSize: '1.2rem' }}>
-        React is rendering successfully. The build is working!
-      </p>
-      <div style={{
-        marginTop: '2rem',
-        padding: '1rem',
+      color: 'white',
+      fontFamily: 'Arial, sans-serif'
+    }
+  }, [
+    React.createElement('h1', {
+      key: 'title',
+      style: { fontSize: '2.5rem', marginBottom: '1rem', textAlign: 'center' }
+    }, '🚀 SolConnect React App Working!'),
+
+    React.createElement('div', {
+      key: 'status',
+      style: {
+        maxWidth: '600px',
+        margin: '2rem auto',
+        padding: '1.5rem',
         background: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: '8px'
-      }}>
-        <h2>Debug Info:</h2>
-        <p>✅ React is loaded</p>
-        <p>✅ Vite build is working</p>
-        <p>✅ CSS is loading</p>
-      </div>
-    </div>
-  );
+        borderRadius: '12px',
+        textAlign: 'center'
+      }
+    }, [
+      React.createElement('h2', { key: 'status-title', style: { color: '#00ff00', marginBottom: '1rem' } }, '✅ React is Working!'),
+      React.createElement('p', { key: 'msg1' }, 'The React app is rendering successfully.'),
+      React.createElement('p', { key: 'msg2' }, 'Vite build and deployment are working!'),
+      React.createElement('p', { key: 'msg3', style: { marginTop: '1rem', fontSize: '0.9rem', opacity: 0.8 } }, 'Next: Restore full SolConnect functionality')
+    ])
+  ]);
 }
 
 export default App;
