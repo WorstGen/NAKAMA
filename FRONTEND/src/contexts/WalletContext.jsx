@@ -5,11 +5,9 @@ import {
 } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
+  PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
-import {
-  StandardWalletAdapter,
-} from '@solana/wallet-standard-wallet-adapter-react';
 import {
   WalletModalProvider,
 } from '@solana/wallet-adapter-react-ui';
@@ -28,14 +26,14 @@ export const WalletContextProvider = ({ children }) => {
   const wallets = React.useMemo(() => {
     console.log('🔧 Initializing wallet adapters...');
 
+    // Create adapters with proper configuration
+    const phantom = new PhantomWalletAdapter();
     const solflare = new SolflareWalletAdapter();
-    const standardWallet = new StandardWalletAdapter();
 
+    console.log('✅ Phantom adapter:', phantom.name, 'State:', phantom.readyState);
     console.log('✅ Solflare adapter:', solflare.name, 'State:', solflare.readyState);
-    console.log('✅ Standard Wallet adapter initialized');
-    console.log('ℹ️ Phantom will be auto-detected by Standard Wallet API');
 
-    // Check if Phantom is actually available as standard wallet
+    // Check if Phantom is actually available
     console.log('🔍 Checking window.solana:', typeof window !== 'undefined' ? !!window.solana : 'N/A');
     console.log('🔍 Checking window.solana.isPhantom:', typeof window !== 'undefined' ? !!(window.solana && window.solana.isPhantom) : 'N/A');
 
@@ -57,7 +55,7 @@ export const WalletContextProvider = ({ children }) => {
       console.log('🔍 Wallet injection status:', walletChecks);
     }
 
-    return [solflare, standardWallet];
+    return [phantom, solflare];
   }, []);
 
   return (
@@ -65,7 +63,6 @@ export const WalletContextProvider = ({ children }) => {
       <WalletProvider
         wallets={wallets}
         autoConnect={false} // Disable auto-connect to prevent issues
-        localStorageKey="solconnect_wallet"
       >
         <WalletModalProvider>
           <WalletContext.Provider value={{}}>
@@ -75,4 +72,3 @@ export const WalletContextProvider = ({ children }) => {
       </WalletProvider>
     </ConnectionProvider>
   );
-};
