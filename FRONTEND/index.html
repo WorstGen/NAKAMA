@@ -6,6 +6,55 @@
     <title>SolConnect</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <h1 style="color: red; padding: 20px; background: black;">EMERGENCY: React Not Loading</h1>
+      <p style="color: white; padding: 20px; background: black;">
+        If you see this, Vite's script injection failed completely.
+      </p>
+      <div id="debug-info" style="color: yellow; padding: 20px; background: black;"></div>
+    </div>
+
+    <script>
+      // Emergency debug script
+      console.log('🔴 EMERGENCY: Checking if any JS files loaded...');
+
+      // Check what scripts were loaded
+      const scripts = document.querySelectorAll('script');
+      console.log('Loaded scripts:', scripts);
+
+      // Check for Vite-generated scripts
+      const viteScripts = Array.from(scripts).filter(script =>
+        script.src && (script.src.includes('assets') || script.src.includes('main') || script.src.includes('index'))
+      );
+      console.log('Vite scripts found:', viteScripts);
+
+      // Update debug info
+      const debugDiv = document.getElementById('debug-info');
+      if (debugDiv) {
+        debugDiv.innerHTML = `
+          <strong>Debug Info:</strong><br>
+          Total scripts: ${scripts.length}<br>
+          Vite scripts: ${viteScripts.length}<br>
+          Check console for details
+        `;
+      }
+
+      // Try to detect if React loaded
+      setTimeout(() => {
+        if (typeof React !== 'undefined') {
+          console.log('✅ React is available');
+        } else {
+          console.log('❌ React not found');
+        }
+
+        if (typeof window !== 'undefined') {
+          console.log('✅ Window object available');
+        }
+
+        const root = document.getElementById('root');
+        console.log('Root element:', root);
+        console.log('Root children:', root ? root.children : 'none');
+      }, 100);
+    </script>
   </body>
 </html>
