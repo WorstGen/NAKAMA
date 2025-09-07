@@ -26,34 +26,13 @@ export const WalletContextProvider = ({ children }) => {
   const wallets = React.useMemo(() => {
     console.log('🔧 Initializing wallet adapters...');
 
-    // Create adapters with proper configuration
     const phantom = new PhantomWalletAdapter();
     const solflare = new SolflareWalletAdapter();
 
     console.log('✅ Phantom adapter:', phantom.name, 'State:', phantom.readyState);
     console.log('✅ Solflare adapter:', solflare.name, 'State:', solflare.readyState);
 
-    // Check if Phantom is actually available
     console.log('🔍 Checking window.solana:', typeof window !== 'undefined' ? !!window.solana : 'N/A');
-    console.log('🔍 Checking window.solana.isPhantom:', typeof window !== 'undefined' ? !!(window.solana && window.solana.isPhantom) : 'N/A');
-
-    // Log all available wallets on window
-    if (typeof window !== 'undefined') {
-      console.log('🔍 Available wallets on window:', Object.keys(window).filter(key =>
-        key.toLowerCase().includes('wallet') ||
-        key.toLowerCase().includes('solana') ||
-        key.toLowerCase().includes('phantom')
-      ));
-
-      // Check for common wallet injection patterns
-      const walletChecks = {
-        'window.solana': !!window.solana,
-        'window.solana.isPhantom': !!(window.solana && window.solana.isPhantom),
-        'window.phantom': !!window.phantom,
-        'window.solflare': !!window.solflare,
-      };
-      console.log('🔍 Wallet injection status:', walletChecks);
-    }
 
     return [phantom, solflare];
   }, []);
@@ -62,7 +41,7 @@ export const WalletContextProvider = ({ children }) => {
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider
         wallets={wallets}
-        autoConnect={false} // Disable auto-connect to prevent issues
+        autoConnect={false}
       >
         <WalletModalProvider>
           <WalletContext.Provider value={{}}>
@@ -72,3 +51,4 @@ export const WalletContextProvider = ({ children }) => {
       </WalletProvider>
     </ConnectionProvider>
   );
+};
