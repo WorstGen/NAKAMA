@@ -28,8 +28,6 @@ export const OAuth = () => {
         scope
       });
 
-      setAuthorized(true);
-      
       // Redirect back to client with authorization code/token
       const params = new URLSearchParams({
         token: result.token,
