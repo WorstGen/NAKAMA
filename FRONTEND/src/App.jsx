@@ -1,46 +1,34 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { Toaster } from 'react-hot-toast';
-import { WalletContextProvider } from './contexts/WalletContext';
-import { AuthProvider } from './contexts/AuthContext';
-import { Header } from './components/Header';
-import { Dashboard } from './pages/Dashboard';
-import { Profile } from './pages/Profile';
-import { Contacts } from './pages/Contacts';
-import { Send } from './pages/Send';
-import { Transactions } from './pages/Transactions';
-import { OAuth } from './pages/OAuth';
-import { Landing } from './pages/Landing';
 import './App.css';
 
-const queryClient = new QueryClient();
-
 function App() {
+  console.log('App component rendering...');
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <WalletContextProvider>
-        <AuthProvider>
-          <Router>
-            <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-blue-800">
-              <Header />
-              <main className="container mx-auto px-4 py-8">
-                <Routes>
-                  <Route path="/" element={<Landing />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/contacts" element={<Contacts />} />
-                  <Route path="/send" element={<Send />} />
-                  <Route path="/transactions" element={<Transactions />} />
-                  <Route path="/oauth/authorize" element={<OAuth />} />
-                </Routes>
-              </main>
-              <Toaster position="bottom-right" />
-            </div>
-          </Router>
-        </AuthProvider>
-      </WalletContextProvider>
-    </QueryClientProvider>
+    <div style={{
+      padding: '20px',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      minHeight: '100vh',
+      color: 'white'
+    }}>
+      <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
+        🚀 SolConnect is Working!
+      </h1>
+      <p style={{ fontSize: '1.2rem' }}>
+        React is rendering successfully. The build is working!
+      </p>
+      <div style={{
+        marginTop: '2rem',
+        padding: '1rem',
+        background: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: '8px'
+      }}>
+        <h2>Debug Info:</h2>
+        <p>✅ React is loaded</p>
+        <p>✅ Vite build is working</p>
+        <p>✅ CSS is loading</p>
+      </div>
+    </div>
   );
 }
 
