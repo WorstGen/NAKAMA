@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { useSearchParams } from 'react-router-dom';
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { Transaction } from '@solana/web3.js';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,7 +17,6 @@ const SUPPORTED_TOKENS = [
 export const Send = () => {
   const { isAuthenticated } = useAuth();
   const { signTransaction } = useWallet();
-  const { connection } = useConnection();
   const [searchParams] = useSearchParams();
   
   const [formData, setFormData] = useState({
