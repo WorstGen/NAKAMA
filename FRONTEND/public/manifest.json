@@ -1,9 +1,1 @@
-{
-  "name": "SolConnect",
-  "short_name": "SolConnect",
-  "description": "Solana Wallet Connector",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000"
-}
+{"name":"SolConnect","short_name":"SolConnect","start_url":"/","display":"standalone"}
