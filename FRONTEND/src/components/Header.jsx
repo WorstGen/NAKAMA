@@ -4,6 +4,50 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useAuth } from '../contexts/AuthContext';
 
+// Enhanced Wallet Connect Button Component
+const WalletConnectButton = () => {
+  const { connected, publicKey, disconnect, wallet } = useWallet();
+
+  // Debug the actual wallet adapter state
+  React.useEffect(() => {
+    console.log('Header - Wallet Adapter State:');
+    console.log('Connected:', connected);
+    console.log('PublicKey:', publicKey?.toString());
+    console.log('Wallet:', wallet?.adapter?.name);
+    console.log('Wallet readyState:', wallet?.adapter?.readyState);
+  }, [connected, publicKey, wallet]);
+
+  if (connected) {
+    return (
+      <div className="flex items-center space-x-3">
+        <div className="hidden sm:flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
+          <div className="w-6 h-6 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex items-center justify-center">
+            <div className="w-2 h-2 bg-white rounded-full"></div>
+          </div>
+          <div className="text-white">
+            <div className="text-xs font-semibold">{wallet?.adapter?.name || 'Wallet'}</div>
+            <div className="text-xs opacity-80">
+              {publicKey?.toString().slice(0, 4)}...{publicKey?.toString().slice(-4)}
+            </div>
+          </div>
+        </div>
+        <button 
+          onClick={disconnect} 
+          className="bg-red-500/20 hover:bg-red-500/40 text-red-200 hover:text-white px-3 py-2 rounded-lg text-sm transition-all duration-200 border border-red-500/30"
+        >
+          Disconnect
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <WalletMultiButton 
+      className="!bg-gradient-to-r !from-purple-500 !to-blue-500 hover:!from-purple-600 hover:!to-blue-600 !transition-all !duration-200" 
+    />
+  );
+};
+
 export const Header = () => {
   const location = useLocation();
   const { connected } = useWallet();
@@ -72,7 +116,7 @@ export const Header = () => {
           {/* User info and wallet button */}
           <div className="flex items-center space-x-4">
             {connected && user && (
-              <div className="hidden sm:flex items-center space-x-2 text-white">
+              <div className="hidden lg:flex items-center space-x-2 text-white">
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center">
                   <span className="font-semibold text-sm">
                     {user.username?.charAt(0).toUpperCase()}
@@ -81,7 +125,8 @@ export const Header = () => {
                 <span className="font-medium">@{user.username}</span>
               </div>
             )}
-            <WalletMultiButton className="!bg-gradient-to-r !from-purple-500 !to-blue-500 hover:!from-purple-600 hover:!to-blue-600" />
+            {/* Replace the old WalletMultiButton with our enhanced component */}
+            <WalletConnectButton />
           </div>
         </div>
       </div>
