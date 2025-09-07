@@ -7,54 +7,25 @@
   </head>
   <body>
     <div id="root">
-      <h1 style="color: red; padding: 20px; background: black;">EMERGENCY: React Not Loading</h1>
-      <p style="color: white; padding: 20px; background: black;">
-        If you see this, Vite's script injection failed completely.
-      </p>
-      <div id="debug-info" style="color: yellow; padding: 20px; background: black;"></div>
+      <h1 style="color: blue; padding: 20px;">🔧 DIAGNOSIS: Vite Script Injection Failed</h1>
+      <div style="background: #f0f0f0; padding: 20px; margin: 20px; border-radius: 8px;">
+        <h2>✅ What We Know:</h2>
+        <ul>
+          <li>✅ HTML is loading correctly</li>
+          <li>✅ Basic JavaScript works</li>
+          <li>✅ Vercel deployment works</li>
+          <li>❌ Vite scripts not injected (0 found)</li>
+          <li>❌ React not loading</li>
+        </ul>
+
+        <h2>🔍 Next Steps:</h2>
+        <ol>
+          <li>Check if build generated JS files</li>
+          <li>Verify Vite entry point</li>
+          <li>Check build configuration</li>
+          <li>Try alternative build approach</li>
+        </ol>
+      </div>
     </div>
-
-    <script>
-      // Emergency debug script
-      console.log('🔴 EMERGENCY: Checking if any JS files loaded...');
-
-      // Check what scripts were loaded
-      const scripts = document.querySelectorAll('script');
-      console.log('Loaded scripts:', scripts);
-
-      // Check for Vite-generated scripts
-      const viteScripts = Array.from(scripts).filter(script =>
-        script.src && (script.src.includes('assets') || script.src.includes('main') || script.src.includes('index'))
-      );
-      console.log('Vite scripts found:', viteScripts);
-
-      // Update debug info
-      const debugDiv = document.getElementById('debug-info');
-      if (debugDiv) {
-        debugDiv.innerHTML = `
-          <strong>Debug Info:</strong><br>
-          Total scripts: ${scripts.length}<br>
-          Vite scripts: ${viteScripts.length}<br>
-          Check console for details
-        `;
-      }
-
-      // Try to detect if React loaded
-      setTimeout(() => {
-        if (typeof React !== 'undefined') {
-          console.log('✅ React is available');
-        } else {
-          console.log('❌ React not found');
-        }
-
-        if (typeof window !== 'undefined') {
-          console.log('✅ Window object available');
-        }
-
-        const root = document.getElementById('root');
-        console.log('Root element:', root);
-        console.log('Root children:', root ? root.children : 'none');
-      }, 100);
-    </script>
   </body>
 </html>
