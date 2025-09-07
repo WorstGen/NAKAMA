@@ -6,7 +6,6 @@ import {
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
   SolflareWalletAdapter,
-  PhantomWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import {
   WalletModalProvider,
@@ -24,16 +23,15 @@ export const WalletContextProvider = ({ children }) => {
   const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
   const wallets = React.useMemo(() => {
-    const phantom = new PhantomWalletAdapter();
     const solflare = new SolflareWalletAdapter();
 
-    // Force ready state check
+    // Force ready state check - Phantom auto-detected via Standard Wallet API
     setTimeout(() => {
-      console.log('Phantom readyState:', phantom.readyState);
       console.log('Solflare readyState:', solflare.readyState);
+      console.log('Phantom auto-detected via Standard Wallet API');
     }, 1000);
 
-    return [phantom, solflare];
+    return [solflare];
   }, []);
 
   return (
