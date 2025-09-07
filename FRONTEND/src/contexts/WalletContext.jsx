@@ -27,56 +27,15 @@ export const WalletContextProvider = ({ children }) => {
     const phantom = new PhantomWalletAdapter();
     const solflare = new SolflareWalletAdapter();
 
-    // Force ready state check with detailed logging
+    // Simple ready state check
     setTimeout(() => {
-      console.log('=== WALLET DEBUG INFO ===');
-      console.log('Phantom adapter:', phantom);
       console.log('Phantom readyState:', phantom.readyState);
-      console.log('Phantom name:', phantom.name);
-      console.log('Phantom connected:', phantom.connected);
-      console.log('Phantom connecting:', phantom.connecting);
       console.log('Solflare readyState:', solflare.readyState);
-
-      // Check if window.solana is available
-      if (typeof window !== 'undefined') {
-        console.log('window.solana available:', !!window.solana);
-        if (window.solana) {
-          console.log('Phantom detected via window.solana:', window.solana.isPhantom);
-          console.log('Phantom version:', window.solana.version);
-        }
-      }
-      console.log('========================');
+      console.log('Phantom detected:', typeof window !== 'undefined' && !!window.solana);
     }, 1000);
 
-    // Add event listeners for debugging
-    phantom.addEventListener('readyStateChange', (event) => {
-      console.log('Phantom readyState changed:', event.detail);
-    });
-
-    phantom.addEventListener('connect', () => {
-      console.log('Phantom connected successfully!');
-    });
-
-    phantom.addEventListener('disconnect', () => {
-      console.log('Phantom disconnected');
-    });
-
-    phantom.addEventListener('error', (error) => {
-      console.error('Phantom error:', error);
-    });
-
-    // Test manual connection after 2 seconds
-    setTimeout(async () => {
-      if (phantom.readyState === 'Installed' && !phantom.connected && !phantom.connecting) {
-        console.log('Attempting manual Phantom connection...');
-        try {
-          await phantom.connect();
-          console.log('Manual connection successful!');
-        } catch (error) {
-          console.error('Manual connection failed:', error);
-        }
-      }
-    }, 2000);
+    // Wallet adapters use emit/on pattern, not DOM events
+    // The WalletProvider handles events automatically
 
     return [phantom, solflare];
   }, []);
