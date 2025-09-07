@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 // Enhanced Wallet Connect Button Component
 const WalletConnectButton = () => {
-  const { connected, publicKey, disconnect, wallet } = useWallet();
+  const { connected, publicKey, disconnect, wallet, connect, select, wallets } = useWallet();
 
   // Debug the actual wallet adapter state
   React.useEffect(() => {
@@ -15,7 +15,37 @@ const WalletConnectButton = () => {
     console.log('PublicKey:', publicKey?.toString());
     console.log('Wallet:', wallet?.adapter?.name);
     console.log('Wallet readyState:', wallet?.adapter?.readyState);
-  }, [connected, publicKey, wallet]);
+    console.log('Available wallets:', wallets.map(w => ({ name: w.adapter.name, readyState: w.adapter.readyState })));
+  }, [connected, publicKey, wallet, wallets]);
+
+  // Try to auto-connect to detected Phantom
+  React.useEffect(() => {
+    if (!connected && typeof window !== 'undefined' && window.solana?.isPhantom) {
+      // Find phantom wallet in available wallets
+      const phantomWallet = wallets.find(w => 
+        w.adapter.name.toLowerCase().includes('phantom') || 
+        w.adapter.url === 'https://phantom.app'
+      );
+      
+      if (phantomWallet) {
+        console.log('Found Phantom wallet, attempting to select and connect...');
+        select(phantomWallet.adapter.name);
+        setTimeout(() => {
+          connect().catch(err => console.log('Auto-connect failed:', err));
+        }, 100);
+      } else {
+        console.log('Phantom wallet not found in available wallets');
+        console.log('Trying to connect to detected Phantom directly...');
+        
+        // Try direct connection and then manually trigger wallet adapter
+        window.solana.connect({ onlyIfTrusted: true })
+          .then(() => {
+            console.log('Direct Phantom connection successful, wallet adapter should pick it up');
+          })
+          .catch(() => console.log('Direct silent connection failed'));
+      }
+    }
+  }, [connected, wallets, select, connect]);
 
   if (connected) {
     return (
