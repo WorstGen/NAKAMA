@@ -7,7 +7,6 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
-  SolletWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import {
   WalletModalProvider,
@@ -28,9 +27,8 @@ export const WalletContextProvider = ({ children }) => {
     return [
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
-      new SolletWalletAdapter({ network }),
     ];
-  }, [network]);
+  }, []);
 
   return (
     <ConnectionProvider endpoint={endpoint}>
