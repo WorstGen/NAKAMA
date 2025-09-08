@@ -1,11 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useWallet } from '../contexts/WalletContext';
 
 export const Header = () => {
   const location = useLocation();
-  const { connected, publicKey, wallet } = useWallet();
+  const { connected, publicKey, wallet, connect } = useWallet();
 
   const isActive = (path) => location.pathname === path;
 
@@ -95,11 +94,11 @@ export const Header = () => {
             <button
               onClick={async () => {
                 try {
-                  console.log('🔌 Force connecting to Phantom...');
-                  const result = await window.solana.connect();
-                  console.log('✅ Force connect successful:', result);
+                  console.log('🔌 Connecting to Phantom...');
+                  await connect();
+                  console.log('✅ Connection initiated');
                 } catch (error) {
-                  console.error('❌ Force connect failed:', error);
+                  console.error('❌ Connection failed:', error);
                   alert(`Connection failed: ${error.message}`);
                 }
               }}
@@ -109,8 +108,6 @@ export const Header = () => {
             </button>
           )}
 
-          {/* Standard Wallet Button */}
-          <WalletMultiButton />
         </div>
       </div>
     </header>
