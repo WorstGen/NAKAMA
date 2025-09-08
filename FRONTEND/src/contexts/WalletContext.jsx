@@ -7,6 +7,8 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
+  SolletWalletAdapter,
+  TorusWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import {
   WalletModalProvider,
@@ -24,17 +26,39 @@ export const WalletContextProvider = ({ children }) => {
   const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
   const wallets = React.useMemo(() => {
-    // Configure the most popular Solana wallets
-    const walletConfigs = [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter(),
-    ];
+    try {
+      // Configure multiple Solana wallets with proper error handling
+      const walletConfigs = [
+        new PhantomWalletAdapter(),
+        new SolflareWalletAdapter(),
+        new SolletWalletAdapter({ network }),
+        new TorusWalletAdapter(),
+      ];
 
-    console.log('🔗 Configured wallets:', walletConfigs.map(w => w.name));
-    console.log('🌐 Using network:', network);
-    console.log('📡 RPC endpoint:', endpoint);
+      console.log('✅ Wallet adapters configured successfully');
+      console.log('🔗 Available wallets:', walletConfigs.map(w => ({
+        name: w.name,
+        readyState: w.readyState
+      })));
+      console.log('🌐 Network:', network);
+      console.log('📡 RPC endpoint:', endpoint);
 
-    return walletConfigs;
+      // Debug browser wallet state
+      setTimeout(() => {
+        console.log('🔍 Browser wallet detection:');
+        console.log('- window.solana:', !!window.solana);
+        console.log('- Phantom installed:', !!(window.solana?.isPhantom));
+        console.log('- Phantom connected:', !!(window.solana?.isConnected));
+        console.log('- Phantom publicKey:', window.solana?.publicKey?.toString());
+        console.log('- MetaMask installed:', !!window.ethereum);
+      }, 2000);
+
+      return walletConfigs;
+    } catch (error) {
+      console.error('❌ Error configuring wallets:', error);
+      console.error('Error details:', error.message);
+      return [];
+    }
   }, [network, endpoint]);
 
   return (
