@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export const Header = () => {
   const location = useLocation();
-  const { connected } = useWallet();
+  const { connected, publicKey, wallet } = useWallet();
   const { user } = useAuth();
 
   const isActive = (path) => location.pathname === path;
@@ -69,8 +69,21 @@ export const Header = () => {
             </nav>
           )}
 
-          {/* Wallet Connect Button */}
-          <WalletMultiButton />
+          {/* Wallet Status */}
+          <div className="flex items-center space-x-3">
+            {connected && publicKey && (
+              <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="text-white text-sm">
+                  <div className="font-medium">{wallet?.adapter?.name || 'Wallet'}</div>
+                  <div className="text-white/70 text-xs">
+                    {publicKey.toString().slice(0, 4)}...{publicKey.toString().slice(-4)}
+                  </div>
+                </div>
+              </div>
+            )}
+            <WalletMultiButton />
+          </div>
         </div>
       </div>
     </header>
