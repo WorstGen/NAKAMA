@@ -2,12 +2,10 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useAuth } from '../contexts/AuthContext';
 
 export const Header = () => {
   const location = useLocation();
   const { connected } = useWallet();
-  const { user } = useAuth();
 
   const isActive = (path) => location.pathname === path;
 
