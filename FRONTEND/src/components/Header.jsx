@@ -87,11 +87,96 @@ const WalletTroubleshootingModal = ({ isOpen, onClose }) => {
   );
 };
 
+// Simple Wallet Test Component
+const SimpleWalletTest = () => {
+  const [testResults, setTestResults] = React.useState(null);
+  const [connecting, setConnecting] = React.useState(false);
+
+  React.useEffect(() => {
+    // Test wallet availability
+    const testWallets = () => {
+      const results = {
+        timestamp: new Date().toISOString(),
+        windowSolana: typeof window !== 'undefined' && !!window.solana,
+        phantomInstalled: typeof window !== 'undefined' && window.solana?.isPhantom,
+        phantomVersion: typeof window !== 'undefined' ? window.solana?.version : null,
+        phantomConnected: typeof window !== 'undefined' ? window.solana?.isConnected : null,
+        phantomPublicKey: typeof window !== 'undefined' ? window.solana?.publicKey?.toString() : null,
+        ethereumDetected: typeof window !== 'undefined' && !!window.ethereum,
+        userAgent: navigator?.userAgent
+      };
+      setTestResults(results);
+      console.log('=== Simple Wallet Test Results ===', results);
+    };
+
+    testWallets();
+  }, []);
+
+  const testPhantomConnection = async () => {
+    if (!window.solana) {
+      console.log('Phantom not available');
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      console.log('Testing direct Phantom connection...');
+
+      // Try to connect
+      const response = await window.solana.connect();
+      console.log('Phantom connection successful:', response);
+
+      // Get public key
+      const publicKey = window.solana.publicKey;
+      console.log('Phantom public key:', publicKey?.toString());
+
+      // Update test results
+      setTestResults(prev => ({
+        ...prev,
+        phantomConnected: window.solana.isConnected,
+        phantomPublicKey: publicKey?.toString()
+      }));
+
+    } catch (error) {
+      console.error('Phantom connection failed:', error);
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  return (
+    <div className="bg-white/10 rounded-lg p-4 mt-4 text-white text-sm max-w-md">
+      <h3 className="font-bold mb-2">Wallet Test Results:</h3>
+      {testResults && (
+        <div className="space-y-1 text-xs">
+          <div>Solana Available: {testResults.windowSolana ? '✅' : '❌'}</div>
+          <div>Phantom Installed: {testResults.phantomInstalled ? '✅' : '❌'}</div>
+          <div>Phantom Connected: {testResults.phantomConnected ? '✅' : '❌'}</div>
+          <div>Phantom Version: {testResults.phantomVersion || 'N/A'}</div>
+          <div>Phantom PublicKey: {testResults.phantomPublicKey ? `${testResults.phantomPublicKey.slice(0, 8)}...` : 'None'}</div>
+          <div>Ethereum Detected: {testResults.ethereumDetected ? '✅' : '❌'}</div>
+        </div>
+      )}
+
+      <div className="mt-3 pt-3 border-t border-white/20">
+        <button
+          onClick={testPhantomConnection}
+          disabled={connecting || !window.solana}
+          className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white px-3 py-1 rounded text-xs transition-colors"
+        >
+          {connecting ? 'Connecting...' : 'Test Phantom Connect'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Enhanced Wallet Connect Button Component
 const WalletConnectButton = () => {
   const { connected, publicKey, disconnect, wallet, wallets, connecting } = useWallet();
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
   const [stuckTimer, setStuckTimer] = React.useState(null);
+  const [showTest, setShowTest] = React.useState(false);
 
   // Debug wallet state changes
   React.useEffect(() => {
@@ -240,8 +325,16 @@ const WalletConnectButton = () => {
         >
           <QuestionMarkCircleIcon className="w-5 h-5" />
         </button>
+        <button
+          onClick={() => setShowTest(!showTest)}
+          className="text-white/60 hover:text-white transition-colors p-1"
+          title="Wallet Test"
+        >
+          🧪
+        </button>
         <WalletMultiButton />
       </div>
+      {showTest && <SimpleWalletTest />}
       {connecting && (
         <div className="text-white/60 text-xs">
           Connecting...
