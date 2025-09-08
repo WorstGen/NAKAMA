@@ -1,72 +1,169 @@
-import React, { createContext, useContext } from 'react';
-import {
-  ConnectionProvider,
-  WalletProvider,
-} from '@solana/wallet-adapter-react';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import {
-  PhantomWalletAdapter,
-} from '@solana/wallet-adapter-phantom';
-import {
-  WalletModalProvider,
-} from '@solana/wallet-adapter-react-ui';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { clusterApiUrl } from '@solana/web3.js';
-
-require('@solana/wallet-adapter-react-ui/styles.css');
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 const WalletContext = createContext({});
 
 export const useWallet = () => useContext(WalletContext);
 
+// Direct Phantom wallet connector - bypasses complex adapter system
 export const WalletContextProvider = ({ children }) => {
+  const [connected, setConnected] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [publicKey, setPublicKey] = useState(null);
+  const [wallet, setWallet] = useState(null);
+
   const network = WalletAdapterNetwork.Mainnet;
   const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
-  const wallets = React.useMemo(() => {
-    try {
-      // Use the official Phantom wallet adapter
-      const phantomAdapter = new PhantomWalletAdapter();
+  // Check for existing Phantom connection on mount
+  useEffect(() => {
+    const checkExistingConnection = async () => {
+      console.log('🔍 Checking for existing Phantom connection...');
 
-      console.log('✅ Official Phantom adapter created');
-      console.log('🔗 Adapter details:', {
-        name: phantomAdapter.name,
-        readyState: phantomAdapter.readyState,
-        url: phantomAdapter.url
-      });
+      if (window.solana && window.solana.isPhantom) {
+        console.log('👻 Phantom detected');
 
-      // Check browser state for debugging
-      setTimeout(() => {
-        console.log('🔍 Browser vs Adapter state:');
-        console.log('- Browser connected:', !!(window.solana?.isConnected));
-        console.log('- Browser publicKey:', window.solana?.publicKey?.toString());
-        console.log('- Adapter readyState:', phantomAdapter.readyState);
-      }, 2000);
+        // Check if already connected at browser level
+        if (window.solana.isConnected && window.solana.publicKey) {
+          console.log('✅ Phantom already connected at browser level');
+          console.log('- PublicKey:', window.solana.publicKey.toString());
 
-      return [phantomAdapter];
-    } catch (error) {
-      console.error('❌ Failed to create Phantom adapter:', error);
-      return [];
+          // Update React state to reflect browser connection
+          setConnected(true);
+          setPublicKey(window.solana.publicKey);
+          setWallet({
+            adapter: {
+              name: 'Phantom',
+              url: 'https://phantom.app'
+            }
+          });
+
+          console.log('🎯 React state updated to match browser connection');
+          return;
+        }
+
+        console.log('❌ Phantom not connected at browser level - ready for manual connection');
+      } else {
+        console.log('❌ Phantom not detected');
+      }
+    };
+
+    // Check immediately and also after a short delay to ensure window is fully loaded
+    checkExistingConnection();
+    const timer = setTimeout(checkExistingConnection, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Listen for Phantom connection changes
+  useEffect(() => {
+    if (window.solana && window.solana.isPhantom) {
+      const handleConnect = (publicKey) => {
+        console.log('🔗 Phantom connected event:', publicKey?.toString());
+        setConnected(true);
+        setConnecting(false);
+        setPublicKey(publicKey);
+        setWallet({
+          adapter: {
+            name: 'Phantom',
+            url: 'https://phantom.app'
+          }
+        });
+      };
+
+      const handleDisconnect = () => {
+        console.log('🔌 Phantom disconnected event');
+        setConnected(false);
+        setPublicKey(null);
+        setWallet(null);
+      };
+
+      const handleAccountChange = (publicKey) => {
+        console.log('🔄 Phantom account changed:', publicKey?.toString());
+        setPublicKey(publicKey);
+      };
+
+      // Add event listeners
+      window.solana.on('connect', handleConnect);
+      window.solana.on('disconnect', handleDisconnect);
+      window.solana.on('accountChanged', handleAccountChange);
+
+      return () => {
+        // Cleanup event listeners
+        if (window.solana) {
+          window.solana.off('connect', handleConnect);
+          window.solana.off('disconnect', handleDisconnect);
+          window.solana.off('accountChanged', handleAccountChange);
+        }
+      };
     }
-  }, []); // Remove network and endpoint dependencies since they're not used in the callback
+  }, []);
+
+  // Manual connect function
+  const connect = async () => {
+    if (!window.solana || !window.solana.isPhantom) {
+      throw new Error('Phantom wallet not found. Please install Phantom.');
+    }
+
+    try {
+      setConnecting(true);
+      console.log('🔌 Attempting to connect to Phantom...');
+
+      const response = await window.solana.connect();
+      console.log('✅ Phantom connect response:', response);
+
+      // The event listener will handle updating the React state
+      return response;
+    } catch (error) {
+      console.error('❌ Phantom connect failed:', error);
+      setConnecting(false);
+      throw error;
+    }
+  };
+
+  // Manual disconnect function
+  const disconnect = async () => {
+    if (window.solana && window.solana.isPhantom) {
+      try {
+        console.log('🔌 Disconnecting from Phantom...');
+        await window.solana.disconnect();
+        console.log('✅ Disconnected from Phantom');
+
+        // Update React state
+        setConnected(false);
+        setPublicKey(null);
+        setWallet(null);
+      } catch (error) {
+        console.error('❌ Phantom disconnect failed:', error);
+        throw error;
+      }
+    }
+  };
+
+  // Select wallet function (for compatibility)
+  const select = async (walletName) => {
+    console.log('🎯 Selecting wallet:', walletName);
+    if (walletName === 'Phantom' || walletName.toLowerCase().includes('phantom')) {
+      return await connect();
+    }
+    throw new Error(`Wallet ${walletName} not supported`);
+  };
+
+  const value = {
+    connected,
+    connecting,
+    publicKey,
+    wallet,
+    connect,
+    disconnect,
+    select,
+    wallets: [], // Empty for compatibility
+  };
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider
-        wallets={wallets}
-        autoConnect={true}
-        onError={(error) => {
-          console.error('Wallet error:', error);
-          console.error('Error details:', error.message);
-          console.error('Error stack:', error.stack);
-        }}
-        localStorageKey="solana-wallet"
-      >
-        <WalletModalProvider>
-          <WalletContext.Provider value={{}}>
-            {children}
-          </WalletContext.Provider>
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <WalletContext.Provider value={value}>
+      {children}
+    </WalletContext.Provider>
   );
 };
