@@ -217,7 +217,10 @@ export const AuthProvider = ({ children }) => {
   // Try to restore authentication on page load if wallet is connected
   useEffect(() => {
     const restoreAuth = async () => {
-      if (connected && publicKey && !user && !loading) {
+      // Only attempt restoration if we haven't tried authentication before
+      // and user is connected but has no authentication state
+      const hasAuthHeaders = api.hasAuthHeaders();
+      if (connected && publicKey && !user && !loading && !hasAuthHeaders) {
         console.log('Attempting to restore authentication...');
         try {
           await authenticate();
