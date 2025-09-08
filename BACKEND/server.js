@@ -105,25 +105,40 @@ const upload = multer({
 const verifyWallet = async (req, res, next) => {
   try {
     const { signature, message, publicKey } = req.headers;
-    
+
+    console.log('Backend Auth Debug:');
+    console.log('Received signature:', signature);
+    console.log('Received message:', message);
+    console.log('Received publicKey:', publicKey);
+
     if (!signature || !message || !publicKey) {
+      console.log('Missing authentication headers');
       return res.status(401).json({ error: 'Missing authentication headers' });
     }
 
     // Verify signature
     const messageBytes = new TextEncoder().encode(message);
+    console.log('Message bytes:', messageBytes);
+
     const signatureBytes = bs58.decode(signature);
+    console.log('Decoded signature bytes:', signatureBytes);
+
     const publicKeyBytes = new PublicKey(publicKey).toBytes();
-    
+    console.log('Public key bytes:', publicKeyBytes);
+
     const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
-    
+    console.log('Signature verification result:', isValid);
+
     if (!isValid) {
+      console.log('Signature verification failed');
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
+    console.log('Authentication successful for:', publicKey);
     req.walletAddress = publicKey;
     next();
   } catch (error) {
+    console.error('Authentication error:', error);
     res.status(401).json({ error: 'Authentication failed' });
   }
 };
