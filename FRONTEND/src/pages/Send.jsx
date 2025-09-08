@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { useSearchParams } from 'react-router-dom';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '../contexts/WalletContext';
 import { Transaction } from '@solana/web3.js';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';

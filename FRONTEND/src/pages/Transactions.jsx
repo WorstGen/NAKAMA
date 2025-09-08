@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '../contexts/WalletContext';
 import { ClockIcon, CheckCircleIcon, XCircleIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
 
 export const Transactions = () => {
