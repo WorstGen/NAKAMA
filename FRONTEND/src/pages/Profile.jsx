@@ -33,6 +33,28 @@ export const Profile = () => {
     }
   }, [user]);
 
+  // Load saved image settings from localStorage
+  useEffect(() => {
+    if (user?.username) {
+      const savedSettings = localStorage.getItem(`profileImageSettings_${user.username}`);
+      if (savedSettings) {
+        try {
+          const parsedSettings = JSON.parse(savedSettings);
+          setImageSettings(parsedSettings);
+        } catch (error) {
+          console.error('Error loading saved image settings:', error);
+        }
+      }
+    }
+  }, [user?.username]);
+
+  // Save image settings to localStorage whenever they change
+  useEffect(() => {
+    if (user?.username && imageSettings) {
+      localStorage.setItem(`profileImageSettings_${user.username}`, JSON.stringify(imageSettings));
+    }
+  }, [imageSettings, user?.username]);
+
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
@@ -56,6 +78,32 @@ export const Profile = () => {
       }
     });
   };
+
+  const resetImageSettings = () => {
+    const defaultSettings = {
+      position: { x: 50, y: 50 },
+      zoom: 100
+    };
+    setImageSettings(defaultSettings);
+    if (user?.username) {
+      localStorage.setItem(`profileImageSettings_${user.username}`, JSON.stringify(defaultSettings));
+    }
+    toast.success('Image settings reset to default');
+  };
+
+  // Utility function to get saved image settings (can be used by other components)
+  const getSavedImageSettings = (username) => {
+    if (!username) return { position: { x: 50, y: 50 }, zoom: 100 };
+    try {
+      const saved = localStorage.getItem(`profileImageSettings_${username}`);
+      return saved ? JSON.parse(saved) : { position: { x: 50, y: 50 }, zoom: 100 };
+    } catch {
+      return { position: { x: 50, y: 50 }, zoom: 100 };
+    }
+  };
+
+  // Export the utility function for use in other components
+  window.getSavedImageSettings = getSavedImageSettings;
 
   // Helper function for image styles
   const getImageStyle = () => {
@@ -264,6 +312,21 @@ export const Profile = () => {
                       }}
                     />
                   </div>
+                </div>
+
+                {/* Reset Button */}
+                <div className="flex justify-center mt-4 space-y-2">
+                  <button
+                    type="button"
+                    onClick={resetImageSettings}
+                    className="px-4 py-2 bg-white/10 text-white/80 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors"
+                    title="Reset to default settings"
+                  >
+                    🔄 Reset to Default
+                  </button>
+                  <p className="text-white/50 text-xs text-center">
+                    💾 Settings saved automatically
+                  </p>
                 </div>
               </div>
             </div>

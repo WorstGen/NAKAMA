@@ -121,6 +121,14 @@ export const Contacts = () => {
                           src={`https://nakama-production-1850.up.railway.app${searchResults.profilePicture}`}
                           alt={`${searchResults.username}'s profile`}
                           className="w-full h-full rounded-full object-cover"
+                          style={(() => {
+                            const settings = window.getSavedImageSettings?.(searchResults.username) || { position: { x: 50, y: 50 }, zoom: 100 };
+                            return {
+                              objectPosition: `${settings.position.x}% ${settings.position.y}%`,
+                              transform: `scale(${settings.zoom / 100})`,
+                              transformOrigin: 'center center'
+                            };
+                          })()}
                         />
                       ) : (
                         <span className="text-white font-semibold">
@@ -173,6 +181,14 @@ export const Contacts = () => {
                           src={`https://nakama-production-1850.up.railway.app${contact.profilePicture}`}
                           alt={`${contact.username}'s profile`}
                           className="w-full h-full rounded-full object-cover"
+                          style={(() => {
+                            const settings = window.getSavedImageSettings?.(contact.username) || { position: { x: 50, y: 50 }, zoom: 100 };
+                            return {
+                              objectPosition: `${settings.position.x}% ${settings.position.y}%`,
+                              transform: `scale(${settings.zoom / 100})`,
+                              transformOrigin: 'center center'
+                            };
+                          })()}
                         />
                       ) : (
                         <span className="text-white font-semibold">
