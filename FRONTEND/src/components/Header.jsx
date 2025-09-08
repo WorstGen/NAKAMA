@@ -233,7 +233,6 @@ const WalletConnectButton = () => {
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
   const [stuckTimer, setStuckTimer] = React.useState(null);
   const [showTest, setShowTest] = React.useState(false);
-  const [syncing, setSyncing] = React.useState(false);
 
   // Sync wallet adapter state with Phantom connection
   React.useEffect(() => {
