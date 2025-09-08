@@ -7,8 +7,6 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
-  SolletWalletAdapter,
-  TorusWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import {
   WalletModalProvider,
@@ -27,12 +25,10 @@ export const WalletContextProvider = ({ children }) => {
 
   const wallets = React.useMemo(() => {
     try {
-      // Configure multiple Solana wallets with proper error handling
+      // Configure the main Solana wallets that are available
       const walletConfigs = [
         new PhantomWalletAdapter(),
         new SolflareWalletAdapter(),
-        new SolletWalletAdapter({ network }),
-        new TorusWalletAdapter(),
       ];
 
       console.log('✅ Wallet adapters configured successfully');
