@@ -494,6 +494,12 @@ app.post('/api/transactions/submit',
 
       const { signedTransaction, recipientUsername, amount, token, memo } = req.body;
 
+      // Look up recipient's wallet address
+      const recipientUser = await User.findOne({ username: recipientUsername.toLowerCase() });
+      if (!recipientUser) {
+        return res.status(404).json({ error: 'Recipient not found' });
+      }
+
       // Deserialize and send transaction
       const txBuffer = Buffer.from(signedTransaction, 'base64');
       const transaction = Transaction.from(txBuffer);
@@ -503,16 +509,16 @@ app.post('/api/transactions/submit',
         preflightCommitment: 'confirmed'
       });
 
-      // Save transaction record
+      // Save transaction record with correct addresses
       const txRecord = new TransactionRecord({
         fromAddress: req.walletAddress,
-        toAddress: recipientUsername, // We'd need to look this up
-        toUsername: recipientUsername,
+        toAddress: recipientUser.walletAddress, // ✅ Actual wallet address
+        toUsername: recipientUsername,           // ✅ Username for display
         amount,
         token,
         signature,
         memo,
-        status: 'pending'
+        status: 'confirmed' // Changed to confirmed since transaction was successful
       });
 
       await txRecord.save();
