@@ -58,7 +58,9 @@ const limiter = rateLimit({
 app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Signature', 'X-Message', 'X-Public-Key', 'signature', 'message', 'publickey', 'publicKey', 'PublicKey'],
+  exposedHeaders: ['X-Signature', 'X-Message', 'X-Public-Key', 'signature', 'message', 'publickey', 'publicKey', 'PublicKey']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
@@ -128,9 +130,9 @@ const upload = multer({
 // Auth middleware
 const verifyWallet = async (req, res, next) => {
   try {
-    const signature = req.headers.signature || req.headers.Signature;
-    const message = req.headers.message || req.headers.Message;
-    const publicKey = req.headers.publickey || req.headers.publicKey || req.headers.PublicKey;
+    const signature = req.headers['x-signature'] || req.headers['X-Signature'] || req.headers.signature || req.headers.Signature;
+    const message = req.headers['x-message'] || req.headers['X-Message'] || req.headers.message || req.headers.Message;
+    const publicKey = req.headers['x-public-key'] || req.headers['X-Public-Key'] || req.headers.publickey || req.headers.publicKey || req.headers.PublicKey;
 
     console.log('Backend Auth Debug:');
     console.log('Received signature:', signature);
