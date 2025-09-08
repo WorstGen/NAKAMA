@@ -36,14 +36,16 @@ export const AuthProvider = ({ children }) => {
 
       const message = `Sign this message to authenticate with SolConnect: ${Date.now()}`;
       console.log('Message to sign:', message);
+      console.log('Message length:', message.length);
 
       let signature;
       try {
         const messageBytes = new TextEncoder().encode(message);
         console.log('Message bytes:', messageBytes);
+        console.log('Message bytes length:', messageBytes.length);
 
         // Add timeout for signing operation
-        const signPromise = signMessage(messageBytes);
+        const signPromise = signMessage(message); // Pass string, not bytes
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Wallet signing timeout')), 30000)
         );
