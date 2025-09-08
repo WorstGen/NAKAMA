@@ -4,7 +4,9 @@ import {
   WalletProvider,
 } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-// Removed explicit wallet adapters - using Standard Wallet API auto-detection
+import {
+  PhantomWalletAdapter,
+} from '@solana/wallet-adapter-phantom';
 import {
   WalletModalProvider,
 } from '@solana/wallet-adapter-react-ui';
@@ -21,29 +23,30 @@ export const WalletContextProvider = ({ children }) => {
   const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
   const wallets = React.useMemo(() => {
-    console.log('✅ Using Standard Wallet API auto-detection');
-    console.log('🌐 Network:', network);
-    console.log('📡 RPC endpoint:', endpoint);
+    try {
+      // Use the official Phantom wallet adapter
+      const phantomAdapter = new PhantomWalletAdapter();
 
-    // Debug browser wallet state
-    setTimeout(() => {
-      console.log('🔍 Browser wallet detection:');
-      console.log('- window.solana:', !!window.solana);
-      console.log('- Phantom installed:', !!(window.solana?.isPhantom));
-      console.log('- Phantom connected:', !!(window.solana?.isConnected));
-      console.log('- Phantom publicKey:', window.solana?.publicKey?.toString());
-      console.log('- MetaMask installed:', !!window.ethereum);
+      console.log('✅ Official Phantom adapter created');
+      console.log('🔗 Adapter details:', {
+        name: phantomAdapter.name,
+        readyState: phantomAdapter.readyState,
+        url: phantomAdapter.url
+      });
 
-      // Check if Standard Wallet API is available
-      if (typeof window !== 'undefined' && window.navigator?.wallet) {
-        console.log('✅ Standard Wallet API available');
-      } else {
-        console.log('❌ Standard Wallet API not available');
-      }
-    }, 2000);
+      // Check browser state for debugging
+      setTimeout(() => {
+        console.log('🔍 Browser vs Adapter state:');
+        console.log('- Browser connected:', !!(window.solana?.isConnected));
+        console.log('- Browser publicKey:', window.solana?.publicKey?.toString());
+        console.log('- Adapter readyState:', phantomAdapter.readyState);
+      }, 2000);
 
-    // Return empty array to use Standard Wallet API auto-detection
-    return [];
+      return [phantomAdapter];
+    } catch (error) {
+      console.error('❌ Failed to create Phantom adapter:', error);
+      return [];
+    }
   }, [network, endpoint]);
 
   return (
