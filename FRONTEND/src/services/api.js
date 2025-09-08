@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Fix the base URL to use your Railway backend directly
-const BASE_URL = process.env.REACT_APP_API_URL || 'https://nakama-production-1850.up.railway.app/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://nakama-production-1850.up.railway.app';
 
 console.log('API Base URL:', BASE_URL); // Debug log to verify URL
 
