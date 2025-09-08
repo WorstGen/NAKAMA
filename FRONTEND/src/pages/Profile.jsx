@@ -17,6 +17,11 @@ export const Profile = () => {
     ethAddress: ''
   });
 
+  const [imageSettings, setImageSettings] = useState({
+    position: 'center', // center, top, bottom, left, right, top-left, top-right, bottom-left, bottom-right
+    shape: 'circle' // circle, hexagon, octagon
+  });
+
   // Load user data when component mounts or user changes
   useEffect(() => {
     if (user) {
@@ -33,6 +38,47 @@ export const Profile = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleShapeChange = (shape) => {
+    setImageSettings({
+      ...imageSettings,
+      shape
+    });
+  };
+
+  const handlePositionChange = (position) => {
+    setImageSettings({
+      ...imageSettings,
+      position
+    });
+  };
+
+  // Helper functions for CSS classes
+  const getShapeClass = (shape) => {
+    switch (shape) {
+      case 'hexagon':
+        return '[clip-path:polygon(50%_0%,_93.3%_25%,_93.3%_75%,_50%_100%,_6.7%_75%,_6.7%_25%)]';
+      case 'octagon':
+        return '[clip-path:polygon(30%_0%,_70%_0%,_100%_30%,_100%_70%,_70%_100%,_30%_100%,_0%_70%,_0%_30%)]';
+      default:
+        return 'rounded-full';
+    }
+  };
+
+  const getPositionClass = (position) => {
+    const positionMap = {
+      'center': 'object-center',
+      'top': 'object-top',
+      'bottom': 'object-bottom',
+      'left': 'object-left',
+      'right': 'object-right',
+      'top-left': 'object-top object-left',
+      'top-right': 'object-top object-right',
+      'bottom-left': 'object-bottom object-left',
+      'bottom-right': 'object-bottom object-right'
+    };
+    return positionMap[position] || 'object-center';
   };
 
   const handleSubmit = async (e) => {
@@ -106,14 +152,19 @@ export const Profile = () => {
         </h1>
 
         {/* Profile Picture */}
-        <div className="flex justify-center mb-8">
-          <div className="relative">
-            <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center">
+        <div className="flex flex-col items-center mb-8">
+          <div className="relative mb-4">
+            <div className={`w-24 h-24 bg-gradient-to-r from-purple-400 to-blue-400 flex items-center justify-center overflow-hidden ${getShapeClass(imageSettings.shape)}`}>
               {user?.profilePicture ? (
                 <img
                   src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
                   alt="Profile"
-                  className="w-full h-full rounded-full object-cover"
+                  className={`w-full h-full ${getPositionClass(imageSettings.position)}`}
+                  style={{
+                    objectFit: 'cover',
+                    width: '100%',
+                    height: '100%'
+                  }}
                 />
               ) : (
                 <span className="text-white font-bold text-2xl">
@@ -131,6 +182,73 @@ export const Profile = () => {
               />
             </label>
           </div>
+
+          {/* Image Customization Controls */}
+          {user?.profilePicture && (
+            <div className="w-full max-w-md space-y-4">
+              {/* Shape Selection */}
+              <div>
+                <label className="block text-white font-medium mb-2 text-sm">
+                  Shape
+                </label>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'circle', label: '○', title: 'Circle' },
+                    { value: 'hexagon', label: '⬡', title: 'Hexagon' },
+                    { value: 'octagon', label: '⬟', title: 'Octagon' }
+                  ].map((shape) => (
+                    <button
+                      key={shape.value}
+                      type="button"
+                      onClick={() => handleShapeChange(shape.value)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        imageSettings.shape === shape.value
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-white/10 text-white hover:bg-white/20'
+                      }`}
+                      title={shape.title}
+                    >
+                      {shape.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Position Selection */}
+              <div>
+                <label className="block text-white font-medium mb-2 text-sm">
+                  Image Position
+                </label>
+                <div className="grid grid-cols-3 gap-1 max-w-32 mx-auto">
+                  {[
+                    { value: 'top-left', label: '↖' },
+                    { value: 'top', label: '↑' },
+                    { value: 'top-right', label: '↗' },
+                    { value: 'left', label: '←' },
+                    { value: 'center', label: '●' },
+                    { value: 'right', label: '→' },
+                    { value: 'bottom-left', label: '↙' },
+                    { value: 'bottom', label: '↓' },
+                    { value: 'bottom-right', label: '↘' }
+                  ].map((pos) => (
+                    <button
+                      key={pos.value}
+                      type="button"
+                      onClick={() => handlePositionChange(pos.value)}
+                      className={`w-8 h-8 rounded text-xs font-bold transition-colors ${
+                        imageSettings.position === pos.value
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-white/10 text-white hover:bg-white/20'
+                      }`}
+                      title={pos.value.replace('-', ' ')}
+                    >
+                      {pos.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
