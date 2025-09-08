@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, useTheme } from '../contexts/AuthContext';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
 import { Link } from 'react-router-dom';
@@ -12,6 +12,8 @@ import {
 
 export const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
+  const { isDark, colors } = useTheme();
+  const currentColors = isDark ? colors.dark : colors.light;
 
   const { data: contacts } = useQuery('contacts', api.getContacts, {
     enabled: isAuthenticated,
@@ -35,17 +37,17 @@ export const Dashboard = () => {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Welcome Section */}
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-8">
+      <div className={`${currentColors.surface} backdrop-blur-md rounded-2xl p-6 mb-8 shadow-xl ${currentColors.border} border`}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className={`text-3xl font-bold ${currentColors.text} mb-2`}>
               Welcome back, @{user.username}!
             </h1>
-            <p className="text-white/70">
+            <p className={currentColors.textSecondary}>
               Manage your contacts and send transactions securely.
             </p>
           </div>
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
+          <div className={`w-16 h-16 ${isDark ? 'bg-gradient-to-r from-orange-400 to-blue-400' : 'bg-gradient-to-r from-orange-500 to-blue-500'} rounded-full flex items-center justify-center overflow-hidden shadow-lg`}>
             {user.profilePicture ? (
               <img
                 src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
@@ -61,7 +63,7 @@ export const Dashboard = () => {
                 })()}
               />
             ) : (
-              <span className="text-white font-bold text-2xl">
+              <span className={`${currentColors.text} font-bold text-2xl`}>
                 {user.username.charAt(0).toUpperCase()}
               </span>
             )}
