@@ -27,17 +27,35 @@ export const WalletContextProvider = ({ children }) => {
 
     // Debug wallet detection
     setTimeout(() => {
+      console.log('=== Wallet Detection Debug ===');
       console.log('Solflare readyState:', solflare.readyState);
       console.log('Window.solana available:', typeof window !== 'undefined' && !!window.solana);
       console.log('Phantom installed:', typeof window !== 'undefined' && window.solana?.isPhantom);
       console.log('Standard wallets will be auto-detected');
-      
+
       // Additional debugging for Phantom state (no auto-connection)
       if (typeof window !== 'undefined' && window.solana) {
         console.log('Phantom version:', window.solana.version);
         console.log('Phantom publicKey:', window.solana.publicKey);
         console.log('Phantom isConnected:', window.solana.isConnected);
         console.log('Phantom wallet detected - user must manually connect');
+      }
+
+      // Check if there are any extension conflicts
+      if (typeof window !== 'undefined') {
+        const extensions = window.navigator.userAgent.includes('Chrome') ?
+          Object.keys(window.chrome?.runtime?.getManifest?.() || {}) : [];
+
+        console.log('Browser extensions detected:', extensions.length > 0 ? 'Yes' : 'No');
+
+        // Check for common wallet extension conflicts
+        if (window.ethereum) {
+          console.log('⚠️ MetaMask/Ethereum wallet detected - may conflict with Solana wallets');
+        }
+
+        if (window.solana && window.ethereum) {
+          console.log('⚠️ Both Solana and Ethereum wallets detected - potential conflicts');
+        }
       }
     }, 1000);
 
