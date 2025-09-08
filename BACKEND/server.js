@@ -103,26 +103,42 @@ const User = mongoose.model('User', UserSchema);
 const Contact = mongoose.model('Contact', ContactSchema);
 const TransactionRecord = mongoose.model('Transaction', TransactionSchema);
 
+// Ensure uploads directory exists
+const fs = require('fs');
+const uploadsDir = 'public/uploads/';
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // File upload configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'public/uploads/');
+    cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, 'profile-' + uniqueSuffix + ext);
   }
 });
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 1 // Only allow 1 file
+  },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (allowedTypes.includes(file.mimetype)) {
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+
+    const fileExt = path.extname(file.originalname).toLowerCase();
+
+    if (allowedTypes.includes(file.mimetype) && allowedExtensions.includes(fileExt)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only images allowed.'));
+      cb(new Error(`Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed. Got: ${file.mimetype}`), false);
     }
   }
 });
@@ -258,22 +274,60 @@ app.post('/api/profile',
 );
 
 // Upload profile picture
-app.post('/api/profile/picture', verifyWallet, upload.single('profilePicture'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
+  // Handle multer errors
+  upload.single('profilePicture')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      // Multer-specific errors
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
+      }
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ error: 'Too many files uploaded.' });
+      }
+      return res.status(400).json({ error: `Upload error: ${err.message}` });
+    } else if (err) {
+      // File filter errors
+      return res.status(400).json({ error: err.message });
     }
 
+    // No multer errors, continue to the actual upload handler
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded or file was rejected.' });
+    }
+
+    console.log('File uploaded successfully:', {
+      filename: req.file.filename,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
+
     const profilePictureUrl = `/uploads/${req.file.filename}`;
-    
-    await User.findOneAndUpdate(
+
+    const result = await User.findOneAndUpdate(
       { walletAddress: req.walletAddress },
-      { profilePicture: profilePictureUrl, updatedAt: new Date() }
+      { profilePicture: profilePictureUrl, updatedAt: new Date() },
+      { new: true } // Return the updated document
     );
 
-    res.json({ success: true, profilePicture: profilePictureUrl });
+    if (!result) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log('Profile picture updated for user:', req.walletAddress);
+    res.json({
+      success: true,
+      profilePicture: profilePictureUrl,
+      message: 'Profile picture uploaded successfully'
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to upload profile picture' });
+    console.error('Profile picture upload error:', error);
+    res.status(500).json({ error: 'Failed to save profile picture. Please try again.' });
   }
 });
 
