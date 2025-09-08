@@ -23,6 +23,7 @@ class ApiService {
     this.client.interceptors.request.use(
       (config) => {
         console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        console.log('Request headers:', config.headers);
         return config;
       },
       (error) => {
