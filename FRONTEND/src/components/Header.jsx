@@ -13,7 +13,7 @@ export const Header = () => {
 
 
   return (
-    <header className={`backdrop-blur-md border-b transition-colors duration-300 ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white/80 border-gray-200'}`}>
+    <header className={`backdrop-blur-md border-b transition-colors duration-300 ${isDark ? 'bg-black/80 border-gray-700' : 'bg-white/80 border-gray-200'}`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
