@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useWallet } from '../contexts/WalletContext';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Header = () => {
   const location = useLocation();
-  const { connected, publicKey, wallet, connect, wallets } = useWallet();
+  const { connected, publicKey, wallet, connect, disconnect, wallets } = useWallet();
   const { user } = useAuth();
   const [showDebug, setShowDebug] = useState(false);
 
@@ -139,7 +138,43 @@ export const Header = () => {
               </button>
             )}
 
-            <WalletMultiButton />
+            {!connected ? (
+              <button
+                onClick={async () => {
+                  try {
+                    console.log('🔌 Connecting to wallet...');
+                    await connect();
+                    console.log('✅ Wallet connected successfully');
+                  } catch (error) {
+                    console.error('❌ Wallet connection failed:', error);
+                    alert(`Connection failed: ${error.message}`);
+                  }
+                }}
+                disabled={!window.solana?.isPhantom}
+                className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${
+                  window.solana?.isPhantom
+                    ? 'bg-purple-600 hover:bg-purple-700'
+                    : 'bg-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {!window.solana?.isPhantom ? 'Install Phantom' : 'Connect Wallet'}
+              </button>
+            ) : (
+              <button
+                onClick={async () => {
+                  try {
+                    console.log('🔌 Disconnecting wallet...');
+                    await disconnect();
+                    console.log('✅ Wallet disconnected successfully');
+                  } catch (error) {
+                    console.error('❌ Wallet disconnect failed:', error);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+              >
+                Disconnect
+              </button>
+            )}
           </div>
 
           {/* Debug Panel */}
@@ -150,18 +185,9 @@ export const Header = () => {
                 <div>React Connected: {connected ? '✅' : '❌'}</div>
                 <div>React PublicKey: {publicKey?.toString() || 'None'}</div>
                 <div>React Wallet: {wallet?.adapter?.name || 'None'}</div>
-                <div>Browser Phantom: {window.solana?.isPhantom ? '✅' : '❌'}</div>
-                <div>Browser Connected: {window.solana?.isConnected ? '✅' : '❌'}</div>
+                <div>Phantom Available: {!!window.solana?.isPhantom}</div>
+                <div>Browser Connected: {!!window.solana?.isConnected}</div>
                 <div>Browser PublicKey: {window.solana?.publicKey?.toString() || 'None'}</div>
-                <div>Wallets Count: {wallets?.length || 0}</div>
-                <div className="border-t pt-2 mt-2">
-                  <div className="font-semibold text-blue-400">Available Wallets:</div>
-                  {wallets?.map((w, i) => (
-                    <div key={i} className="text-xs">
-                      {w.adapter.name}: {w.adapter.readyState}
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           )}
