@@ -59,15 +59,34 @@ export const Profile = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Please upload JPEG, PNG, GIF, or WebP images only.');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('File too large. Please upload images smaller than 5MB.');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('profilePicture', file);
 
     try {
+      toast.loading('Uploading profile picture...');
       const result = await api.uploadProfilePicture(formData);
       setUser({ ...user, profilePicture: result.profilePicture });
-      toast.success('Profile picture updated!');
+      toast.dismiss();
+      toast.success('Profile picture updated successfully!');
     } catch (error) {
-      toast.error('Failed to upload profile picture');
+      toast.dismiss();
+      const errorMessage = error?.error || error?.message || 'Failed to upload profile picture';
+      toast.error(errorMessage);
+      console.error('Profile picture upload error:', error);
     }
   };
 
@@ -106,7 +125,7 @@ export const Profile = () => {
               <CameraIcon className="w-4 h-4 text-gray-600" />
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/gif,image/webp"
                 onChange={handleProfilePictureUpload}
                 className="hidden"
               />
