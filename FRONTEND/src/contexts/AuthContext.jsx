@@ -157,7 +157,7 @@ export const AuthProvider = ({ children }) => {
         toast.success(`Welcome back, @${profile.username}!`);
       } else {
         console.log('No existing profile found - user can create one');
-        toast.info('Welcome! Please create your profile to get started.');
+        toast.success('Welcome! Please create your profile to get started.');
       }
 
     } catch (error) {
@@ -182,7 +182,7 @@ export const AuthProvider = ({ children }) => {
       if (error?.error === 'Profile not found' || error?.message?.includes('Profile not found')) {
         console.log('Profile not found - this is normal for new users');
         setUser(null);
-        toast.info('Welcome! Please create your profile to get started.');
+        toast.success('Welcome! Please create your profile to get started.');
       } else if (error?.status === 401) {
         console.error('Authentication unauthorized - possible signature verification failure');
         toast.error('Authentication failed. Please try reconnecting your wallet.');
