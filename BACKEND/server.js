@@ -128,12 +128,15 @@ const upload = multer({
 // Auth middleware
 const verifyWallet = async (req, res, next) => {
   try {
-    const { signature, message, publicKey } = req.headers;
+    const signature = req.headers.signature || req.headers.Signature;
+    const message = req.headers.message || req.headers.Message;
+    const publicKey = req.headers.publickey || req.headers.publicKey || req.headers.PublicKey;
 
     console.log('Backend Auth Debug:');
     console.log('Received signature:', signature);
     console.log('Received message:', message);
-    console.log('Received publicKey:', publicKey);
+    console.log('Received publickey:', publicKey);
+    console.log('All headers:', Object.keys(req.headers));
 
     if (!signature || !message || !publicKey) {
       console.log('Missing authentication headers');
