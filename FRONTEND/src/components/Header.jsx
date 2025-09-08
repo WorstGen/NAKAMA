@@ -100,7 +100,12 @@ const WalletConnectButton = () => {
       connecting,
       walletName: wallet?.adapter?.name,
       publicKey: publicKey?.toString(),
-      walletCount: wallets.length
+      walletCount: wallets.length,
+      allWallets: wallets.map(w => ({
+        name: w.adapter.name,
+        readyState: w.adapter.readyState,
+        url: w.adapter.url
+      }))
     });
 
     // Detect if connection is stuck
@@ -111,7 +116,9 @@ const WalletConnectButton = () => {
 
       const timer = setTimeout(() => {
         console.log('Wallet connection appears stuck, you may need to refresh or try a different wallet');
-      }, 30000); // 30 seconds
+        console.log('Available wallets:', wallets.map(w => w.adapter.name));
+        console.log('Wallet states:', wallets.map(w => `${w.adapter.name}: ${w.adapter.readyState}`));
+      }, 10000); // Reduced to 10 seconds for faster feedback
 
       setStuckTimer(timer);
     } else {
@@ -218,16 +225,22 @@ const WalletConnectButton = () => {
     <div className="flex flex-col items-end space-y-2">
       <div className="flex items-center space-x-2">
         <button
-          onClick={() => setShowTroubleshooting(true)}
+          onClick={() => {
+            console.log('=== Manual Wallet Check ===');
+            console.log('Wallets array:', wallets);
+            console.log('Wallet details:', wallets.map(w => ({
+              name: w.adapter.name,
+              readyState: w.adapter.readyState,
+              url: w.adapter.url
+            })));
+            setShowTroubleshooting(true);
+          }}
           className="text-white/60 hover:text-white transition-colors p-1"
           title="Wallet Connection Help"
         >
           <QuestionMarkCircleIcon className="w-5 h-5" />
         </button>
-        <WalletMultiButton
-          className="!bg-gradient-to-r !from-purple-500 !to-blue-500 hover:!from-purple-600 hover:!to-blue-600 !transition-all !duration-200 disabled:!opacity-50 disabled:!cursor-not-allowed"
-          disabled={connecting}
-        />
+        <WalletMultiButton />
       </div>
       {connecting && (
         <div className="text-white/60 text-xs">
