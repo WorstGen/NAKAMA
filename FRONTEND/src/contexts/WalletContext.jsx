@@ -4,10 +4,7 @@ import {
   WalletProvider,
 } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import {
-  PhantomWalletAdapter,
-  SolflareWalletAdapter,
-} from '@solana/wallet-adapter-wallets';
+// Removed explicit wallet adapters - using Standard Wallet API auto-detection
 import {
   WalletModalProvider,
 } from '@solana/wallet-adapter-react-ui';
@@ -24,37 +21,29 @@ export const WalletContextProvider = ({ children }) => {
   const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
   const wallets = React.useMemo(() => {
-    try {
-      // Configure the main Solana wallets that are available
-      const walletConfigs = [
-        new PhantomWalletAdapter(),
-        new SolflareWalletAdapter(),
-      ];
+    console.log('✅ Using Standard Wallet API auto-detection');
+    console.log('🌐 Network:', network);
+    console.log('📡 RPC endpoint:', endpoint);
 
-      console.log('✅ Wallet adapters configured successfully');
-      console.log('🔗 Available wallets:', walletConfigs.map(w => ({
-        name: w.name,
-        readyState: w.readyState
-      })));
-      console.log('🌐 Network:', network);
-      console.log('📡 RPC endpoint:', endpoint);
+    // Debug browser wallet state
+    setTimeout(() => {
+      console.log('🔍 Browser wallet detection:');
+      console.log('- window.solana:', !!window.solana);
+      console.log('- Phantom installed:', !!(window.solana?.isPhantom));
+      console.log('- Phantom connected:', !!(window.solana?.isConnected));
+      console.log('- Phantom publicKey:', window.solana?.publicKey?.toString());
+      console.log('- MetaMask installed:', !!window.ethereum);
 
-      // Debug browser wallet state
-      setTimeout(() => {
-        console.log('🔍 Browser wallet detection:');
-        console.log('- window.solana:', !!window.solana);
-        console.log('- Phantom installed:', !!(window.solana?.isPhantom));
-        console.log('- Phantom connected:', !!(window.solana?.isConnected));
-        console.log('- Phantom publicKey:', window.solana?.publicKey?.toString());
-        console.log('- MetaMask installed:', !!window.ethereum);
-      }, 2000);
+      // Check if Standard Wallet API is available
+      if (typeof window !== 'undefined' && window.navigator?.wallet) {
+        console.log('✅ Standard Wallet API available');
+      } else {
+        console.log('❌ Standard Wallet API not available');
+      }
+    }, 2000);
 
-      return walletConfigs;
-    } catch (error) {
-      console.error('❌ Error configuring wallets:', error);
-      console.error('Error details:', error.message);
-      return [];
-    }
+    // Return empty array to use Standard Wallet API auto-detection
+    return [];
   }, [network, endpoint]);
 
   return (
