@@ -58,6 +58,10 @@ class ApiService {
     this.authHeaders = {};
   }
 
+  hasAuthHeaders() {
+    return Object.keys(this.authHeaders).length > 0;
+  }
+
   async request(method, endpoint, data = null) {
     try {
       const config = {
