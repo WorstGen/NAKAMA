@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { api } from '../services/api';
+import bs58 from 'bs58';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -20,30 +21,21 @@ export const AuthProvider = ({ children }) => {
     console.log('Starting authentication process...');
     
     try {
-      // Try the challenge-response method first (preferred by backend)
-      try {
-        console.log('Attempting challenge-response authentication...');
-        const authResult = await api.authenticateWallet(publicKey, signMessage);
-        setAuthToken(authResult.token);
-        console.log('Challenge-response auth successful');
-      } catch (challengeError) {
-        console.log('Challenge-response failed, trying fallback method...');
-        
-        // Fallback to your original method
-        const message = `Sign this message to authenticate with SolConnect: ${Date.now()}`;
-        const messageBytes = new TextEncoder().encode(message);
-        const signature = await signMessage(messageBytes);
-        
-        // Set auth headers using your current format
-        api.setAuthHeaders({
-          'X-Signature': Array.from(signature).join(','),
-          'X-Message': message,
-          'X-Public-Key': publicKey.toString(),
-          'Authorization': `Wallet ${publicKey.toString()}`
-        });
-        
-        console.log('Fallback auth headers set');
-      }
+      // Use direct signature authentication
+      console.log('Setting up wallet authentication...');
+
+      const message = `Sign this message to authenticate with SolConnect: ${Date.now()}`;
+      const messageBytes = new TextEncoder().encode(message);
+      const signature = await signMessage(messageBytes);
+
+      // Set auth headers to match backend expectations
+      api.setAuthHeaders({
+        'signature': bs58.encode(signature),
+        'message': message,
+        'publicKey': publicKey.toString()
+      });
+
+      console.log('Auth headers set successfully');
       
       // Try to fetch user profile
       const profile = await api.getProfile();
