@@ -242,16 +242,9 @@ const WalletConnectButton = () => {
         console.log('Phantom is connected but wallet adapter is not aware - attempting to sync...');
 
         try {
-          // Try to manually sync the connection state
-          // This is a workaround for wallet adapter state sync issues
+          // Wallet connected successfully - React state should sync automatically
           console.log('Manual sync attempt - Phantom public key:', window.solana.publicKey.toString());
-
-          // Force a page reload to reset wallet adapter state
-          // This is a nuclear option but often fixes state sync issues
-          console.log('Forcing page reload to sync wallet state...');
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
+          console.log('Wallet connected - React adapters should detect this automatically');
 
         } catch (error) {
           console.error('Failed to sync wallet state:', error);
