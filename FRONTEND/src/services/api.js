@@ -90,15 +90,15 @@ class ApiService {
   }
 
   // Profile endpoints
-  async getProfile() {
+  getProfile = async () => {
     return this.request('GET', '/api/profile');
   }
 
-  async updateProfile(profileData) {
+  updateProfile = async (profileData) => {
     return this.request('POST', '/api/profile', profileData);
   }
 
-  async uploadProfilePicture(formData) {
+  uploadProfilePicture = async (formData) => {
     try {
       const config = {
         method: 'POST',
@@ -119,38 +119,38 @@ class ApiService {
   }
 
   // User search
-  async searchUser(username) {
+  searchUser = async (username) => {
     return this.request('GET', `/api/users/search/${username}`);
   }
 
   // Contacts endpoints
-  async getContacts() {
+  getContacts = async () => {
     return this.request('GET', '/api/contacts');
   }
 
-  async addContact(username) {
+  addContact = async (username) => {
     return this.request('POST', '/api/contacts', { username });
   }
 
-  async removeContact(username) {
+  removeContact = async (username) => {
     return this.request('DELETE', `/api/contacts/${username}`);
   }
 
   // Transaction endpoints
-  async prepareTransaction(transactionData) {
+  prepareTransaction = async (transactionData) => {
     return this.request('POST', '/api/transactions/prepare', transactionData);
   }
 
-  async submitTransaction(signedTransactionData) {
+  submitTransaction = async (signedTransactionData) => {
     return this.request('POST', '/api/transactions/submit', signedTransactionData);
   }
 
-  async getTransactions() {
+  getTransactions = async () => {
     return this.request('GET', '/api/transactions');
   }
 
   // OAuth endpoints
-  async authorizeOAuth(oauthData) {
+  authorizeOAuth = async (oauthData) => {
     return this.request('POST', '/api/oauth/authorize', oauthData);
   }
 }
