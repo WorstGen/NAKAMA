@@ -115,10 +115,18 @@ export const Contacts = () => {
               {searchResults.found ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center">
-                      <span className="text-white font-semibold">
-                        {searchResults.username.charAt(0).toUpperCase()}
-                      </span>
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
+                      {searchResults.profilePicture ? (
+                        <img
+                          src={`https://nakama-production-1850.up.railway.app${searchResults.profilePicture}`}
+                          alt={`${searchResults.username}'s profile`}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-white font-semibold">
+                          {searchResults.username.charAt(0).toUpperCase()}
+                        </span>
+                      )}
                     </div>
                     <div>
                       <p className="text-white font-semibold">@{searchResults.username}</p>
@@ -159,11 +167,11 @@ export const Contacts = () => {
               {contacts.contacts.map((contact) => (
                 <div key={contact.username} className="bg-white/5 rounded-lg p-4 flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
                       {contact.profilePicture ? (
                         <img
-                          src={`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}${contact.profilePicture}`}
-                          alt="Profile"
+                          src={`https://nakama-production-1850.up.railway.app${contact.profilePicture}`}
+                          alt={`${contact.username}'s profile`}
                           className="w-full h-full rounded-full object-cover"
                         />
                       ) : (

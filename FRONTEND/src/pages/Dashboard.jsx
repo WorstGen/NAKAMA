@@ -45,10 +45,18 @@ export const Dashboard = () => {
               Manage your contacts and send transactions securely.
             </p>
           </div>
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-2xl">
-              {user.username.charAt(0).toUpperCase()}
-            </span>
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
+            {user.profilePicture ? (
+              <img
+                src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
+                alt={`${user.username}'s profile`}
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-white font-bold text-2xl">
+                {user.username.charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -103,14 +111,22 @@ export const Dashboard = () => {
           <h3 className="text-white font-semibold text-lg mb-4">Recent Contacts</h3>
           {contacts?.contacts?.slice(0, 5).map((contact) => (
             <div key={contact.username} className="flex items-center space-x-3 py-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-semibold">
-                  {contact.username.charAt(0).toUpperCase()}
-                </span>
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
+                {contact.profilePicture ? (
+                  <img
+                    src={`https://nakama-production-1850.up.railway.app${contact.profilePicture}`}
+                    alt={`${contact.username}'s profile`}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white text-xs font-semibold">
+                    {contact.username.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <p className="text-white font-medium">@{contact.username}</p>
-                <p className="text-white/60 text-sm">{contact.bio}</p>
+                <p className="text-white/60 text-sm">{contact.bio || 'No bio available'}</p>
               </div>
             </div>
           )) || <p className="text-white/60">No contacts yet</p>}

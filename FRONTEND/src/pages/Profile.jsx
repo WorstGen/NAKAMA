@@ -18,8 +18,8 @@ export const Profile = () => {
   });
 
   const [imageSettings, setImageSettings] = useState({
-    position: 'center', // center, top, bottom, left, right, top-left, top-right, bottom-left, bottom-right
-    shape: 'circle' // circle, hexagon, octagon
+    position: { x: 50, y: 50 }, // percentage from 0-100
+    zoom: 100 // zoom level from 50-200
   });
 
   // Load user data when component mounts or user changes
@@ -40,45 +40,32 @@ export const Profile = () => {
     });
   };
 
-  const handleShapeChange = (shape) => {
+  const handleZoomChange = (zoom) => {
     setImageSettings({
       ...imageSettings,
-      shape
+      zoom: Math.max(50, Math.min(200, zoom)) // Clamp between 50-200
     });
   };
 
-  const handlePositionChange = (position) => {
+  const handlePositionChange = (x, y) => {
     setImageSettings({
       ...imageSettings,
-      position
+      position: {
+        x: Math.max(0, Math.min(100, x)), // Clamp between 0-100
+        y: Math.max(0, Math.min(100, y))
+      }
     });
   };
 
-  // Helper functions for CSS classes
-  const getShapeClass = (shape) => {
-    switch (shape) {
-      case 'hexagon':
-        return '[clip-path:polygon(50%_0%,_93.3%_25%,_93.3%_75%,_50%_100%,_6.7%_75%,_6.7%_25%)]';
-      case 'octagon':
-        return '[clip-path:polygon(30%_0%,_70%_0%,_100%_30%,_100%_70%,_70%_100%,_30%_100%,_0%_70%,_0%_30%)]';
-      default:
-        return 'rounded-full';
-    }
-  };
-
-  const getPositionClass = (position) => {
-    const positionMap = {
-      'center': 'object-center',
-      'top': 'object-top',
-      'bottom': 'object-bottom',
-      'left': 'object-left',
-      'right': 'object-right',
-      'top-left': 'object-top object-left',
-      'top-right': 'object-top object-right',
-      'bottom-left': 'object-bottom object-left',
-      'bottom-right': 'object-bottom object-right'
+  // Helper function for image styles
+  const getImageStyle = () => {
+    const { position, zoom } = imageSettings;
+    return {
+      objectPosition: `${position.x}% ${position.y}%`,
+      transform: `scale(${zoom / 100})`,
+      transformOrigin: 'center center',
+      transition: 'transform 0.2s ease, object-position 0.2s ease'
     };
-    return positionMap[position] || 'object-center';
   };
 
   const handleSubmit = async (e) => {
@@ -154,16 +141,15 @@ export const Profile = () => {
         {/* Profile Picture */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-4">
-            <div className={`w-24 h-24 bg-gradient-to-r from-purple-400 to-blue-400 flex items-center justify-center overflow-hidden ${getShapeClass(imageSettings.shape)}`}>
+            <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
               {user?.profilePicture ? (
                 <img
                   src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
                   alt="Profile"
-                  className={`w-full h-full ${getPositionClass(imageSettings.position)}`}
+                  className="w-full h-full rounded-full"
                   style={{
                     objectFit: 'cover',
-                    width: '100%',
-                    height: '100%'
+                    ...getImageStyle()
                   }}
                 />
               ) : (
@@ -185,66 +171,99 @@ export const Profile = () => {
 
           {/* Image Customization Controls */}
           {user?.profilePicture && (
-            <div className="w-full max-w-md space-y-4">
-              {/* Shape Selection */}
+            <div className="w-full max-w-md space-y-6">
+              {/* Zoom Control */}
               <div>
-                <label className="block text-white font-medium mb-2 text-sm">
-                  Shape
+                <label className="block text-white font-medium mb-3 text-sm">
+                  Zoom: {imageSettings.zoom}%
                 </label>
-                <div className="flex gap-2">
-                  {[
-                    { value: 'circle', label: '○', title: 'Circle' },
-                    { value: 'hexagon', label: '⬡', title: 'Hexagon' },
-                    { value: 'octagon', label: '⬟', title: 'Octagon' }
-                  ].map((shape) => (
-                    <button
-                      key={shape.value}
-                      type="button"
-                      onClick={() => handleShapeChange(shape.value)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        imageSettings.shape === shape.value
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-white/10 text-white hover:bg-white/20'
-                      }`}
-                      title={shape.title}
-                    >
-                      {shape.label}
-                    </button>
-                  ))}
+                <input
+                  type="range"
+                  min="50"
+                  max="200"
+                  value={imageSettings.zoom}
+                  onChange={(e) => handleZoomChange(parseInt(e.target.value))}
+                  className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                  style={{
+                    background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${(imageSettings.zoom - 50) / 1.5}%, rgba(255,255,255,0.2) ${(imageSettings.zoom - 50) / 1.5}%, rgba(255,255,255,0.2) 100%)`
+                  }}
+                />
+                <div className="flex justify-between text-xs text-white/60 mt-1">
+                  <span>50%</span>
+                  <span>100%</span>
+                  <span>200%</span>
                 </div>
               </div>
 
-              {/* Position Selection */}
+              {/* Position Control */}
               <div>
-                <label className="block text-white font-medium mb-2 text-sm">
-                  Image Position
+                <label className="block text-white font-medium mb-3 text-sm">
+                  Position
                 </label>
-                <div className="grid grid-cols-3 gap-1 max-w-32 mx-auto">
-                  {[
-                    { value: 'top-left', label: '↖' },
-                    { value: 'top', label: '↑' },
-                    { value: 'top-right', label: '↗' },
-                    { value: 'left', label: '←' },
-                    { value: 'center', label: '●' },
-                    { value: 'right', label: '→' },
-                    { value: 'bottom-left', label: '↙' },
-                    { value: 'bottom', label: '↓' },
-                    { value: 'bottom-right', label: '↘' }
-                  ].map((pos) => (
-                    <button
-                      key={pos.value}
-                      type="button"
-                      onClick={() => handlePositionChange(pos.value)}
-                      className={`w-8 h-8 rounded text-xs font-bold transition-colors ${
-                        imageSettings.position === pos.value
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-white/10 text-white hover:bg-white/20'
-                      }`}
-                      title={pos.value.replace('-', ' ')}
-                    >
-                      {pos.label}
-                    </button>
-                  ))}
+                <div className="relative w-32 h-32 mx-auto bg-white/10 rounded-lg overflow-hidden">
+                  {/* Position Indicator Grid */}
+                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+                    {Array.from({ length: 9 }).map((_, index) => {
+                      const row = Math.floor(index / 3);
+                      const col = index % 3;
+                      const x = (col * 33.33) + 16.665;
+                      const y = (row * 33.33) + 16.665;
+
+                      return (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handlePositionChange(x, y)}
+                          className="w-full h-full flex items-center justify-center hover:bg-white/20 transition-colors"
+                        >
+                          {(Math.abs(imageSettings.position.x - x) < 20 && Math.abs(imageSettings.position.y - y) < 20) && (
+                            <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Current Position Indicator */}
+                  <div
+                    className="absolute w-3 h-3 bg-purple-600 rounded-full border-2 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200"
+                    style={{
+                      left: `${imageSettings.position.x}%`,
+                      top: `${imageSettings.position.y}%`
+                    }}
+                  />
+                </div>
+
+                {/* Manual Position Controls */}
+                <div className="flex justify-center gap-4 mt-3">
+                  <div className="flex flex-col items-center">
+                    <label className="text-xs text-white/60 mb-1">X</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={imageSettings.position.x}
+                      onChange={(e) => handlePositionChange(parseInt(e.target.value), imageSettings.position.y)}
+                      className="w-16 h-1 bg-white/20 rounded appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${imageSettings.position.x}%, rgba(255,255,255,0.2) ${imageSettings.position.x}%, rgba(255,255,255,0.2) 100%)`
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <label className="text-xs text-white/60 mb-1">Y</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={imageSettings.position.y}
+                      onChange={(e) => handlePositionChange(imageSettings.position.x, parseInt(e.target.value))}
+                      className="w-16 h-1 bg-white/20 rounded appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${imageSettings.position.y}%, rgba(255,255,255,0.2) ${imageSettings.position.y}%, rgba(255,255,255,0.2) 100%)`
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
