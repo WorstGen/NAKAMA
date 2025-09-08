@@ -96,6 +96,24 @@ export const AuthProvider = ({ children }) => {
     }
   }, [connected, publicKey, authenticate]);
 
+  // Try to restore authentication on page load if wallet is connected
+  useEffect(() => {
+    const restoreAuth = async () => {
+      if (connected && publicKey && !user && !loading) {
+        console.log('Attempting to restore authentication...');
+        try {
+          await authenticate();
+        } catch (error) {
+          console.log('Failed to restore authentication:', error);
+        }
+      }
+    };
+
+    // Small delay to ensure wallet state is fully initialized
+    const timeoutId = setTimeout(restoreAuth, 500);
+    return () => clearTimeout(timeoutId);
+  }, [connected, publicKey, user, loading, authenticate]);
+
   const value = {
     user,
     setUser,
