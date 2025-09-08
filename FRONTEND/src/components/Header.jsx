@@ -8,15 +8,6 @@ export const Header = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  // Debug wallet state in Header
-  React.useEffect(() => {
-    console.log('🎯 Header wallet state:', {
-      connected,
-      publicKey: publicKey?.toString(),
-      wallet: wallet?.adapter?.name,
-      hasWallet: !!wallet
-    });
-  }, [connected, publicKey, wallet]);
 
   return (
     <header className="bg-white/10 backdrop-blur-md border-b border-white/20">
