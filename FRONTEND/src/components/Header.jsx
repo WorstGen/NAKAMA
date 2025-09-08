@@ -50,12 +50,25 @@ const WalletTroubleshootingModal = ({ isOpen, onClose }) => {
             </div>
 
             <div>
+              <h4 className="font-semibold text-gray-800 mb-2">🦊 For MetaMask Users:</h4>
+              <ul className="list-disc list-inside space-y-1">
+                <li>MetaMask can work with Solana via the Wallet Standard API</li>
+                <li>Make sure MetaMask is updated to the latest version</li>
+                <li>Try switching MetaMask to Solana mode if available</li>
+                <li>Check if MetaMask has Solana network support enabled</li>
+                <li>If MetaMask appears greyed out, try refreshing the page</li>
+                <li>MetaMask works best with dApps that support both Ethereum and Solana</li>
+              </ul>
+            </div>
+
+            <div>
               <h4 className="font-semibold text-gray-800 mb-2">⚠️ Multiple Wallet Issues:</h4>
               <ul className="list-disc list-inside space-y-1">
-                <li>If you have both Phantom and MetaMask installed, try disabling MetaMask</li>
-                <li>Check browser console for wallet conflict warnings</li>
-                <li>Try using only one wallet extension at a time</li>
+                <li>Having multiple wallets can sometimes cause conflicts</li>
+                <li>Try using only one wallet at a time for testing</li>
                 <li>Use incognito mode to test with isolated extensions</li>
+                <li>Check browser console for specific wallet compatibility messages</li>
+                <li>Different wallets may have different Solana network requirements</li>
               </ul>
             </div>
           </div>
@@ -146,6 +159,23 @@ const WalletConnectButton = () => {
         console.log(`✅ ${walletAdapter.adapter.name} wallet is loadable`);
       } else if (walletAdapter.adapter.readyState === 'Installed') {
         console.log(`✅ ${walletAdapter.adapter.name} wallet is installed`);
+
+        // Check for MetaMask - can work with Solana but needs proper configuration
+        if (walletAdapter.adapter.name.toLowerCase().includes('metamask')) {
+          console.log(`ℹ️ ${walletAdapter.adapter.name} detected - MetaMask can work with Solana via Wallet Standard`);
+          console.log(`💡 Make sure MetaMask is connected to Solana network, or use its Solana features`);
+          console.log(`💡 If issues persist, try switching MetaMask to Solana mode or use a Solana-native wallet`);
+
+          // Check if MetaMask has Solana support
+          const supportedVersions = walletAdapter.adapter.supportedTransactionVersions;
+          if (supportedVersions?.has('legacy') || supportedVersions?.size > 0) {
+            console.log(`✅ ${walletAdapter.adapter.name} has transaction support (versions: ${Array.from(supportedVersions || []).join(', ')})`);
+            console.log(`💡 ${walletAdapter.adapter.name} should work with Solana - if greyed out, try refreshing the page`);
+          } else {
+            console.warn(`⚠️ ${walletAdapter.adapter.name} may need configuration for Solana support`);
+            console.log(`💡 Try updating ${walletAdapter.adapter.name} or check if Solana features are enabled`);
+          }
+        }
       } else if (walletAdapter.adapter.readyState === 'Unsupported') {
         console.warn(`⚠️ ${walletAdapter.adapter.name} wallet is not supported`);
       }
