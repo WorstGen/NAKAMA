@@ -97,24 +97,23 @@ export const AuthProvider = ({ children }) => {
 
       // Try to fetch user profile with retry logic
       let profile;
-      let retryCount = 0;
       const maxRetries = 3;
 
-      while (retryCount < maxRetries) {
+      for (let retryCount = 0; retryCount < maxRetries; retryCount++) {
         try {
           console.log(`Profile fetch attempt ${retryCount + 1}/${maxRetries}`);
           profile = await api.getProfile();
           break; // Success, exit retry loop
         } catch (profileError) {
           console.error(`Profile fetch attempt ${retryCount + 1} failed:`, profileError);
-          retryCount++;
 
-          if (retryCount >= maxRetries) {
+          if (retryCount === maxRetries - 1) {
+            // This was the last attempt
             throw profileError;
           }
 
-          // Wait before retry
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          // Wait before retry (use retryCount + 1 to avoid 0ms delay)
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
         }
       }
 
