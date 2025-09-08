@@ -73,17 +73,47 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Signature type:', typeof signature);
 
-      // Convert signature to Uint8Array if it's not already
-      const signatureArray = signature instanceof Uint8Array ? signature : new Uint8Array(signature);
+      // Handle new signature format from updated signMessage function
+      let signatureArray;
+      let encodedSignature;
+
+      if (typeof signature === 'object' && signature.signature) {
+        // New format: {signature: Uint8Array, signatureHex: string, signatureBase64: string}
+        signatureArray = signature.signature;
+        console.log('Using new signature format');
+
+        // Try hex format first (common for Solana backends), fallback to base64
+        encodedSignature = signature.signatureHex || signature.signatureBase64;
+        console.log('Signature formats available:', {
+          hex: !!signature.signatureHex,
+          base64: !!signature.signatureBase64
+        });
+      } else {
+        // Legacy format: direct Uint8Array
+        signatureArray = signature instanceof Uint8Array ? signature : new Uint8Array(signature);
+      }
+
+      // Validate signature array
+      if (!(signatureArray instanceof Uint8Array)) {
+        console.error('Signature is not Uint8Array:', signatureArray);
+        throw new Error('Invalid signature format - expected Uint8Array');
+      }
+
       console.log('Signature as array:', signatureArray);
 
       // Validate signature length (Ed25519 signatures are 64 bytes)
       if (signatureArray.length !== 64) {
-        throw new Error('Invalid signature length. Expected 64 bytes for Ed25519 signature.');
+        throw new Error(`Invalid signature length. Expected 64 bytes for Ed25519 signature, got ${signatureArray.length} bytes.`);
       }
 
-      const encodedSignature = bs58.encode(signatureArray);
-      console.log('Encoded signature:', encodedSignature);
+      // Use the encoded signature if we have it, otherwise encode with bs58
+      if (!encodedSignature) {
+        encodedSignature = bs58.encode(signatureArray);
+        console.log('Encoded signature with bs58:', encodedSignature);
+      } else {
+        console.log('Using pre-encoded signature:', encodedSignature);
+      }
+
       console.log('Public key:', publicKey.toString());
 
       // Set auth headers to match backend expectations
