@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
 import { CameraIcon } from '@heroicons/react/24/outline';
@@ -8,12 +9,24 @@ import { CameraIcon } from '@heroicons/react/24/outline';
 export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
   const { publicKey } = useWallet();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    username: user?.username || '',
-    bio: user?.bio || '',
-    ethAddress: user?.ethAddress || ''
+    username: '',
+    bio: '',
+    ethAddress: ''
   });
+
+  // Load user data when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        username: user.username || '',
+        bio: user.bio || '',
+        ethAddress: user.ethAddress || ''
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -29,7 +42,12 @@ export const Profile = () => {
     try {
       const result = await api.updateProfile(formData);
       setUser(result.user);
-      toast.success('Profile updated successfully!');
+      toast.success(user ? 'Profile updated successfully!' : 'Profile created successfully!');
+
+      // Redirect to dashboard after successful profile creation/update
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
     } catch (error) {
       toast.error(error.error || 'Failed to update profile');
     } finally {
@@ -74,7 +92,7 @@ export const Profile = () => {
             <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center">
               {user?.profilePicture ? (
                 <img
-                  src={`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}${user.profilePicture}`}
+                  src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
                   alt="Profile"
                   className="w-full h-full rounded-full object-cover"
                 />
