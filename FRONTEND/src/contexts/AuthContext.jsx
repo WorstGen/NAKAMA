@@ -212,7 +212,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       logout();
     }
-  }, [connected, publicKey, authenticate]);
+  }, [connected, publicKey]);
 
   // Try to restore authentication on page load if wallet is connected
   useEffect(() => {
