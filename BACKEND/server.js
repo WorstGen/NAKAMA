@@ -59,8 +59,34 @@ app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Signature', 'X-Message', 'X-Public-Key', 'signature', 'message', 'publickey', 'publicKey', 'PublicKey'],
-  exposedHeaders: ['X-Signature', 'X-Message', 'X-Public-Key', 'signature', 'message', 'publickey', 'publicKey', 'PublicKey']
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Signature',
+    'X-Message',
+    'X-Public-Key',
+    'signature',
+    'message',
+    'publickey',
+    'publicKey',
+    'PublicKey',
+    'Accept',
+    'Origin',
+    'X-Requested-With',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers'
+  ],
+  exposedHeaders: [
+    'X-Signature',
+    'X-Message',
+    'X-Public-Key',
+    'signature',
+    'message',
+    'publickey',
+    'publicKey',
+    'PublicKey'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
@@ -275,9 +301,14 @@ app.post('/api/profile',
 
 // Upload profile picture
 app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
+  console.log('Profile picture upload request received');
+  console.log('Request headers:', req.headers);
+  console.log('Wallet address from auth:', req.walletAddress);
+
   // Handle multer errors
   upload.single('profilePicture')(req, res, (err) => {
     if (err instanceof multer.MulterError) {
+      console.log('Multer error:', err);
       // Multer-specific errors
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
@@ -287,6 +318,7 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
       }
       return res.status(400).json({ error: `Upload error: ${err.message}` });
     } else if (err) {
+      console.log('File filter error:', err);
       // File filter errors
       return res.status(400).json({ error: err.message });
     }
