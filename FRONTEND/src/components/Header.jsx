@@ -30,10 +30,12 @@ const WalletTroubleshootingModal = ({ isOpen, onClose }) => {
               <h4 className="font-semibold text-gray-800 mb-2">🛠️ Quick Fixes:</h4>
               <ol className="list-decimal list-inside space-y-1">
                 <li>Ensure only Solana network is enabled in your wallet</li>
-                <li>Try refreshing the page</li>
+                <li>Try refreshing the page (F5 or Ctrl+R)</li>
                 <li>Disconnect and reconnect your wallet</li>
                 <li>Try a different browser or incognito mode</li>
-                <li>Check if other wallet extensions are disabled</li>
+                <li>Check if MetaMask/other Ethereum wallets are disabled</li>
+                <li>Clear browser cache and cookies for this site</li>
+                <li>Try disabling and re-enabling the wallet extension</li>
               </ol>
             </div>
 
@@ -44,6 +46,16 @@ const WalletTroubleshootingModal = ({ isOpen, onClose }) => {
                 <li>Disable Ethereum and Sui networks</li>
                 <li>Ensure Solana Mainnet is selected</li>
                 <li>Try resetting your wallet account</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-2">⚠️ Multiple Wallet Issues:</h4>
+              <ul className="list-disc list-inside space-y-1">
+                <li>If you have both Phantom and MetaMask installed, try disabling MetaMask</li>
+                <li>Check browser console for wallet conflict warnings</li>
+                <li>Try using only one wallet extension at a time</li>
+                <li>Use incognito mode to test with isolated extensions</li>
               </ul>
             </div>
           </div>
@@ -67,6 +79,7 @@ const WalletConnectButton = () => {
   const { connected, publicKey, disconnect, wallet, wallets, connecting } = useWallet();
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
   const [stuckTimer, setStuckTimer] = React.useState(null);
+  const [forceRefresh, setForceRefresh] = React.useState(0);
 
   // Debug wallet state changes
   React.useEffect(() => {
@@ -86,7 +99,8 @@ const WalletConnectButton = () => {
 
       const timer = setTimeout(() => {
         console.log('Wallet connection appears stuck, you may need to refresh or try a different wallet');
-        // Could add a reset mechanism here if needed
+        // Force a refresh of wallet detection
+        setForceRefresh(prev => prev + 1);
       }, 30000); // 30 seconds
 
       setStuckTimer(timer);
@@ -112,7 +126,33 @@ const WalletConnectButton = () => {
     console.log('PublicKey:', publicKey?.toString());
     console.log('Wallet:', wallet?.adapter?.name);
     console.log('Wallet readyState:', wallet?.adapter?.readyState);
-    console.log('Available wallets:', wallets.map(w => ({ name: w.adapter.name, readyState: w.adapter.readyState })));
+    console.log('Available wallets:', wallets.map(w => ({
+      name: w.adapter.name,
+      readyState: w.adapter.readyState,
+      url: w.adapter.url,
+      icon: w.adapter.icon,
+      supportedTransactionVersions: w.adapter.supportedTransactionVersions
+    })));
+
+    // Check for wallet compatibility issues
+    wallets.forEach(walletAdapter => {
+      console.log(`Wallet ${walletAdapter.adapter.name}:`, {
+        readyState: walletAdapter.adapter.readyState,
+        supported: walletAdapter.adapter.supportedTransactionVersions,
+        url: walletAdapter.adapter.url
+      });
+
+      // Check if wallet is in a problematic state
+      if (walletAdapter.adapter.readyState === 'NotDetected') {
+        console.warn(`⚠️ ${walletAdapter.adapter.name} wallet not detected in browser`);
+      } else if (walletAdapter.adapter.readyState === 'Loadable') {
+        console.log(`✅ ${walletAdapter.adapter.name} wallet is loadable`);
+      } else if (walletAdapter.adapter.readyState === 'Installed') {
+        console.log(`✅ ${walletAdapter.adapter.name} wallet is installed`);
+      } else if (walletAdapter.adapter.readyState === 'Unsupported') {
+        console.warn(`⚠️ ${walletAdapter.adapter.name} wallet is not supported`);
+      }
+    });
   }, [connected, connecting, publicKey, wallet, wallets]);
 
   // Auto-connect logic disabled - users must manually connect via button click
