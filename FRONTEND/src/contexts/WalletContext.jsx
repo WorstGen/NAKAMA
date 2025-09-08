@@ -4,7 +4,10 @@ import {
   WalletProvider,
 } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-// Removed explicit wallet adapters to rely on Standard Wallet API auto-detection
+import {
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+} from '@solana/wallet-adapter-wallets';
 import {
   WalletModalProvider,
 } from '@solana/wallet-adapter-react-ui';
@@ -21,42 +24,24 @@ export const WalletContextProvider = ({ children }) => {
   const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
   const wallets = React.useMemo(() => {
-    // Use empty array to rely purely on Standard Wallet API auto-detection
-    // This avoids conflicts with explicit adapter configurations
+    // Configure the most popular Solana wallets
+    const walletConfigs = [
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter(),
+    ];
 
-    // Debug wallet detection
-    setTimeout(() => {
-      console.log('=== Wallet Detection Debug ===');
-      console.log('Using Standard Wallet API auto-detection only');
-      console.log('Window.solana available:', typeof window !== 'undefined' && !!window.solana);
-      console.log('Phantom installed:', typeof window !== 'undefined' && window.solana?.isPhantom);
+    console.log('🔗 Configured wallets:', walletConfigs.map(w => w.name));
+    console.log('🌐 Using network:', network);
+    console.log('📡 RPC endpoint:', endpoint);
 
-      // Additional debugging for Phantom state (no auto-connection)
-      if (typeof window !== 'undefined' && window.solana) {
-        console.log('Phantom version:', window.solana.version);
-        console.log('Phantom publicKey:', window.solana.publicKey);
-        console.log('Phantom isConnected:', window.solana.isConnected);
-        console.log('Phantom wallet detected - user must manually connect');
-      }
-
-      // Check for MetaMask and provide guidance
-      if (typeof window !== 'undefined') {
-        if (window.ethereum) {
-          console.log('🦊 MetaMask detected - can work with Solana via Wallet Standard API');
-          console.log('💡 If MetaMask appears greyed out, try refreshing or updating MetaMask');
-        }
-      }
-    }, 1000);
-
-    // Return empty array for pure auto-detection
-    return [];
-  }, []);
+    return walletConfigs;
+  }, [network, endpoint]);
 
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider
         wallets={wallets}
-        autoConnect={false}
+        autoConnect={true}
         onError={(error) => {
           console.error('Wallet error:', error);
           console.error('Error details:', error.message);
