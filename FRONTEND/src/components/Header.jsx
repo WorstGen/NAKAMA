@@ -66,6 +66,43 @@ const WalletTroubleshootingModal = ({ isOpen, onClose }) => {
 const WalletConnectButton = () => {
   const { connected, publicKey, disconnect, wallet, wallets, connecting } = useWallet();
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
+  const [stuckTimer, setStuckTimer] = React.useState(null);
+
+  // Debug wallet state changes
+  React.useEffect(() => {
+    console.log('WalletConnectButton State:', {
+      connected,
+      connecting,
+      walletName: wallet?.adapter?.name,
+      publicKey: publicKey?.toString(),
+      walletCount: wallets.length
+    });
+
+    // Detect if connection is stuck
+    if (connecting && !connected) {
+      if (stuckTimer) {
+        clearTimeout(stuckTimer);
+      }
+
+      const timer = setTimeout(() => {
+        console.log('Wallet connection appears stuck, you may need to refresh or try a different wallet');
+        // Could add a reset mechanism here if needed
+      }, 30000); // 30 seconds
+
+      setStuckTimer(timer);
+    } else {
+      if (stuckTimer) {
+        clearTimeout(stuckTimer);
+        setStuckTimer(null);
+      }
+    }
+
+    return () => {
+      if (stuckTimer) {
+        clearTimeout(stuckTimer);
+      }
+    };
+  }, [connected, connecting, wallet, publicKey, wallets, stuckTimer]);
 
   // Debug the actual wallet adapter state
   React.useEffect(() => {
@@ -121,11 +158,17 @@ const WalletConnectButton = () => {
           <QuestionMarkCircleIcon className="w-5 h-5" />
         </button>
         <WalletMultiButton
-          className="!bg-gradient-to-r !from-purple-500 !to-blue-500 hover:!from-purple-600 hover:!to-blue-600 !transition-all !duration-200"
+          className="!bg-gradient-to-r !from-purple-500 !to-blue-500 hover:!from-purple-600 hover:!to-blue-600 !transition-all !duration-200 disabled:!opacity-50 disabled:!cursor-not-allowed"
+          disabled={connecting}
         />
       </div>
       {connecting && (
-        <div className="text-white/60 text-xs">Connecting...</div>
+        <div className="text-white/60 text-xs">
+          Connecting...
+          <div className="mt-1 text-white/40 text-xs">
+            If stuck, try refreshing or switching wallets
+          </div>
+        </div>
       )}
 
       <WalletTroubleshootingModal
