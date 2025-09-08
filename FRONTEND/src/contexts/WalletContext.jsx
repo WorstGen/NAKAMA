@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { clusterApiUrl } from '@solana/web3.js';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 const WalletContext = createContext({});
 
@@ -12,9 +10,6 @@ export const WalletContextProvider = ({ children }) => {
   const [connecting, setConnecting] = useState(false);
   const [publicKey, setPublicKey] = useState(null);
   const [wallet, setWallet] = useState(null);
-
-  const network = WalletAdapterNetwork.Mainnet;
-  const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
   // Check for existing Phantom connection on mount
   useEffect(() => {
