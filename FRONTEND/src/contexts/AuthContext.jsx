@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from './WalletContext';
 import { api } from '../services/api';
 import bs58 from 'bs58';
 import toast from 'react-hot-toast';
