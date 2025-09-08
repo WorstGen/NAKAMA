@@ -5,9 +5,19 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 export const Header = () => {
   const location = useLocation();
-  const { connected } = useWallet();
+  const { connected, publicKey, wallet } = useWallet();
 
   const isActive = (path) => location.pathname === path;
+
+  // Debug wallet state in Header
+  React.useEffect(() => {
+    console.log('🎯 Header wallet state:', {
+      connected,
+      publicKey: publicKey?.toString(),
+      wallet: wallet?.adapter?.name,
+      hasWallet: !!wallet
+    });
+  }, [connected, publicKey, wallet]);
 
   return (
     <header className="bg-white/10 backdrop-blur-md border-b border-white/20">
@@ -67,7 +77,39 @@ export const Header = () => {
             </nav>
           )}
 
-          {/* Wallet Connect Button */}
+          {/* Wallet Status Display */}
+          {connected && publicKey && (
+            <div className="hidden md:flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2 mr-4">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <div className="text-white text-sm">
+                <div className="font-medium">{wallet?.adapter?.name || 'Wallet'}</div>
+                <div className="text-white/70 text-xs">
+                  {publicKey.toString().slice(0, 4)}...{publicKey.toString().slice(-4)}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Manual Connect Button - appears when Phantom available but not connected */}
+          {!connected && window.solana?.isPhantom && (
+            <button
+              onClick={async () => {
+                try {
+                  console.log('🔌 Force connecting to Phantom...');
+                  const result = await window.solana.connect();
+                  console.log('✅ Force connect successful:', result);
+                } catch (error) {
+                  console.error('❌ Force connect failed:', error);
+                  alert(`Connection failed: ${error.message}`);
+                }
+              }}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors mr-2"
+            >
+              Connect Phantom
+            </button>
+          )}
+
+          {/* Standard Wallet Button */}
           <WalletMultiButton />
         </div>
       </div>
