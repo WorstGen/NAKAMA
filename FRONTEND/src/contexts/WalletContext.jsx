@@ -23,6 +23,8 @@ export const WalletContextProvider = ({ children }) => {
   const endpoint = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl(network);
 
   const wallets = React.useMemo(() => {
+    // Only include Solflare explicitly - Phantom and other Solana wallets
+    // are handled automatically by the Standard Wallet API
     const solflare = new SolflareWalletAdapter();
 
     // Debug wallet detection
@@ -48,19 +50,25 @@ export const WalletContextProvider = ({ children }) => {
 
         console.log('Browser extensions detected:', extensions.length > 0 ? 'Yes' : 'No');
 
-        // Check for common wallet extension conflicts
+        // Check for MetaMask and provide guidance
         if (window.ethereum) {
-          console.log('⚠️ MetaMask/Ethereum wallet detected - may conflict with Solana wallets');
+          console.log('🦊 MetaMask detected - can work with Solana via Wallet Standard API');
+          console.log('💡 MetaMask supports both Ethereum and Solana - check if Solana mode is enabled');
+          console.log('💡 If MetaMask appears greyed out, try refreshing or updating MetaMask');
+          console.log('💡 MetaMask works well with dApps that support multi-chain functionality');
         }
 
         if (window.solana && window.ethereum) {
-          console.log('⚠️ Both Solana and Ethereum wallets detected - potential conflicts');
+          console.log('ℹ️ Multiple wallet types detected (Solana + Ethereum)');
+          console.log('💡 This is normal and supported - MetaMask can work alongside Solana wallets');
+          console.log('💡 Try MetaMask first for multi-chain support, or use Solana-native wallets');
         }
       }
     }, 1000);
 
-    // Only include Solflare - Phantom handled automatically by Standard Wallet API
-    return [solflare];
+    // Return empty array to let Standard Wallet API handle all wallets automatically
+    // This prevents conflicts between explicit adapters and auto-detected wallets
+    return [];
   }, []);
 
   return (
