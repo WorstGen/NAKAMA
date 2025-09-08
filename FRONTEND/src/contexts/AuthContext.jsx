@@ -60,21 +60,24 @@ export const ThemeProvider = ({ children }) => {
     isDark,
     toggleTheme,
     colors: {
-      // Dark mode colors
+      // Ultra Dark mode colors
       dark: {
-        bg: 'bg-gray-900',
-        surface: 'bg-gray-800',
-        surfaceHover: 'bg-gray-700',
+        bg: 'bg-black',
+        surface: 'bg-gray-900',
+        surfaceHover: 'bg-gray-800',
         text: 'text-white',
-        textSecondary: 'text-gray-300',
-        textMuted: 'text-gray-500',
+        textSecondary: 'text-gray-200',
+        textMuted: 'text-gray-400',
         border: 'border-gray-700',
         accent: 'text-orange-400',
         accentBg: 'bg-orange-500',
         accentHover: 'bg-orange-600',
         secondary: 'text-blue-400',
         secondaryBg: 'bg-blue-500',
-        secondaryHover: 'bg-blue-600'
+        secondaryHover: 'bg-blue-600',
+        card: 'bg-gray-800/80',
+        input: 'bg-gray-700/50',
+        inputBorder: 'border-gray-600'
       },
       // Light mode colors
       light: {
@@ -90,7 +93,10 @@ export const ThemeProvider = ({ children }) => {
         accentHover: 'bg-orange-600',
         secondary: 'text-blue-500',
         secondaryBg: 'bg-blue-500',
-        secondaryHover: 'bg-blue-600'
+        secondaryHover: 'bg-blue-600',
+        card: 'bg-white',
+        input: 'bg-gray-50',
+        inputBorder: 'border-gray-300'
       }
     }
   };
