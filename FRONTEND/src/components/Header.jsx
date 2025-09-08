@@ -64,8 +64,7 @@ const WalletTroubleshootingModal = ({ isOpen, onClose }) => {
 
 // Enhanced Wallet Connect Button Component
 const WalletConnectButton = () => {
-  const { connected, publicKey, disconnect, wallet, connect, select, wallets, connecting } = useWallet();
-  const [connectionError, setConnectionError] = React.useState(null);
+  const { connected, publicKey, disconnect, wallet, wallets, connecting } = useWallet();
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
 
   // Debug the actual wallet adapter state
@@ -79,41 +78,9 @@ const WalletConnectButton = () => {
     console.log('Available wallets:', wallets.map(w => ({ name: w.adapter.name, readyState: w.adapter.readyState })));
   }, [connected, connecting, publicKey, wallet, wallets]);
 
-  // Try to auto-connect to detected Phantom
-  React.useEffect(() => {
-    if (!connected && !connecting && typeof window !== 'undefined' && window.solana?.isPhantom) {
-      // Find phantom wallet in available wallets
-      const phantomWallet = wallets.find(w =>
-        w.adapter.name.toLowerCase().includes('phantom') ||
-        w.adapter.url === 'https://phantom.app'
-      );
-
-      if (phantomWallet) {
-        console.log('Found Phantom wallet, attempting to select and connect...');
-        select(phantomWallet.adapter.name);
-        setTimeout(() => {
-          connect().catch(err => {
-            console.log('Auto-connect failed:', err);
-            setConnectionError('Failed to connect to Phantom wallet. Please try connecting manually.');
-          });
-        }, 100);
-      } else {
-        console.log('Phantom wallet not found in available wallets');
-        console.log('Trying to connect to detected Phantom directly...');
-
-        // Try direct connection and then manually trigger wallet adapter
-        window.solana.connect({ onlyIfTrusted: true })
-          .then(() => {
-            console.log('Direct Phantom connection successful, wallet adapter should pick it up');
-            setConnectionError(null);
-          })
-          .catch((err) => {
-            console.log('Direct silent connection failed:', err);
-            // Don't set error for silent connection failures as they're expected
-          });
-      }
-    }
-  }, [connected, connecting, wallets, select, connect]);
+  // Auto-connect logic disabled - users must manually connect via button click
+  // This prevents automatic connection attempts that can cause issues with
+  // multi-network wallets or when users don't want to connect immediately
 
   if (connected) {
     return (
@@ -134,10 +101,7 @@ const WalletConnectButton = () => {
           </div>
         </div>
         <button
-          onClick={() => {
-            disconnect();
-            setConnectionError(null);
-          }}
+          onClick={disconnect}
           className="bg-red-500/20 hover:bg-red-500/40 text-red-200 hover:text-white px-3 py-2 rounded-lg text-sm transition-all duration-200 border border-red-500/30"
         >
           Disconnect
@@ -148,11 +112,6 @@ const WalletConnectButton = () => {
 
   return (
     <div className="flex flex-col items-end space-y-2">
-      {connectionError && (
-        <div className="text-red-300 text-xs bg-red-500/10 px-3 py-1 rounded-lg border border-red-500/20 max-w-xs text-center">
-          {connectionError}
-        </div>
-      )}
       <div className="flex items-center space-x-2">
         <button
           onClick={() => setShowTroubleshooting(true)}
