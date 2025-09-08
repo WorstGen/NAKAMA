@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export const Header = () => {
   const location = useLocation();
-  const { connected, publicKey, wallet, connect, disconnect, wallets } = useWallet();
+  const { connected, publicKey, wallet, connect, disconnect } = useWallet();
   const { user } = useAuth();
   const [showDebug, setShowDebug] = useState(false);
 
