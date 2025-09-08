@@ -25,12 +25,26 @@ export const AuthProvider = ({ children }) => {
       console.log('Setting up wallet authentication...');
 
       const message = `Sign this message to authenticate with SolConnect: ${Date.now()}`;
+      console.log('Message to sign:', message);
+
       const messageBytes = new TextEncoder().encode(message);
+      console.log('Message bytes:', messageBytes);
+
       const signature = await signMessage(messageBytes);
+      console.log('Raw signature:', signature);
+      console.log('Signature type:', typeof signature);
+
+      // Convert signature to Uint8Array if it's not already
+      const signatureArray = signature instanceof Uint8Array ? signature : new Uint8Array(signature);
+      console.log('Signature as array:', signatureArray);
+
+      const encodedSignature = bs58.encode(signatureArray);
+      console.log('Encoded signature:', encodedSignature);
+      console.log('Public key:', publicKey.toString());
 
       // Set auth headers to match backend expectations
       api.setAuthHeaders({
-        'signature': bs58.encode(signature),
+        'signature': encodedSignature,
         'message': message,
         'publicKey': publicKey.toString()
       });
