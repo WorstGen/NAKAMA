@@ -4,6 +4,104 @@ import { api } from '../services/api';
 import bs58 from 'bs58';
 import toast from 'react-hot-toast';
 
+// Theme Toggle Component
+export const ThemeToggle = () => {
+  const { isDark, toggleTheme, colors } = useTheme();
+  const currentColors = isDark ? colors.dark : colors.light;
+
+  return (
+    <button
+      onClick={toggleTheme}
+      className={`p-2 rounded-lg transition-all duration-200 ${currentColors.surface} ${currentColors.surfaceHover} ${currentColors.border} border`}
+      title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+    >
+      {isDark ? (
+        // Sun icon for light mode
+        <svg className={`w-5 h-5 ${currentColors.accent}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ) : (
+        // Moon icon for dark mode
+        <svg className={`w-5 h-5 ${currentColors.secondary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      )}
+    </button>
+  );
+};
+
+// Theme Context
+export const ThemeContext = createContext();
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
+
+export const ThemeProvider = ({ children }) => {
+  const [isDark, setIsDark] = useState(() => {
+    // Check localStorage or default to dark mode
+    const saved = localStorage.getItem('nakama-theme');
+    return saved ? JSON.parse(saved) : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('nakama-theme', JSON.stringify(isDark));
+    // Apply theme to document
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark(!isDark);
+
+  const theme = {
+    isDark,
+    toggleTheme,
+    colors: {
+      // Dark mode colors
+      dark: {
+        bg: 'bg-gray-900',
+        surface: 'bg-gray-800',
+        surfaceHover: 'bg-gray-700',
+        text: 'text-white',
+        textSecondary: 'text-gray-300',
+        textMuted: 'text-gray-500',
+        border: 'border-gray-700',
+        accent: 'text-orange-400',
+        accentBg: 'bg-orange-500',
+        accentHover: 'bg-orange-600',
+        secondary: 'text-blue-400',
+        secondaryBg: 'bg-blue-500',
+        secondaryHover: 'bg-blue-600'
+      },
+      // Light mode colors
+      light: {
+        bg: 'bg-gray-50',
+        surface: 'bg-white',
+        surfaceHover: 'bg-gray-100',
+        text: 'text-gray-900',
+        textSecondary: 'text-gray-600',
+        textMuted: 'text-gray-400',
+        border: 'border-gray-200',
+        accent: 'text-orange-500',
+        accentBg: 'bg-orange-500',
+        accentHover: 'bg-orange-600',
+        secondary: 'text-blue-500',
+        secondaryBg: 'bg-blue-500',
+        secondaryHover: 'bg-blue-600'
+      }
+    }
+  };
+
+  return (
+    <ThemeContext.Provider value={theme}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
