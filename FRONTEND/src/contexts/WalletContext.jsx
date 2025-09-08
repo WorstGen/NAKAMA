@@ -32,16 +32,12 @@ export const WalletContextProvider = ({ children }) => {
       console.log('Phantom installed:', typeof window !== 'undefined' && window.solana?.isPhantom);
       console.log('Standard wallets will be auto-detected');
       
-      // Additional debugging for Phantom state
+      // Additional debugging for Phantom state (no auto-connection)
       if (typeof window !== 'undefined' && window.solana) {
         console.log('Phantom version:', window.solana.version);
         console.log('Phantom publicKey:', window.solana.publicKey);
         console.log('Phantom isConnected:', window.solana.isConnected);
-        
-        // Test direct connection
-        window.solana.connect({ onlyIfTrusted: false })
-          .then(() => console.log('Direct Phantom connection works'))
-          .catch(err => console.log('Direct connection failed:', err));
+        console.log('Phantom wallet detected - user must manually connect');
       }
     }, 1000);
 
