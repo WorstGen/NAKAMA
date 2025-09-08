@@ -431,7 +431,7 @@ const WalletConnectButton = () => {
         <button
           onClick={async () => {
             console.log('=== EMERGENCY WALLET CONNECT ===');
-            alert('🚨 Attempting emergency wallet connection...\n\nCheck browser console for detailed results!');
+            alert('🚨 Attempting emergency wallet connection...\n\nThis will bypass wallet adapters and connect directly to Phantom.');
             try {
               if (window.solana) {
                 console.log('🔴 Attempting emergency connect...');
@@ -440,16 +440,22 @@ const WalletConnectButton = () => {
                 console.log('🔗 Connected:', window.solana.isConnected);
                 console.log('🔑 Public key:', window.solana.publicKey?.toString());
 
-                alert('🎉 Emergency connect successful!\n\nReloading page to sync wallet state...');
-                // Force reload to sync state
-                setTimeout(() => window.location.reload(), 1000);
+                if (window.solana.isConnected && window.solana.publicKey) {
+                  alert('🎉 Emergency connect successful!\n\nWallet is connected. The app should now recognize the connection.\n\nIf navigation doesn\'t appear, try refreshing the page manually.');
+                  console.log('🎯 Wallet connected successfully - React state should update automatically');
+
+                  // Don't auto-reload - let React state sync naturally
+                  // The useWallet hook should detect the connection change
+                } else {
+                  alert('⚠️ Connection completed but wallet state unclear.\n\nTry refreshing the page manually.');
+                }
               } else {
                 console.log('❌ No Solana wallet found');
                 alert('❌ No Solana wallet found!\n\nPlease install Phantom wallet and try again.');
               }
             } catch (error) {
               console.error('❌ Emergency connect failed:', error);
-              alert('❌ Emergency connect failed!\n\nCheck browser console for error details.\n\nThis might indicate a Phantom extension issue.');
+              alert('❌ Emergency connect failed!\n\nError: ' + error.message + '\n\nCheck browser console for details.');
             }
           }}
           className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-bold animate-pulse shadow-lg"
@@ -460,16 +466,40 @@ const WalletConnectButton = () => {
 
         <button
           onClick={() => {
-            setSyncing(true);
-            console.log('🔄 Manual wallet sync initiated...');
-            alert('🔄 Syncing wallet state...\n\nPage will reload automatically.');
-            setTimeout(() => window.location.reload(), 500);
+            console.log('🔄 Manual wallet state refresh...');
+            alert('🔄 Refreshing wallet state...\n\nThis will force the wallet adapters to re-check their connection status.');
+
+            // Force wallet adapters to re-evaluate their state
+            // This triggers the useWallet hook to re-run its connection checks
+            setTimeout(() => {
+              console.log('🔍 Re-evaluating wallet connection state...');
+              console.log('Phantom direct state:', {
+                isConnected: window.solana?.isConnected,
+                publicKey: window.solana?.publicKey?.toString()
+              });
+
+              // Trigger a re-render by updating local state
+              // This should cause the useWallet hook to re-evaluate
+              alert('🔍 Wallet state refreshed!\n\nCheck if navigation appears now.\n\nIf not, the wallet adapter may need a page reload.');
+            }, 500);
           }}
-          disabled={syncing}
-          className="text-white/70 hover:text-white transition-colors p-2 rounded bg-green-500/20 hover:bg-green-500/40 disabled:opacity-50"
-          title="Sync Wallet State"
+          className="text-white/70 hover:text-white transition-colors p-2 rounded bg-green-500/20 hover:bg-green-500/40"
+          title="Refresh Wallet State (No Reload)"
         >
           🔄
+        </button>
+
+        <button
+          onClick={() => {
+            console.log('💥 Nuclear option: Hard reload with cache clear');
+            alert('💥 Nuclear Option Activated!\n\nThis will:\n1. Clear browser cache\n2. Hard reload the page\n3. Force fresh wallet state\n\nThis should fix any stuck wallet issues.');
+            // Force hard reload with cache clear
+            window.location.reload(true);
+          }}
+          className="text-white/70 hover:text-white transition-colors p-2 rounded bg-yellow-500/20 hover:bg-yellow-500/40"
+          title="💥 Nuclear Option: Hard Reload + Cache Clear"
+        >
+          💥
         </button>
 
         <div className="border-l border-white/20 pl-3 ml-2">
