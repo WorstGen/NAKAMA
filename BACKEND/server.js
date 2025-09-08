@@ -57,7 +57,38 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // Allow specific origins
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://localhost:3000',
+      'https://localhost:3001',
+      process.env.FRONTEND_URL,
+      'https://nakama-production-1850.up.railway.app', // Allow self-origin
+      /^https:\/\/.*\.vercel\.app$/, // Allow Vercel deployments
+      /^https:\/\/.*\.netlify\.app$/, // Allow Netlify deployments
+      /^https:\/\/.*\.github\.io$/ // Allow GitHub Pages
+    ].filter(Boolean);
+
+    // Check if the origin is allowed
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return allowedOrigin === origin;
+      }
+      return allowedOrigin.test(origin);
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   allowedHeaders: [
     'Content-Type',
@@ -89,6 +120,23 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json({ limit: '10mb' }));
+
+// Add CORS headers for static files (images, etc.)
+app.use('/uploads', (req, res, next) => {
+  // Allow images to be loaded from any origin (safe for public images)
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 app.use(express.static('public'));
 
 // Apply rate limiting to all API routes
