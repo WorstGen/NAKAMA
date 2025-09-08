@@ -400,7 +400,9 @@ const WalletConnectButton = () => {
 
   return (
     <div className="flex flex-col items-end space-y-2">
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-3 bg-white/10 rounded-lg px-3 py-2">
+        <div className="text-white text-sm font-medium mr-2">Wallet Tools:</div>
+
         <button
           onClick={() => {
             console.log('=== Manual Wallet Check ===');
@@ -412,56 +414,67 @@ const WalletConnectButton = () => {
             })));
             setShowTroubleshooting(true);
           }}
-          className="text-white/60 hover:text-white transition-colors p-1"
+          className="text-white/70 hover:text-white transition-colors p-2 rounded bg-blue-500/20 hover:bg-blue-500/40"
           title="Wallet Connection Help"
         >
-          <QuestionMarkCircleIcon className="w-5 h-5" />
+          <QuestionMarkCircleIcon className="w-4 h-4" />
         </button>
+
         <button
           onClick={() => setShowTest(!showTest)}
-          className="text-white/60 hover:text-white transition-colors p-1"
-          title="Wallet Test"
+          className="text-white/70 hover:text-white transition-colors p-2 rounded bg-purple-500/20 hover:bg-purple-500/40"
+          title="Wallet Test Panel"
         >
           🧪
         </button>
+
         <button
           onClick={async () => {
-            console.log('=== Emergency Wallet Test ===');
+            console.log('=== EMERGENCY WALLET CONNECT ===');
+            alert('🚨 Attempting emergency wallet connection...\n\nCheck browser console for detailed results!');
             try {
               if (window.solana) {
-                console.log('Attempting emergency connect...');
+                console.log('🔴 Attempting emergency connect...');
                 const result = await window.solana.connect();
-                console.log('Emergency connect result:', result);
-                console.log('Connected:', window.solana.isConnected);
-                console.log('Public key:', window.solana.publicKey?.toString());
+                console.log('✅ Emergency connect result:', result);
+                console.log('🔗 Connected:', window.solana.isConnected);
+                console.log('🔑 Public key:', window.solana.publicKey?.toString());
 
+                alert('🎉 Emergency connect successful!\n\nReloading page to sync wallet state...');
                 // Force reload to sync state
                 setTimeout(() => window.location.reload(), 1000);
               } else {
-                console.log('No Solana wallet found');
+                console.log('❌ No Solana wallet found');
+                alert('❌ No Solana wallet found!\n\nPlease install Phantom wallet and try again.');
               }
             } catch (error) {
-              console.error('Emergency connect failed:', error);
+              console.error('❌ Emergency connect failed:', error);
+              alert('❌ Emergency connect failed!\n\nCheck browser console for error details.\n\nThis might indicate a Phantom extension issue.');
             }
           }}
-          className="text-white/60 hover:text-white transition-colors p-1"
-          title="Emergency Connect"
+          className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-bold animate-pulse shadow-lg"
+          title="🚨 EMERGENCY: Bypass wallet adapters and connect directly to Phantom"
         >
-          🚨
+          🚨 EMERGENCY CONNECT
         </button>
+
         <button
           onClick={() => {
             setSyncing(true);
-            console.log('Manual wallet sync initiated...');
+            console.log('🔄 Manual wallet sync initiated...');
+            alert('🔄 Syncing wallet state...\n\nPage will reload automatically.');
             setTimeout(() => window.location.reload(), 500);
           }}
           disabled={syncing}
-          className="text-white/60 hover:text-white transition-colors p-1 disabled:opacity-50"
+          className="text-white/70 hover:text-white transition-colors p-2 rounded bg-green-500/20 hover:bg-green-500/40 disabled:opacity-50"
           title="Sync Wallet State"
         >
           🔄
         </button>
-        <WalletMultiButton />
+
+        <div className="border-l border-white/20 pl-3 ml-2">
+          <WalletMultiButton />
+        </div>
       </div>
       {showTest && <SimpleWalletTest />}
       {connecting && (
