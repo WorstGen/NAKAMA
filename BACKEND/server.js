@@ -16,6 +16,30 @@ const { getOrCreateAssociatedTokenAccount, transfer, TOKEN_PROGRAM_ID } = requir
 const nacl = require('tweetnacl');
 const bs58 = require('bs58');
 
+// Test signature verification
+const testSignature = () => {
+  const message = "Sign this message to authenticate with SolConnect: 1757318496794";
+  const signature = "3MnuuCJBz6FyiCHXrXvh5khTu31LbBJrinu3JLChgZWnz1T6iUXo95nVKf2sx9gExsxWtRVTk6XAyoEDpQcV92fi";
+  const publicKey = "Hc2brsb7SX1QkJT8iTscPek1brcrC5seb7R9PgWa9rAw";
+
+  try {
+    const messageBytes = new TextEncoder().encode(message);
+    const signatureBytes = bs58.decode(signature);
+    const publicKeyBytes = new PublicKey(publicKey).toBytes();
+
+    const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+    console.log('Test signature verification result:', isValid);
+    return isValid;
+  } catch (error) {
+    console.error('Test signature verification error:', error);
+    return false;
+  }
+};
+
+// Run test on startup
+console.log('Testing signature verification...');
+testSignature();
+
 const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
