@@ -79,7 +79,6 @@ const WalletConnectButton = () => {
   const { connected, publicKey, disconnect, wallet, wallets, connecting } = useWallet();
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
   const [stuckTimer, setStuckTimer] = React.useState(null);
-  const [forceRefresh, setForceRefresh] = React.useState(0);
 
   // Debug wallet state changes
   React.useEffect(() => {
@@ -99,8 +98,6 @@ const WalletConnectButton = () => {
 
       const timer = setTimeout(() => {
         console.log('Wallet connection appears stuck, you may need to refresh or try a different wallet');
-        // Force a refresh of wallet detection
-        setForceRefresh(prev => prev + 1);
       }, 30000); // 30 seconds
 
       setStuckTimer(timer);
