@@ -85,8 +85,27 @@ export const WalletContextProvider = ({ children }) => {
       throw new Error('Phantom wallet not connected');
     }
 
-    const encodedMessage = new TextEncoder().encode(message);
-    return await window.solana.signMessage(encodedMessage);
+    try {
+      const encodedMessage = new TextEncoder().encode(message);
+      const signature = await window.solana.signMessage(encodedMessage);
+
+      // Handle different signature formats from Phantom
+      if (signature && typeof signature === 'object') {
+        if (signature.signature && signature.signature instanceof Uint8Array) {
+          // Return the signature as Uint8Array
+          return signature.signature;
+        } else if (signature instanceof Uint8Array) {
+          // Already a Uint8Array
+          return signature;
+        }
+      }
+
+      // Fallback - try to return as-is
+      return signature;
+    } catch (error) {
+      console.error('Error signing message:', error);
+      throw error;
+    }
   };
 
   // Sign transaction function for sending transactions
