@@ -207,12 +207,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (connected && publicKey) {
+    if (connected && publicKey && !user && !loading && !api.hasAuthHeaders()) {
       authenticate();
-    } else {
+    } else if (!connected || !publicKey) {
       logout();
     }
-  }, [connected, publicKey]);
+  }, [connected, publicKey, authenticate, user, loading]);
 
   // Try to restore authentication on page load if wallet is connected
   useEffect(() => {
