@@ -10,10 +10,9 @@ class ApiService {
     this.client = axios.create({
       baseURL: BASE_URL,
       timeout: 30000,
-      // Add CORS headers
+      // Don't set default Content-Type - let axios handle it automatically
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
       }
     });
 
