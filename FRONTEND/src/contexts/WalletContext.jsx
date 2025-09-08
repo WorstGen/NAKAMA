@@ -90,18 +90,29 @@ export const WalletContextProvider = ({ children }) => {
       const signature = await window.solana.signMessage(encodedMessage);
 
       // Handle different signature formats from Phantom
+      let signatureBytes;
       if (signature && typeof signature === 'object') {
         if (signature.signature && signature.signature instanceof Uint8Array) {
-          // Return the signature as Uint8Array
-          return signature.signature;
+          signatureBytes = signature.signature;
         } else if (signature instanceof Uint8Array) {
-          // Already a Uint8Array
-          return signature;
+          signatureBytes = signature;
+        } else {
+          throw new Error('Invalid signature format from Phantom');
         }
+      } else if (signature instanceof Uint8Array) {
+        signatureBytes = signature;
+      } else {
+        throw new Error('Invalid signature format from Phantom');
       }
 
-      // Fallback - try to return as-is
-      return signature;
+      // Return both raw bytes and hex format (common backend expectation)
+      return {
+        signature: signatureBytes,
+        signatureHex: Array.from(signatureBytes)
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join(''),
+        signatureBase64: btoa(String.fromCharCode(...signatureBytes))
+      };
     } catch (error) {
       console.error('Error signing message:', error);
       throw error;
