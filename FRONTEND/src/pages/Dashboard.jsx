@@ -35,15 +35,15 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className={`max-w-6xl mx-auto transition-all duration-500 ${isDark ? 'text-white' : 'text-gray-900'}`}>
       {/* Welcome Section */}
-      <div className={`${currentColors.surface} backdrop-blur-md rounded-2xl p-6 mb-8 shadow-xl ${currentColors.border} border`}>
+      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-6 mb-8 shadow-2xl ${currentColors.border} border-2`}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className={`text-3xl font-bold ${currentColors.text} mb-2`}>
+            <h1 className={`text-3xl font-bold ${currentColors.text} mb-2 drop-shadow-lg`}>
               Welcome back, @{user.username}!
             </h1>
-            <p className={currentColors.textSecondary}>
+            <p className={`${currentColors.textSecondary} drop-shadow-md`}>
               Manage your contacts and send transactions securely.
             </p>
           </div>
@@ -75,40 +75,40 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Link
           to="/profile"
-          className="bg-white/10 backdrop-blur-md rounded-xl p-6 hover:bg-white/20 transition-colors"
+          className={`${currentColors.card} backdrop-blur-md rounded-xl p-6 hover:${currentColors.surfaceHover} transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1`}
         >
-          <WalletIcon className="w-8 h-8 text-purple-300 mb-3" />
-          <h3 className="text-white font-semibold mb-2">Profile</h3>
-          <p className="text-white/60 text-sm">Update your profile and settings</p>
+          <WalletIcon className={`w-8 h-8 ${currentColors.secondary} mb-3`} />
+          <h3 className={`${currentColors.text} font-semibold mb-2`}>Profile</h3>
+          <p className={`${currentColors.textMuted} text-sm`}>Update your profile and settings</p>
         </Link>
 
         <Link
           to="/contacts"
-          className="bg-white/10 backdrop-blur-md rounded-xl p-6 hover:bg-white/20 transition-colors"
+          className={`${currentColors.card} backdrop-blur-md rounded-xl p-6 hover:${currentColors.surfaceHover} transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1`}
         >
-          <UserGroupIcon className="w-8 h-8 text-blue-300 mb-3" />
-          <h3 className="text-white font-semibold mb-2">Contacts</h3>
-          <p className="text-white/60 text-sm">
+          <UserGroupIcon className={`w-8 h-8 ${currentColors.accent} mb-3`} />
+          <h3 className={`${currentColors.text} font-semibold mb-2`}>Contacts</h3>
+          <p className={`${currentColors.textMuted} text-sm`}>
             {contacts?.contacts?.length || 0} contacts
           </p>
         </Link>
 
         <Link
           to="/send"
-          className="bg-white/10 backdrop-blur-md rounded-xl p-6 hover:bg-white/20 transition-colors"
+          className={`${currentColors.card} backdrop-blur-md rounded-xl p-6 hover:${currentColors.surfaceHover} transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1`}
         >
-          <PaperAirplaneIcon className="w-8 h-8 text-green-300 mb-3" />
-          <h3 className="text-white font-semibold mb-2">Send</h3>
-          <p className="text-white/60 text-sm">Send SOL and SPL tokens</p>
+          <PaperAirplaneIcon className={`w-8 h-8 ${currentColors.secondary} mb-3`} />
+          <h3 className={`${currentColors.text} font-semibold mb-2`}>Send</h3>
+          <p className={`${currentColors.textMuted} text-sm`}>Send SOL and SPL tokens</p>
         </Link>
 
         <Link
           to="/transactions"
-          className="bg-white/10 backdrop-blur-md rounded-xl p-6 hover:bg-white/20 transition-colors"
+          className={`${currentColors.card} backdrop-blur-md rounded-xl p-6 hover:${currentColors.surfaceHover} transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1`}
         >
-          <ClockIcon className="w-8 h-8 text-yellow-300 mb-3" />
-          <h3 className="text-white font-semibold mb-2">History</h3>
-          <p className="text-white/60 text-sm">
+          <ClockIcon className={`w-8 h-8 ${currentColors.accent} mb-3`} />
+          <h3 className={`${currentColors.text} font-semibold mb-2`}>History</h3>
+          <p className={`${currentColors.textMuted} text-sm`}>
             {transactions?.transactions?.length || 0} transactions
           </p>
         </Link>
@@ -117,11 +117,11 @@ export const Dashboard = () => {
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Contacts */}
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-6">
-          <h3 className="text-white font-semibold text-lg mb-4">Recent Contacts</h3>
+        <div className={`${currentColors.card} backdrop-blur-md rounded-xl p-6 shadow-xl`}>
+          <h3 className={`${currentColors.text} font-semibold text-lg mb-4`}>Recent Contacts</h3>
           {contacts?.contacts?.slice(0, 5).map((contact) => (
             <div key={contact.username} className="flex items-center space-x-3 py-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
+              <div className={`w-8 h-8 ${isDark ? 'bg-gradient-to-r from-orange-400 to-blue-400' : 'bg-gradient-to-r from-orange-500 to-blue-500'} rounded-full flex items-center justify-center overflow-hidden shadow-md`}>
                 {contact.profilePicture ? (
                   <img
                     src={`https://nakama-production-1850.up.railway.app${contact.profilePicture}`}
@@ -137,41 +137,41 @@ export const Dashboard = () => {
                     })()}
                   />
                 ) : (
-                  <span className="text-white text-xs font-semibold">
+                  <span className={`${currentColors.text} text-xs font-semibold`}>
                     {contact.username.charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div>
-                <p className="text-white font-medium">@{contact.username}</p>
-                <p className="text-white/60 text-sm">{contact.bio || 'No bio available'}</p>
+                <p className={`${currentColors.text} font-medium`}>@{contact.username}</p>
+                <p className={`${currentColors.textMuted} text-sm`}>{contact.bio || 'No bio available'}</p>
               </div>
             </div>
-          )) || <p className="text-white/60">No contacts yet</p>}
+          )) || <p className={`${currentColors.textMuted}`}>No contacts yet</p>}
         </div>
 
         {/* Recent Transactions */}
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-6">
-          <h3 className="text-white font-semibold text-lg mb-4">Recent Transactions</h3>
+        <div className={`${currentColors.card} backdrop-blur-md rounded-xl p-6 shadow-xl`}>
+          <h3 className={`${currentColors.text} font-semibold text-lg mb-4`}>Recent Transactions</h3>
           {transactions?.transactions?.slice(0, 5).map((tx) => (
             <div key={tx.signature} className="flex items-center justify-between py-2">
               <div>
-                <p className="text-white font-medium">
+                <p className={`${currentColors.text} font-medium`}>
                   {tx.amount} {tx.token}
                 </p>
-                <p className="text-white/60 text-sm">
+                <p className={`${currentColors.textMuted} text-sm`}>
                   to @{tx.toUsername}
                 </p>
               </div>
-              <span className={`px-2 py-1 rounded text-xs ${
-                tx.status === 'confirmed' ? 'bg-green-500/20 text-green-300' :
-                tx.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
-                'bg-red-500/20 text-red-300'
+              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                tx.status === 'confirmed' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                tx.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                'bg-red-500/20 text-red-400 border border-red-500/30'
               }`}>
                 {tx.status}
               </span>
             </div>
-          )) || <p className="text-white/60">No transactions yet</p>}
+          )) || <p className={`${currentColors.textMuted}`}>No transactions yet</p>}
         </div>
       </div>
     </div>

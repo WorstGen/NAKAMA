@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, useTheme } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -9,6 +9,8 @@ import { CameraIcon } from '@heroicons/react/24/outline';
 export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
   const { publicKey } = useWallet();
+  const { isDark, colors } = useTheme();
+  const currentColors = isDark ? colors.dark : colors.light;
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -174,22 +176,22 @@ export const Profile = () => {
   if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-white text-lg">Please connect your wallet first.</p>
+        <p className="text-white dark:text-white text-lg">Please connect your wallet first.</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8">
-        <h1 className="text-3xl font-bold text-white mb-8 text-center">
+    <div className={`max-w-2xl mx-auto transition-all duration-500 ${isDark ? 'text-white dark:text-white' : 'text-gray-900'}`}>
+      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 shadow-2xl ${currentColors.border} border-2`}>
+        <h1 className={`text-3xl font-bold text-white dark:text-white mb-8 text-center drop-shadow-lg`}>
           {user ? 'Update Profile' : 'Create Profile'}
         </h1>
 
         {/* Profile Picture */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-4">
-            <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
+            <div className={`w-24 h-24 ${isDark ? 'bg-gradient-to-r from-orange-400 to-blue-400' : 'bg-gradient-to-r from-orange-500 to-blue-500'} rounded-full flex items-center justify-center overflow-hidden shadow-xl`}>
               {user?.profilePicture ? (
                 <img
                   src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
@@ -201,7 +203,7 @@ export const Profile = () => {
                   }}
                 />
               ) : (
-                <span className="text-white font-bold text-2xl">
+                <span className="text-white dark:text-white font-bold text-2xl">
                   {formData.username.charAt(0).toUpperCase() || '?'}
                 </span>
               )}
@@ -222,7 +224,7 @@ export const Profile = () => {
             <div className="w-full max-w-md space-y-6">
               {/* Zoom Control */}
               <div>
-                <label className="block text-white font-medium mb-3 text-sm">
+                <label className="block text-white dark:text-white font-medium mb-3 text-sm">
                   Zoom: {imageSettings.zoom}%
                 </label>
                 <input
@@ -236,7 +238,7 @@ export const Profile = () => {
                     background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${(imageSettings.zoom - 50) / 1.5}%, rgba(255,255,255,0.2) ${(imageSettings.zoom - 50) / 1.5}%, rgba(255,255,255,0.2) 100%)`
                   }}
                 />
-                <div className="flex justify-between text-xs text-white/60 mt-1">
+                <div className="flex justify-between text-xs text-white dark:text-white/60 mt-1">
                   <span>50%</span>
                   <span>100%</span>
                   <span>200%</span>
@@ -245,7 +247,7 @@ export const Profile = () => {
 
               {/* Position Control */}
               <div>
-                <label className="block text-white font-medium mb-3 text-sm">
+                <label className="block text-white dark:text-white font-medium mb-3 text-sm">
                   Position
                 </label>
                 <div className="relative w-32 h-32 mx-auto bg-white/10 rounded-lg overflow-hidden">
@@ -285,7 +287,7 @@ export const Profile = () => {
                 {/* Manual Position Controls */}
                 <div className="flex justify-center gap-4 mt-3">
                   <div className="flex flex-col items-center">
-                    <label className="text-xs text-white/60 mb-1">X</label>
+                    <label className="text-xs text-white dark:text-white/60 mb-1">X</label>
                     <input
                       type="range"
                       min="0"
@@ -299,7 +301,7 @@ export const Profile = () => {
                     />
                   </div>
                   <div className="flex flex-col items-center">
-                    <label className="text-xs text-white/60 mb-1">Y</label>
+                    <label className="text-xs text-white dark:text-white/60 mb-1">Y</label>
                     <input
                       type="range"
                       min="0"
@@ -319,12 +321,12 @@ export const Profile = () => {
                   <button
                     type="button"
                     onClick={resetImageSettings}
-                    className="px-4 py-2 bg-white/10 text-white/80 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors"
+                    className="px-4 py-2 bg-white/10 text-white dark:text-white/80 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors"
                     title="Reset to default settings"
                   >
                     🔄 Reset to Default
                   </button>
-                  <p className="text-white/50 text-xs text-center">
+                  <p className="text-white dark:text-white/50 text-xs text-center">
                     💾 Settings saved automatically
                   </p>
                 </div>
@@ -336,7 +338,7 @@ export const Profile = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Username */}
           <div>
-            <label className="block text-white font-medium mb-2">
+            <label className="block text-white dark:text-white font-medium mb-2">
               Username *
             </label>
             <input
@@ -345,19 +347,19 @@ export const Profile = () => {
               value={formData.username}
               onChange={handleInputChange}
               placeholder="Enter a unique username"
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-purple-400"
+              className="w-full px-4 py-3 bg-gray-700/50 dark:bg-gray-700/50 border-gray-600 dark:border-gray-600 border rounded-lg text-white dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors"
               required
               pattern="[a-zA-Z0-9_]{3,20}"
               title="Username must be 3-20 characters, letters, numbers, and underscores only"
             />
-            <p className="text-white/60 text-sm mt-1">
+            <p className="text-white dark:text-white/60 text-sm mt-1">
               This will be your permanent username - choose wisely!
             </p>
           </div>
 
           {/* Bio */}
           <div>
-            <label className="block text-white font-medium mb-2">
+            <label className="block text-white dark:text-white font-medium mb-2">
               Bio
             </label>
             <textarea
@@ -366,14 +368,14 @@ export const Profile = () => {
               onChange={handleInputChange}
               placeholder="Tell us about yourself..."
               rows={4}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-purple-400 resize-none"
+              className="w-full px-4 py-3 bg-gray-700/50 dark:bg-gray-700/50 border-gray-600 dark:border-gray-600 border rounded-lg text-white dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors resize-none"
               maxLength={500}
             />
           </div>
 
           {/* Ethereum Address */}
           <div>
-            <label className="block text-white font-medium mb-2">
+            <label className="block text-white dark:text-white font-medium mb-2">
               Ethereum Address (Optional)
             </label>
             <input
@@ -382,7 +384,7 @@ export const Profile = () => {
               value={formData.ethAddress}
               onChange={handleInputChange}
               placeholder="0x..."
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-purple-400"
+              className="w-full px-4 py-3 bg-gray-700/50 dark:bg-gray-700/50 border-gray-600 dark:border-gray-600 border rounded-lg text-white dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors"
               pattern="0x[a-fA-F0-9]{40}"
               title="Enter a valid Ethereum address"
             />
@@ -390,17 +392,17 @@ export const Profile = () => {
 
           {/* Wallet Addresses Display */}
           <div className="space-y-4">
-            <h3 className="text-white font-medium">Connected Addresses</h3>
+            <h3 className="text-white dark:text-white font-medium">Connected Addresses</h3>
             <div className="bg-white/5 rounded-lg p-4">
-              <p className="text-white/60 text-sm mb-1">Solana Address</p>
-              <p className="text-white font-mono text-sm break-all">
+              <p className="text-white dark:text-white/60 text-sm mb-1">Solana Address</p>
+              <p className="text-white dark:text-white font-mono text-sm break-all">
                 {publicKey?.toString()}
               </p>
             </div>
             {formData.ethAddress && (
               <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-white/60 text-sm mb-1">Ethereum Address</p>
-                <p className="text-white font-mono text-sm break-all">
+                <p className="text-white dark:text-white/60 text-sm mb-1">Ethereum Address</p>
+                <p className="text-white dark:text-white font-mono text-sm break-all">
                   {formData.ethAddress}
                 </p>
               </div>
@@ -411,7 +413,7 @@ export const Profile = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white dark:text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50"
           >
             {loading ? 'Saving...' : user ? 'Update Profile' : 'Create Profile'}
           </button>

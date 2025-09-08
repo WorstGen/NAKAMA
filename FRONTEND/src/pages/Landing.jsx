@@ -20,19 +20,19 @@ export const Landing = () => {
   }
 
   return (
-    <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${currentColors.bg}`}>
+    <div className={`min-h-screen flex items-center justify-center transition-all duration-500 ${currentColors.bg} ${isDark ? 'bg-black' : 'bg-gray-50'}`}>
       <div className="text-center">
         <div className="mb-8">
-          <h1 className={`text-6xl font-bold mb-4 ${currentColors.text}`}>
-            <span className={currentColors.accent}>NAKAMA</span>
+          <h1 className={`text-6xl font-bold mb-4 ${currentColors.text} drop-shadow-lg`}>
+            <span className={`${currentColors.accent} drop-shadow-lg`}>NAKAMA</span>
           </h1>
-          <p className={`text-xl ${currentColors.textSecondary} mb-8 max-w-2xl mx-auto`}>
+          <p className={`text-xl ${currentColors.textSecondary} mb-8 max-w-2xl mx-auto drop-shadow-md`}>
             Connect with friends through secure SOL and SPL token transfers.
             Build your Web3 social network with unique usernames and profiles.
           </p>
         </div>
 
-        <div className={`${currentColors.surface} backdrop-blur-md rounded-2xl p-8 max-w-md mx-auto shadow-2xl ${currentColors.border} border`}>
+        <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 max-w-md mx-auto shadow-2xl ${currentColors.border} border-2`}>
           <h2 className={`text-2xl font-semibold ${currentColors.text} mb-6`}>Get Started</h2>
 
           {!connected ? (
