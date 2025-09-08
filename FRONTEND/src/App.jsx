@@ -25,7 +25,7 @@ function App() {
         <WalletContextProvider>
           <AuthProvider>
             <Router>
-              <div className="min-h-screen transition-colors duration-300 dark:bg-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 bg-gradient-to-br from-orange-50 via-blue-50 to-white">
+              <div className="min-h-screen transition-all duration-500 bg-black dark:bg-black dark:from-black dark:via-gray-900 dark:to-black bg-gradient-to-br from-orange-50 via-blue-50 to-white">
                 <Header />
                 <main className="container mx-auto px-4 py-8">
                   <Routes>
