@@ -12,37 +12,28 @@ export const WalletContextProvider = ({ children }) => {
 
   // Check for existing Phantom connection on mount
   useEffect(() => {
-    console.log('🔍 Checking for existing Phantom connection...');
-
     if (window.solana?.isConnected && window.solana?.publicKey) {
-      console.log('✅ Found existing Phantom connection:', window.solana.publicKey.toString());
       setConnected(true);
       setPublicKey(window.solana.publicKey);
-    } else {
-      console.log('❌ No existing Phantom connection found');
     }
   }, []);
 
   // Listen for Phantom connection events
   useEffect(() => {
     if (window.solana?.isPhantom) {
-      console.log('👻 Setting up Phantom event listeners');
 
       const handleConnect = (pubKey) => {
-        console.log('🔗 Phantom connected:', pubKey?.toString());
         setConnected(true);
         setConnecting(false);
         setPublicKey(pubKey);
       };
 
       const handleDisconnect = () => {
-        console.log('🔌 Phantom disconnected');
         setConnected(false);
         setPublicKey(null);
       };
 
       const handleAccountChange = (pubKey) => {
-        console.log('🔄 Phantom account changed:', pubKey?.toString());
         setPublicKey(pubKey);
       };
 
@@ -68,15 +59,10 @@ export const WalletContextProvider = ({ children }) => {
 
     try {
       setConnecting(true);
-      console.log('🔌 Connecting to Phantom...');
-
       const result = await window.solana.connect();
-      console.log('✅ Phantom connect successful');
-
       // Event listener will handle state updates
       return result;
     } catch (error) {
-      console.error('❌ Phantom connect failed:', error);
       setConnecting(false);
       throw error;
     }
@@ -86,14 +72,39 @@ export const WalletContextProvider = ({ children }) => {
   const disconnect = async () => {
     if (window.solana?.isPhantom) {
       try {
-        console.log('🔌 Disconnecting from Phantom...');
         await window.solana.disconnect();
-        console.log('✅ Disconnected from Phantom');
       } catch (error) {
-        console.error('❌ Phantom disconnect failed:', error);
         throw error;
       }
     }
+  };
+
+  // Sign message function for authentication
+  const signMessage = async (message) => {
+    if (!window.solana?.isPhantom || !connected) {
+      throw new Error('Phantom wallet not connected');
+    }
+
+    const encodedMessage = new TextEncoder().encode(message);
+    return await window.solana.signMessage(encodedMessage);
+  };
+
+  // Sign transaction function for sending transactions
+  const signTransaction = async (transaction) => {
+    if (!window.solana?.isPhantom || !connected) {
+      throw new Error('Phantom wallet not connected');
+    }
+
+    return await window.solana.signTransaction(transaction);
+  };
+
+  // Sign multiple transactions
+  const signAllTransactions = async (transactions) => {
+    if (!window.solana?.isPhantom || !connected) {
+      throw new Error('Phantom wallet not connected');
+    }
+
+    return await window.solana.signAllTransactions(transactions);
   };
 
   const value = {
@@ -102,6 +113,9 @@ export const WalletContextProvider = ({ children }) => {
     publicKey,
     connect,
     disconnect,
+    signMessage,
+    signTransaction,
+    signAllTransactions,
     // Legacy compatibility
     wallet: connected ? { adapter: { name: 'Phantom' } } : null,
   };
