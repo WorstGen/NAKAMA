@@ -158,11 +158,14 @@ const SimpleWalletTest = () => {
         </div>
       )}
 
-      <div className="mt-3 pt-3 border-t border-white/20">
+      <div className="mt-3 pt-3 border-t border-white/20 space-y-2">
+        <div className="text-xs text-white/70">
+          🔄 Use sync button if wallet state is out of sync
+        </div>
         <button
           onClick={testPhantomConnection}
           disabled={connecting || !window.solana}
-          className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white px-3 py-1 rounded text-xs transition-colors"
+          className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white px-3 py-1 rounded text-xs transition-colors mr-2"
         >
           {connecting ? 'Connecting...' : 'Test Phantom Connect'}
         </button>
@@ -177,6 +180,37 @@ const WalletConnectButton = () => {
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
   const [stuckTimer, setStuckTimer] = React.useState(null);
   const [showTest, setShowTest] = React.useState(false);
+  const [syncing, setSyncing] = React.useState(false);
+
+  // Sync wallet adapter state with Phantom connection
+  React.useEffect(() => {
+    const syncWithPhantom = async () => {
+      // If Phantom is connected but wallet adapter doesn't know about it
+      if (window.solana?.isConnected && !connected && window.solana?.publicKey) {
+        console.log('Phantom is connected but wallet adapter is not aware - attempting to sync...');
+
+        try {
+          // Try to manually sync the connection state
+          // This is a workaround for wallet adapter state sync issues
+          console.log('Manual sync attempt - Phantom public key:', window.solana.publicKey.toString());
+
+          // Force a page reload to reset wallet adapter state
+          // This is a nuclear option but often fixes state sync issues
+          console.log('Forcing page reload to sync wallet state...');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+
+        } catch (error) {
+          console.error('Failed to sync wallet state:', error);
+        }
+      }
+    };
+
+    // Check sync status after a delay to allow wallet adapters to initialize
+    const syncTimer = setTimeout(syncWithPhantom, 2000);
+    return () => clearTimeout(syncTimer);
+  }, [connected]);
 
   // Debug wallet state changes
   React.useEffect(() => {
@@ -186,6 +220,11 @@ const WalletConnectButton = () => {
       walletName: wallet?.adapter?.name,
       publicKey: publicKey?.toString(),
       walletCount: wallets.length,
+      phantomDirectState: {
+        isConnected: window.solana?.isConnected,
+        publicKey: window.solana?.publicKey?.toString(),
+        version: window.solana?.version
+      },
       allWallets: wallets.map(w => ({
         name: w.adapter.name,
         readyState: w.adapter.readyState,
@@ -331,6 +370,18 @@ const WalletConnectButton = () => {
           title="Wallet Test"
         >
           🧪
+        </button>
+        <button
+          onClick={() => {
+            setSyncing(true);
+            console.log('Manual wallet sync initiated...');
+            setTimeout(() => window.location.reload(), 500);
+          }}
+          disabled={syncing}
+          className="text-white/60 hover:text-white transition-colors p-1 disabled:opacity-50"
+          title="Sync Wallet State"
+        >
+          🔄
         </button>
         <WalletMultiButton />
       </div>
