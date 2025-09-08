@@ -91,6 +91,7 @@ const WalletTroubleshootingModal = ({ isOpen, onClose }) => {
 const SimpleWalletTest = () => {
   const [testResults, setTestResults] = React.useState(null);
   const [connecting, setConnecting] = React.useState(false);
+  const [walletAdapterTest, setWalletAdapterTest] = React.useState(null);
 
   React.useEffect(() => {
     // Test wallet availability
@@ -107,6 +108,27 @@ const SimpleWalletTest = () => {
       };
       setTestResults(results);
       console.log('=== Simple Wallet Test Results ===', results);
+
+      // Test if wallet adapters are working
+      try {
+        // Test basic wallet adapter functionality
+        const adapterTest = {
+          hasWalletStandard: typeof window !== 'undefined' && !!window.navigator?.wallet,
+          hasPhantom: typeof window !== 'undefined' && !!window.solana,
+          phantomMethods: typeof window !== 'undefined' && window.solana ?
+            Object.getOwnPropertyNames(window.solana).filter(name =>
+              typeof window.solana[name] === 'function'
+            ) : [],
+          ethereumMethods: typeof window !== 'undefined' && window.ethereum ?
+            Object.getOwnPropertyNames(window.ethereum).filter(name =>
+              typeof window.ethereum[name] === 'function'
+            ) : []
+        };
+        setWalletAdapterTest(adapterTest);
+        console.log('=== Wallet Adapter Methods Test ===', adapterTest);
+      } catch (error) {
+        console.error('Wallet adapter test failed:', error);
+      }
     };
 
     testWallets();
@@ -145,16 +167,31 @@ const SimpleWalletTest = () => {
   };
 
   return (
-    <div className="bg-white/10 rounded-lg p-4 mt-4 text-white text-sm max-w-md">
+    <div className="bg-white/10 rounded-lg p-4 mt-4 text-white text-sm max-w-md max-h-96 overflow-y-auto">
       <h3 className="font-bold mb-2">Wallet Test Results:</h3>
       {testResults && (
-        <div className="space-y-1 text-xs">
+        <div className="space-y-1 text-xs mb-3">
           <div>Solana Available: {testResults.windowSolana ? '✅' : '❌'}</div>
           <div>Phantom Installed: {testResults.phantomInstalled ? '✅' : '❌'}</div>
           <div>Phantom Connected: {testResults.phantomConnected ? '✅' : '❌'}</div>
           <div>Phantom Version: {testResults.phantomVersion || 'N/A'}</div>
           <div>Phantom PublicKey: {testResults.phantomPublicKey ? `${testResults.phantomPublicKey.slice(0, 8)}...` : 'None'}</div>
           <div>Ethereum Detected: {testResults.ethereumDetected ? '✅' : '❌'}</div>
+        </div>
+      )}
+
+      {walletAdapterTest && (
+        <div className="space-y-1 text-xs mb-3 pt-3 border-t border-white/20">
+          <h4 className="font-semibold text-white/80">Adapter Methods:</h4>
+          <div>Wallet Standard: {walletAdapterTest.hasWalletStandard ? '✅' : '❌'}</div>
+          <div>Phantom Methods: {walletAdapterTest.phantomMethods?.length || 0}</div>
+          <div>Ethereum Methods: {walletAdapterTest.ethereumMethods?.length || 0}</div>
+          {walletAdapterTest.phantomMethods?.length > 0 && (
+            <div className="text-xs text-white/60 mt-1">
+              Methods: {walletAdapterTest.phantomMethods.slice(0, 5).join(', ')}
+              {walletAdapterTest.phantomMethods.length > 5 && '...'}
+            </div>
+          )}
         </div>
       )}
 
@@ -168,6 +205,22 @@ const SimpleWalletTest = () => {
           className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white px-3 py-1 rounded text-xs transition-colors mr-2"
         >
           {connecting ? 'Connecting...' : 'Test Phantom Connect'}
+        </button>
+        <button
+          onClick={() => {
+            console.log('=== Full Wallet Debug ===');
+            console.log('Window object:', typeof window);
+            console.log('Navigator:', typeof navigator);
+            console.log('All window properties:', Object.getOwnPropertyNames(window).filter(name =>
+              name.toLowerCase().includes('solana') ||
+              name.toLowerCase().includes('phantom') ||
+              name.toLowerCase().includes('wallet') ||
+              name.toLowerCase().includes('ethereum')
+            ));
+          }}
+          className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-xs transition-colors"
+        >
+          Debug All
         </button>
       </div>
     </div>
@@ -370,6 +423,31 @@ const WalletConnectButton = () => {
           title="Wallet Test"
         >
           🧪
+        </button>
+        <button
+          onClick={async () => {
+            console.log('=== Emergency Wallet Test ===');
+            try {
+              if (window.solana) {
+                console.log('Attempting emergency connect...');
+                const result = await window.solana.connect();
+                console.log('Emergency connect result:', result);
+                console.log('Connected:', window.solana.isConnected);
+                console.log('Public key:', window.solana.publicKey?.toString());
+
+                // Force reload to sync state
+                setTimeout(() => window.location.reload(), 1000);
+              } else {
+                console.log('No Solana wallet found');
+              }
+            } catch (error) {
+              console.error('Emergency connect failed:', error);
+            }
+          }}
+          className="text-white/60 hover:text-white transition-colors p-1"
+          title="Emergency Connect"
+        >
+          🚨
         </button>
         <button
           onClick={() => {
