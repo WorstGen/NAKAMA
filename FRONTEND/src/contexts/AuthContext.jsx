@@ -82,8 +82,8 @@ export const AuthProvider = ({ children }) => {
         signatureArray = signature.signature;
         console.log('Using new signature format');
 
-        // Try hex format first (common for Solana backends), fallback to base64
-        encodedSignature = signature.signatureHex || signature.signatureBase64;
+        // Try base64 format first (works with nacl/bs58), fallback to hex
+        encodedSignature = signature.signatureBase64 || signature.signatureHex;
         console.log('Signature formats available:', {
           hex: !!signature.signatureHex,
           base64: !!signature.signatureBase64
