@@ -82,15 +82,20 @@ export const AuthProvider = ({ children }) => {
         signatureArray = signature.signature;
         console.log('Using new signature format');
 
-        // Try base64 format first (works with nacl/bs58), fallback to hex
-        encodedSignature = signature.signatureBase64 || signature.signatureHex;
+        // Convert raw signature bytes to base58 (backend expects this)
+        encodedSignature = bs58.encode(signatureArray);
+        console.log('Converted signature to base58:', encodedSignature);
         console.log('Signature formats available:', {
           hex: !!signature.signatureHex,
-          base64: !!signature.signatureBase64
+          base64: !!signature.signatureBase64,
+          base58: !!encodedSignature
         });
       } else {
         // Legacy format: direct Uint8Array
         signatureArray = signature instanceof Uint8Array ? signature : new Uint8Array(signature);
+        // Convert to base58
+        encodedSignature = bs58.encode(signatureArray);
+        console.log('Converted legacy signature to base58:', encodedSignature);
       }
 
       // Validate signature array
@@ -106,13 +111,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error(`Invalid signature length. Expected 64 bytes for Ed25519 signature, got ${signatureArray.length} bytes.`);
       }
 
-      // Use the encoded signature if we have it, otherwise encode with bs58
-      if (!encodedSignature) {
-        encodedSignature = bs58.encode(signatureArray);
-        console.log('Encoded signature with bs58:', encodedSignature);
-      } else {
-        console.log('Using pre-encoded signature:', encodedSignature);
-      }
+      // We now always encode with bs58 for backend compatibility
+      console.log('Final signature (base58 encoded):', encodedSignature);
 
       console.log('Public key:', publicKey.toString());
 
