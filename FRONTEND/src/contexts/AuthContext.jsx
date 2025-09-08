@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
       api.setAuthHeaders({
         'signature': encodedSignature,
         'message': message,
-        'publicKey': publicKey.toString()
+        'publickey': publicKey.toString() // Try lowercase to see if case sensitivity is the issue
       });
 
       console.log('Auth headers set successfully');
