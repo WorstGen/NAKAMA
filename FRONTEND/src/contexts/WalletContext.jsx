@@ -47,7 +47,7 @@ export const WalletContextProvider = ({ children }) => {
       console.error('❌ Failed to create Phantom adapter:', error);
       return [];
     }
-  }, [network, endpoint]);
+  }, []); // Remove network and endpoint dependencies since they're not used in the callback
 
   return (
     <ConnectionProvider endpoint={endpoint}>
