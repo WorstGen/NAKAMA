@@ -1,22 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
-import { useTheme, ThemeToggle } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/AuthContext';
 
 export const Header = () => {
   const location = useLocation();
   const { connected, publicKey, wallet, connect } = useWallet();
   const theme = useTheme();
-
-  // Handle case where theme context might not be available
-  const isDark = theme ? theme.isDark : true;
-  const colors = theme ? theme.colors : {
-    dark: {
-      text: 'text-white',
-      header: 'bg-black/90 border-gray-800'
-    }
-  };
-  const currentColors = colors ? (isDark ? colors.dark : colors.light) : colors.dark;
+  const currentColors = theme.classes; // Always dark colors now
 
   const isActive = (path) => location.pathname === path;
 
@@ -103,8 +94,6 @@ export const Header = () => {
             </div>
           )}
 
-          {/* Theme Toggle */}
-          <ThemeToggle />
 
           {/* Manual Connect Button - appears when Phantom available but not connected */}
           {!connected && window.solana?.isPhantom && (
