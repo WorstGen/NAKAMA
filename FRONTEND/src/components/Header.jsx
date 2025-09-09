@@ -39,9 +39,9 @@ export const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className={`w-8 h-8 ${isDark ? 'bg-gradient-to-r from-orange-400 to-blue-400' : 'bg-gradient-to-r from-orange-500 to-blue-500'} rounded-lg flex items-center justify-center shadow-lg`}>
-              <span className={`font-bold text-lg ${classes.text}`}>N</span>
+              <span className={`font-bold text-lg ${currentColors.text}`}>N</span>
             </div>
-            <span className={`font-bold text-xl ${classes.text}`}>NAKAMA</span>
+            <span className={`font-bold text-xl ${currentColors.text}`}>NAKAMA</span>
           </Link>
 
           {/* Navigation */}
