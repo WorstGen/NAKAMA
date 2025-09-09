@@ -10,7 +10,7 @@ export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
   const { publicKey } = useWallet();
   const { isDark, colors } = useTheme();
-  const currentColors = isDark ? colors.dark : colors.light;
+  const classes = useTheme().classes;
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -183,7 +183,7 @@ export const Profile = () => {
 
   return (
     <div className={`max-w-2xl mx-auto transition-all duration-500 ${isDark ? 'text-white dark:text-white' : 'text-gray-900'}`}>
-      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 shadow-2xl ${currentColors.border} border-2`}>
+      <div className={`${classes.card} backdrop-blur-md rounded-2xl p-8 shadow-2xl ${classes.border} border-2`}>
         <h1 className={`text-3xl font-bold text-white dark:text-white mb-8 text-center drop-shadow-lg`}>
           {user ? 'Update Profile' : 'Create Profile'}
         </h1>
