@@ -35,18 +35,10 @@ export const Dashboard = () => {
   }
 
   const getTransactionPartner = (tx) => {
-    // If current user is the sender, show the recipient
-    // If current user is the recipient, show the sender
-    if (tx.fromUsername === user.username) {
-      return tx.toUsername;
-    } else {
-      return tx.fromUsername;
-    }
-  };
-
-  const getTransactionType = (tx) => {
-    // Determine if this transaction was sent or received by the current user
-    return tx.fromUsername === user.username ? 'sent' : 'received';
+    // Use the existing tx.type field to determine the partner
+    // If tx.type is 'sent', show the recipient (toUsername)
+    // If tx.type is 'received', show the sender (fromUsername)
+    return tx.type === 'sent' ? tx.toUsername : tx.fromUsername;
   };
 
   return (
