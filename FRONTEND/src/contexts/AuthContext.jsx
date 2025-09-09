@@ -4,31 +4,7 @@ import { api } from '../services/api';
 import bs58 from 'bs58';
 import toast from 'react-hot-toast';
 
-// Theme Toggle Component
-export const ThemeToggle = () => {
-  const { isDark, toggleTheme, colors } = useTheme();
-  const currentColors = isDark ? colors.dark : colors.light;
-
-  return (
-    <button
-      onClick={toggleTheme}
-      className={`p-2 rounded-lg transition-all duration-200 ${currentColors.surface} ${currentColors.surfaceHover} ${currentColors.border} border`}
-      title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-    >
-      {isDark ? (
-        // Sun icon for light mode
-        <svg className={`w-5 h-5 ${currentColors.accent}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-      ) : (
-        // Moon icon for dark mode
-        <svg className={`w-5 h-5 ${currentColors.secondary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
-      )}
-    </button>
-  );
-};
+// Theme is now dark-only - no toggle needed
 
 // Theme Context
 export const ThemeContext = createContext();
@@ -44,120 +20,44 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(() => {
-    // Check localStorage or default to dark mode
-    try {
-      const saved = localStorage.getItem('nakama-theme');
-      console.log('🎨 ThemeProvider: saved theme from localStorage:', saved);
-      return saved ? JSON.parse(saved) : true;
-    } catch (error) {
-      console.error('🎨 ThemeProvider: Error reading localStorage:', error);
-      return true; // default to dark mode
-    }
-  });
+  // Always dark mode - ultra dark theme as requested
+  const isDark = true;
 
   useEffect(() => {
-    localStorage.setItem('nakama-theme', JSON.stringify(isDark));
-    // Apply theme to document
-    document.documentElement.classList.toggle('dark', isDark);
-  }, [isDark]);
+    // Always apply dark theme to document
+    document.documentElement.classList.add('dark');
+  }, []);
 
-  const toggleTheme = () => setIsDark(!isDark);
+  // Ultra dark theme colors - optimized for readability and professional look
+  const colors = {
+    bg: 'bg-black',
+    surface: 'bg-gray-900',
+    surfaceHover: 'bg-gray-800',
+    text: 'text-white',
+    textSecondary: 'text-gray-200',
+    textMuted: 'text-gray-400',
+    border: 'border-gray-700',
+    accent: 'text-orange-400',
+    accentBg: 'bg-orange-500',
+    accentHover: 'bg-orange-600',
+    secondary: 'text-blue-400',
+    secondaryBg: 'bg-blue-500',
+    secondaryHover: 'bg-blue-600',
+    card: 'bg-gray-800 border-gray-700',
+    input: 'bg-gray-700 text-white border-gray-600',
+    inputBorder: 'border-gray-600',
+    container: 'bg-black min-h-screen',
+    header: 'bg-black/90 border-gray-800',
+    button: 'bg-orange-500 hover:bg-orange-600 text-white',
+    buttonSecondary: 'bg-blue-500 hover:bg-blue-600 text-white'
+  };
 
   const theme = {
     isDark,
-    toggleTheme,
-    // Legacy colors structure for backward compatibility
     colors: {
-      dark: {
-        bg: 'bg-black',
-        surface: 'bg-gray-900',
-        surfaceHover: 'bg-gray-800',
-        text: 'text-white',
-        textSecondary: 'text-gray-200',
-        textMuted: 'text-gray-400',
-        border: 'border-gray-700',
-        accent: 'text-orange-400',
-        accentBg: 'bg-orange-500',
-        accentHover: 'bg-orange-600',
-        secondary: 'text-blue-400',
-        secondaryBg: 'bg-blue-500',
-        secondaryHover: 'bg-blue-600',
-        card: 'bg-gray-800 border-gray-700',
-        input: 'bg-gray-700 text-white border-gray-600',
-        inputBorder: 'border-gray-600',
-        container: 'bg-black min-h-screen',
-        header: 'bg-black/90 border-gray-800',
-        button: 'bg-orange-500 hover:bg-orange-600 text-white',
-        buttonSecondary: 'bg-blue-500 hover:bg-blue-600 text-white'
-      },
-      light: {
-        bg: 'bg-gray-50',
-        surface: 'bg-white',
-        surfaceHover: 'bg-gray-100',
-        text: 'text-gray-900',
-        textSecondary: 'text-gray-600',
-        textMuted: 'text-gray-400',
-        border: 'border-gray-200',
-        accent: 'text-orange-500',
-        accentBg: 'bg-orange-500',
-        accentHover: 'bg-orange-600',
-        secondary: 'text-blue-500',
-        secondaryBg: 'bg-blue-500',
-        secondaryHover: 'bg-blue-600',
-        card: 'bg-white border-gray-200',
-        input: 'bg-gray-50 text-gray-900 border-gray-300',
-        inputBorder: 'border-gray-300',
-        container: 'bg-gray-50 min-h-screen',
-        header: 'bg-white/90 border-gray-200',
-        button: 'bg-orange-500 hover:bg-orange-600 text-white',
-        buttonSecondary: 'bg-blue-500 hover:bg-blue-600 text-white'
-      }
+      dark: colors // Legacy structure for backward compatibility
     },
-    // Direct class names for easy application
-    classes: isDark ? {
-      bg: 'bg-black',
-      surface: 'bg-gray-900',
-      surfaceHover: 'bg-gray-800',
-      text: 'text-white',
-      textSecondary: 'text-gray-200',
-      textMuted: 'text-gray-400',
-      border: 'border-gray-700',
-      accent: 'text-orange-400',
-      accentBg: 'bg-orange-500',
-      accentHover: 'bg-orange-600',
-      secondary: 'text-blue-400',
-      secondaryBg: 'bg-blue-500',
-      secondaryHover: 'bg-blue-600',
-      card: 'bg-gray-800 border-gray-700',
-      input: 'bg-gray-700 text-white border-gray-600',
-      inputBorder: 'border-gray-600',
-      container: 'bg-black min-h-screen',
-      header: 'bg-black/90 border-gray-800',
-      button: 'bg-orange-500 hover:bg-orange-600 text-white',
-      buttonSecondary: 'bg-blue-500 hover:bg-blue-600 text-white'
-    } : {
-      bg: 'bg-gray-50',
-      surface: 'bg-white',
-      surfaceHover: 'bg-gray-100',
-      text: 'text-gray-900',
-      textSecondary: 'text-gray-600',
-      textMuted: 'text-gray-400',
-      border: 'border-gray-200',
-      accent: 'text-orange-500',
-      accentBg: 'bg-orange-500',
-      accentHover: 'bg-orange-600',
-      secondary: 'text-blue-500',
-      secondaryBg: 'bg-blue-500',
-      secondaryHover: 'bg-blue-600',
-      card: 'bg-white border-gray-200',
-      input: 'bg-gray-50 text-gray-900 border-gray-300',
-      inputBorder: 'border-gray-300',
-      container: 'bg-gray-50 min-h-screen',
-      header: 'bg-white/90 border-gray-200',
-      button: 'bg-orange-500 hover:bg-orange-600 text-white',
-      buttonSecondary: 'bg-blue-500 hover:bg-blue-600 text-white'
-    }
+    classes: colors // Direct access to classes
   };
 
   return (
