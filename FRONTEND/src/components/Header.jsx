@@ -60,7 +60,7 @@ export const Header = () => {
               className="h-12 w-auto"
               style={{ maxWidth: '180px', minWidth: '120px' }}
             >
-              {/* Background gradient */}
+              {/* Background with gradient */}
               <defs>
                 <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" style={{ stopColor: '#fb923c', stopOpacity: 1 }} />
@@ -68,31 +68,31 @@ export const Header = () => {
                 </linearGradient>
               </defs>
 
-              {/* Main logo shape - simplified version */}
-              <rect x="10" y="12" width="160" height="24" rx="12" fill="url(#logoGradient)" />
+              {/* Main logo shape */}
+              <rect x="0" y="8" width="180" height="32" rx="16" fill="url(#logoGradient)" />
 
-              {/* NAKAMA Text */}
+              {/* NAKAMA text */}
               <text
                 x="90"
                 y="30"
                 textAnchor="middle"
                 fill="white"
-                fontSize="16"
+                fontSize="20"
                 fontWeight="bold"
                 fontFamily="Arial, sans-serif"
-                letterSpacing="1px"
+                letterSpacing="2px"
               >
                 NAKAMA
               </text>
 
               {/* Decorative elements */}
-              <circle cx="25" cy="24" r="3" fill="white" opacity="0.8"/>
-              <circle cx="155" cy="24" r="3" fill="white" opacity="0.8"/>
-              <rect x="35" y="20" width="4" height="8" fill="white" opacity="0.6"/>
-              <rect x="45" y="18" width="4" height="12" fill="white" opacity="0.6"/>
-              <rect x="55" y="22" width="4" height="4" fill="white" opacity="0.6"/>
-              <rect x="65" y="20" width="4" height="8" fill="white" opacity="0.6"/>
-              <rect x="75" y="16" width="4" height="16" fill="white" opacity="0.6"/>
+              <circle cx="30" cy="24" r="4" fill="white" opacity="0.9"/>
+              <circle cx="150" cy="24" r="4" fill="white" opacity="0.9"/>
+              <rect x="50" y="20" width="6" height="8" fill="white" opacity="0.8"/>
+              <rect x="65" y="18" width="6" height="12" fill="white" opacity="0.8"/>
+              <rect x="80" y="22" width="6" height="4" fill="white" opacity="0.8"/>
+              <rect x="95" y="20" width="6" height="8" fill="white" opacity="0.8"/>
+              <rect x="110" y="16" width="6" height="16" fill="white" opacity="0.8"/>
             </svg>
           </Link>
 
