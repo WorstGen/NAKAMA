@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
-import { useTheme, useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Header = () => {
   const location = useLocation();
   const { connected, publicKey, connect, disconnect } = useWallet();
   const { user } = useAuth();
-  const theme = useTheme();
-  const currentColors = theme.classes; // Always dark colors now
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [portalRoot, setPortalRoot] = useState(null);
 
