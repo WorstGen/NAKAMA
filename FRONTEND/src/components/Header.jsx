@@ -10,7 +10,6 @@ export const Header = () => {
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [portalRoot, setPortalRoot] = useState(null);
-  const [logoError, setLogoError] = useState(false);
 
   const isActive = (path) => location.pathname === path;
 
@@ -52,22 +51,13 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            {!logoError ? (
-              <img
-                src="/logo/nakama-logo.png"
-                alt="NAKAMA"
-                className="h-12 w-auto"
-                style={{ maxWidth: '180px' }}
-                onError={(e) => {
-                  console.log('Logo failed to load:', e.target.src);
-                  setLogoError(true);
-                }}
-              />
-            ) : (
-              <div className="h-12 flex items-center">
-                <span className="font-bold text-xl text-white">NAKAMA</span>
-              </div>
-            )}
+            <img
+              src="/logo/nakama-logo.png"
+              alt="NAKAMA"
+              className="h-12 w-auto"
+              style={{ maxWidth: '180px' }}
+              onError={(e) => console.log('Logo failed to load, using fallback')}
+            />
           </Link>
 
           {/* Profile/Connect Button */}
