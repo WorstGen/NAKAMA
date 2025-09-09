@@ -9,7 +9,7 @@ import { CameraIcon } from '@heroicons/react/24/outline';
 export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
   const { publicKey } = useWallet();
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
   const classes = useTheme().classes;
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);

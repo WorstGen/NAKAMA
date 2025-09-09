@@ -6,7 +6,7 @@ import { Navigate, Link } from 'react-router-dom';
 export const Landing = () => {
   const { connected } = useWallet();
   const { user } = useAuth();
-  const { isDark, colors } = useTheme();
+  // Theme hook is used via classes object below
   const classes = useTheme().classes;
 
   // Redirect to dashboard if already connected and has profile
