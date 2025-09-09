@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
 import { WalletContextProvider } from './contexts/WalletContext';
-import { AuthProvider, ThemeProvider } from './contexts/AuthContext';
+import { AuthProvider, ThemeProvider, useTheme } from './contexts/AuthContext';
 import { Header } from './components/Header';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
@@ -25,21 +25,7 @@ function App() {
         <WalletContextProvider>
           <AuthProvider>
             <Router>
-              <div className="min-h-screen transition-all duration-500 bg-black dark:bg-black dark:from-black dark:via-gray-900 dark:to-black bg-gradient-to-br from-orange-50 via-blue-50 to-white">
-                <Header />
-                <main className="container mx-auto px-4 py-8">
-                  <Routes>
-                    <Route path="/" element={<Landing />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/contacts" element={<Contacts />} />
-                    <Route path="/send" element={<Send />} />
-                    <Route path="/transactions" element={<Transactions />} />
-                    <Route path="/oauth/authorize" element={<OAuth />} />
-                  </Routes>
-                </main>
-                <Toaster position="bottom-right" />
-              </div>
+              <AppContent />
             </Router>
           </AuthProvider>
         </WalletContextProvider>
@@ -47,5 +33,28 @@ function App() {
     </QueryClientProvider>
   );
 }
+
+// Separate component to use theme hook
+const AppContent = () => {
+  const { isDark, classes } = useTheme();
+
+  return (
+    <div className={`${classes.container} transition-all duration-500`}>
+      <Header />
+      <main className="container mx-auto px-4 py-8">
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/contacts" element={<Contacts />} />
+          <Route path="/send" element={<Send />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/oauth/authorize" element={<OAuth />} />
+        </Routes>
+      </main>
+      <Toaster position="bottom-right" />
+    </div>
+  );
+};
 
 export default App;
