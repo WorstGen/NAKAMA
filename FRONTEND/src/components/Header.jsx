@@ -107,41 +107,15 @@ export const Header = () => {
 
           {/* Universal Navigation Menu */}
           {connected && mobileMenuOpen && (
-            <div className="fixed inset-0" style={{
-              zIndex: 2147483647, // Maximum possible z-index value
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0
-            }}>
+            <div className="dropdown-overlay">
               {/* Backdrop */}
               <div
-                className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+                className="dropdown-backdrop bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={() => setMobileMenuOpen(false)}
-                style={{
-                  zIndex: 2147483647,
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0
-                }}
               />
 
               {/* Navigation Menu Panel */}
-              <div
-                className="absolute right-4 top-20 w-80 bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-2xl"
-                style={{
-                  zIndex: 2147483647,
-                  position: 'absolute',
-                  right: '16px',
-                  top: '80px',
-                  isolation: 'isolate',
-                  transform: 'translateZ(0)',
-                  willChange: 'transform'
-                }}
-              >
+              <div className="dropdown-panel w-80 bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-2xl">
                 {/* Navigation Links */}
                 <nav className="p-3">
                   <div className="space-y-1">
