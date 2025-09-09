@@ -12,8 +12,15 @@ export const Header = () => {
   const isActive = (path) => location.pathname === path;
 
 
+  const headerStyle = {
+    backgroundColor: isDark ? '#000000' : '#ffffff',
+    borderBottom: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
+    backdropFilter: 'blur(10px)',
+    transition: 'all 0.3s ease'
+  };
+
   return (
-    <header className={`backdrop-blur-md border-b transition-colors duration-300 ${classes.header}`}>
+    <header style={headerStyle}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
