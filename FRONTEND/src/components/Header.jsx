@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { useTheme, useAuth } from '../contexts/AuthContext';
@@ -10,8 +11,33 @@ export const Header = () => {
   const theme = useTheme();
   const currentColors = theme.classes; // Always dark colors now
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [portalRoot, setPortalRoot] = useState(null);
 
   const isActive = (path) => location.pathname === path;
+
+  // Create portal root on mount
+  useEffect(() => {
+    let portalDiv = document.getElementById('dropdown-portal');
+    if (!portalDiv) {
+      portalDiv = document.createElement('div');
+      portalDiv.id = 'dropdown-portal';
+      portalDiv.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 2147483647;
+        pointer-events: none;
+      `;
+      document.body.appendChild(portalDiv);
+    }
+    setPortalRoot(portalDiv);
+
+    return () => {
+      if (portalDiv && portalDiv.parentNode) {
+        portalDiv.parentNode.removeChild(portalDiv);
+      }
+    };
+  }, []);
 
 
   const headerStyle = {
@@ -105,17 +131,49 @@ export const Header = () => {
             )}
           </div>
 
-          {/* Universal Navigation Menu */}
-          {connected && mobileMenuOpen && (
-            <div className="nuclear-dropdown">
+          {/* Universal Navigation Menu - Portal Rendered */}
+          {portalRoot && connected && mobileMenuOpen && createPortal(
+            <div
+              className="fixed inset-0"
+              style={{
+                zIndex: 2147483647,
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                pointerEvents: 'none'
+              }}
+            >
               {/* Backdrop */}
               <div
-                className="nuclear-backdrop bg-black bg-opacity-50 backdrop-blur-sm"
+                className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={() => setMobileMenuOpen(false)}
+                style={{
+                  zIndex: 2147483647,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  pointerEvents: 'auto'
+                }}
               />
 
               {/* Navigation Menu Panel */}
-              <div className="nuclear-panel w-80 bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-2xl">
+              <div
+                className="absolute w-80 bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-2xl"
+                style={{
+                  zIndex: 2147483648,
+                  position: 'absolute',
+                  right: '16px',
+                  top: '80px',
+                  pointerEvents: 'auto',
+                  isolation: 'isolate',
+                  transform: 'translateZ(0)',
+                  willChange: 'transform'
+                }}
+              >
                 {/* Navigation Links */}
                 <nav className="p-3">
                   <div className="space-y-1">
@@ -197,7 +255,8 @@ export const Header = () => {
                   </div>
                 </nav>
               </div>
-            </div>
+            </div>,
+            portalRoot
           )}
 
 
