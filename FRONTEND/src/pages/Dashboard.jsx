@@ -144,7 +144,6 @@ export const Dashboard = () => {
         <div className={`bg-gray-800 border-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 shadow-xl border`}>
           <h3 className={`text-white font-semibold text-base md:text-lg mb-3 md:mb-4`}>Recent Transactions</h3>
           {transactions?.transactions?.slice(0, 5).map((tx) => {
-            const transactionType = getTransactionType(tx);
             const partner = getTransactionPartner(tx);
             
             return (
@@ -154,7 +153,7 @@ export const Dashboard = () => {
                     {tx.amount} {tx.token}
                   </p>
                   <p className="text-gray-400 text-sm">
-                    {transactionType === 'sent' ? 'To' : 'From'}: @{partner || 'Unknown'}
+                    {tx.type === 'sent' ? 'To' : 'From'}: @{partner || 'Unknown'}
                   </p>
                 </div>
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
