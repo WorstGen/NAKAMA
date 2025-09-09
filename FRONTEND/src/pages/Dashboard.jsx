@@ -137,6 +137,7 @@ export const Dashboard = () => {
           <h3 className={`text-white font-semibold text-base md:text-lg mb-3 md:mb-4`}>Recent Transactions</h3>
           {transactions?.transactions?.slice(0, 5).map((tx) => {
             const partner = getTransactionPartner(tx);
+            const direction = getTransactionDirection(tx);
             
             return (
               <div key={tx.signature} className="flex items-center justify-between py-2">
@@ -145,7 +146,7 @@ export const Dashboard = () => {
                     {tx.amount} {tx.token}
                   </p>
                   <p className="text-gray-400 text-sm">
-                    {tx.type === 'sent' ? 'To' : 'From'}: @{partner || 'Unknown'}
+                    {direction}: @{partner || 'Unknown'}
                   </p>
                 </div>
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
