@@ -2,6 +2,18 @@
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
+    "./public/index.html",
+  ],
+  safelist: [
+    // Ensure theme classes are not purged
+    'bg-black',
+    'bg-gray-50',
+    'bg-gray-800',
+    'bg-gray-900',
+    'text-white',
+    'text-gray-900',
+    'border-gray-700',
+    'border-gray-200',
   ],
   theme: {
     extend: {
