@@ -80,26 +80,51 @@ export const Header = () => {
             )}
           </div>
 
-          {/* Universal Hamburger Menu Button */}
+          {/* Profile/Connect Button */}
           <div className="ml-4">
-            {connected ? (
-              // Hamburger menu when connected (universal for all devices)
+            {connected && user ? (
+              // User profile button when connected
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="px-4 py-2 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="flex items-center space-x-3 backdrop-blur-sm rounded-lg px-3 py-2 border transition-all duration-200 hover:bg-gray-800/50"
                 style={{
-                  backgroundColor: '#f97316',
-                  color: '#ffffff'
+                  backgroundColor: '#1f2937',
+                  border: '1px solid #374151'
                 }}
                 aria-label="Toggle navigation menu"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {mobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
+                {/* Profile Picture */}
+                {user?.profilePicture ? (
+                  <img
+                    src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
+                    alt={`${user.username}'s profile`}
+                    className="w-8 h-8 rounded-full object-cover border-2"
+                    style={{ borderColor: '#fb923c' }}
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-400 to-blue-400 flex items-center justify-center border-2 border-orange-400/60">
+                    <span className="text-white font-bold text-sm">
+                      {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                    </span>
+                  </div>
+                )}
+
+                {/* User Info */}
+                <div className="text-sm hidden sm:block">
+                  <div className="font-medium text-white truncate max-w-24">
+                    @{user?.username || 'User'}
+                  </div>
+                  <div className="text-xs text-gray-400 truncate max-w-24">
+                    {publicKey?.toString().slice(0, 6)}...{publicKey?.toString().slice(-4)}
+                  </div>
+                </div>
+
+                {/* Hamburger Icon */}
+                <div className="flex flex-col space-y-0.5">
+                  <div className="w-4 h-0.5 bg-orange-400 rounded-full"></div>
+                  <div className="w-4 h-0.5 bg-orange-400 rounded-full"></div>
+                  <div className="w-4 h-0.5 bg-orange-400 rounded-full"></div>
+                </div>
               </button>
             ) : (
               // Connect button when not connected
@@ -129,51 +154,19 @@ export const Header = () => {
 
           {/* Universal Navigation Menu */}
           {connected && mobileMenuOpen && (
-            <div className="fixed inset-0" style={{ zIndex: 99999 }}>
+            <div className="fixed inset-0" style={{ zIndex: 2147483647 }}>
               {/* Backdrop */}
               <div
                 className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={() => setMobileMenuOpen(false)}
-                style={{ zIndex: 100000 }}
+                style={{ zIndex: 2147483647 }}
               />
 
               {/* Navigation Menu Panel */}
               <div
-                className="absolute right-4 top-16 w-80 bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-2xl"
-                style={{ zIndex: 100001 }}
+                className="absolute right-4 top-20 w-80 bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-2xl"
+                style={{ zIndex: 2147483647 }}
               >
-                {/* User Info Section */}
-                {user && (
-                  <div className="p-4 border-b border-gray-700/50">
-                    <div className="flex items-center space-x-3">
-                      {/* Profile Picture */}
-                      {user?.profilePicture ? (
-                        <img
-                          src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
-                          alt={`${user.username}'s profile`}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-orange-400/60"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-400 to-blue-400 flex items-center justify-center border-2 border-orange-400/60">
-                          <span className="text-white font-bold">
-                            {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* User Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-white truncate">
-                          @{user?.username || 'User'}
-                        </div>
-                        <div className="text-sm text-gray-400 truncate">
-                          {publicKey?.toString().slice(0, 6)}...{publicKey?.toString().slice(-4)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* Navigation Links */}
                 <nav className="p-3">
                   <div className="space-y-1">
