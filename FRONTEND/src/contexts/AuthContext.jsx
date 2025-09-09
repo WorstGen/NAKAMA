@@ -67,6 +67,53 @@ export const ThemeProvider = ({ children }) => {
   const theme = {
     isDark,
     toggleTheme,
+    // Legacy colors structure for backward compatibility
+    colors: {
+      dark: {
+        bg: 'bg-black',
+        surface: 'bg-gray-900',
+        surfaceHover: 'bg-gray-800',
+        text: 'text-white',
+        textSecondary: 'text-gray-200',
+        textMuted: 'text-gray-400',
+        border: 'border-gray-700',
+        accent: 'text-orange-400',
+        accentBg: 'bg-orange-500',
+        accentHover: 'bg-orange-600',
+        secondary: 'text-blue-400',
+        secondaryBg: 'bg-blue-500',
+        secondaryHover: 'bg-blue-600',
+        card: 'bg-gray-800 border-gray-700',
+        input: 'bg-gray-700 text-white border-gray-600',
+        inputBorder: 'border-gray-600',
+        container: 'bg-black min-h-screen',
+        header: 'bg-black/90 border-gray-800',
+        button: 'bg-orange-500 hover:bg-orange-600 text-white',
+        buttonSecondary: 'bg-blue-500 hover:bg-blue-600 text-white'
+      },
+      light: {
+        bg: 'bg-gray-50',
+        surface: 'bg-white',
+        surfaceHover: 'bg-gray-100',
+        text: 'text-gray-900',
+        textSecondary: 'text-gray-600',
+        textMuted: 'text-gray-400',
+        border: 'border-gray-200',
+        accent: 'text-orange-500',
+        accentBg: 'bg-orange-500',
+        accentHover: 'bg-orange-600',
+        secondary: 'text-blue-500',
+        secondaryBg: 'bg-blue-500',
+        secondaryHover: 'bg-blue-600',
+        card: 'bg-white border-gray-200',
+        input: 'bg-gray-50 text-gray-900 border-gray-300',
+        inputBorder: 'border-gray-300',
+        container: 'bg-gray-50 min-h-screen',
+        header: 'bg-white/90 border-gray-200',
+        button: 'bg-orange-500 hover:bg-orange-600 text-white',
+        buttonSecondary: 'bg-blue-500 hover:bg-blue-600 text-white'
+      }
+    },
     // Direct class names for easy application
     classes: isDark ? {
       bg: 'bg-black',
