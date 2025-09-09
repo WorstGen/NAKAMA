@@ -37,17 +37,17 @@ export const Dashboard = () => {
   return (
     <div className="max-w-6xl mx-auto transition-all duration-500">
       {/* Welcome Section */}
-      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-6 mb-8 shadow-2xl border`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
+      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-4 md:p-6 mb-6 md:mb-8 shadow-2xl border`}>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-lg">
               Welcome back, @{user.username}!
             </h1>
-            <p className="text-gray-200 drop-shadow-md">
+            <p className="text-gray-200 drop-shadow-md text-sm md:text-base">
               Manage your contacts and send transactions securely.
             </p>
           </div>
-          <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-lg">
+          <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-lg self-center md:self-auto">
             {user.profilePicture ? (
               <img
                 src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
@@ -72,53 +72,53 @@ export const Dashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
         <Link
           to="/profile"
-          className={`${currentColors.card} backdrop-blur-md rounded-xl p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border`}
+          className={`${currentColors.card} backdrop-blur-md rounded-xl p-4 md:p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border active:scale-95`}
         >
-          <WalletIcon className={`w-8 h-8 text-blue-400 mb-3`} />
-          <h3 className={`text-white font-semibold mb-2`}>Profile</h3>
-          <p className="text-gray-400 text-sm">Update your profile and settings</p>
+          <WalletIcon className={`w-6 h-6 md:w-8 md:h-8 text-blue-400 mb-2 md:mb-3`} />
+          <h3 className={`text-white font-semibold mb-1 md:mb-2 text-sm md:text-base`}>Profile</h3>
+          <p className="text-gray-400 text-xs md:text-sm">Update your profile and settings</p>
         </Link>
 
         <Link
           to="/contacts"
-          className="bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          className="bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95"
         >
-          <UserGroupIcon className={`w-8 h-8 text-orange-400 mb-3`} />
-          <h3 className={`text-white font-semibold mb-2`}>Contacts</h3>
-          <p className="text-gray-400 text-sm">
+          <UserGroupIcon className={`w-6 h-6 md:w-8 md:h-8 text-orange-400 mb-2 md:mb-3`} />
+          <h3 className={`text-white font-semibold mb-1 md:mb-2 text-sm md:text-base`}>Contacts</h3>
+          <p className="text-gray-400 text-xs md:text-sm">
             {contacts?.contacts?.length || 0} contacts
           </p>
         </Link>
 
         <Link
           to="/send"
-          className={`bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1`}
+          className={`bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95`}
         >
-          <PaperAirplaneIcon className={`w-8 h-8 text-blue-400 mb-3`} />
-          <h3 className={`text-white font-semibold mb-2`}>Send</h3>
-          <p className="text-gray-400 text-sm">Send SOL and SPL tokens</p>
+          <PaperAirplaneIcon className={`w-6 h-6 md:w-8 md:h-8 text-blue-400 mb-2 md:mb-3`} />
+          <h3 className={`text-white font-semibold mb-1 md:mb-2 text-sm md:text-base`}>Send</h3>
+          <p className="text-gray-400 text-xs md:text-sm">Send SOL and SPL tokens</p>
         </Link>
 
         <Link
           to="/transactions"
-          className={`bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1`}
+          className={`bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95`}
         >
-          <ClockIcon className={`w-8 h-8 text-orange-400 mb-3`} />
-          <h3 className={`text-white font-semibold mb-2`}>History</h3>
-          <p className="text-gray-400 text-sm">
+          <ClockIcon className={`w-6 h-6 md:w-8 md:h-8 text-orange-400 mb-2 md:mb-3`} />
+          <h3 className={`text-white font-semibold mb-1 md:mb-2 text-sm md:text-base`}>History</h3>
+          <p className="text-gray-400 text-xs md:text-sm">
             {transactions?.transactions?.length || 0} transactions
           </p>
         </Link>
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Recent Contacts */}
-        <div className={`bg-gray-800 border-gray-700 backdrop-blur-md rounded-xl p-6 shadow-xl border`}>
-          <h3 className={`text-white font-semibold text-lg mb-4`}>Recent Contacts</h3>
+        <div className={`bg-gray-800 border-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 shadow-xl border`}>
+          <h3 className={`text-white font-semibold text-base md:text-lg mb-3 md:mb-4`}>Recent Contacts</h3>
           {contacts?.contacts?.slice(0, 5).map((contact) => (
             <div key={contact.username} className="flex items-center space-x-3 py-2">
               <div className={`w-8 h-8 bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-md`}>
@@ -151,8 +151,8 @@ export const Dashboard = () => {
         </div>
 
         {/* Recent Transactions */}
-        <div className={`bg-gray-800 border-gray-700 backdrop-blur-md rounded-xl p-6 shadow-xl border`}>
-          <h3 className={`text-white font-semibold text-lg mb-4`}>Recent Transactions</h3>
+        <div className={`bg-gray-800 border-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 shadow-xl border`}>
+          <h3 className={`text-white font-semibold text-base md:text-lg mb-3 md:mb-4`}>Recent Transactions</h3>
           {transactions?.transactions?.slice(0, 5).map((tx) => (
             <div key={tx.signature} className="flex items-center justify-between py-2">
               <div>

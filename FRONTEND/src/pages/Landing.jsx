@@ -32,17 +32,17 @@ export const Landing = () => {
     <div style={containerStyle}>
       <div className="text-center">
         <div className="mb-8">
-          <h1 className="text-6xl font-bold mb-4 drop-shadow-lg" style={{ color: '#ffffff' }}>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg" style={{ color: '#ffffff' }}>
             <span className="drop-shadow-lg" style={{ color: '#fb923c' }}>NAKAMA</span>
           </h1>
-          <p className="text-xl mb-8 max-w-2xl mx-auto drop-shadow-md" style={{ color: '#e5e7eb' }}>
+          <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow-md px-4" style={{ color: '#e5e7eb' }}>
             Connect with friends through secure SOL and SPL token transfers.
             Build your Web3 social network with unique usernames and profiles.
           </p>
         </div>
 
-        <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 max-w-md mx-auto shadow-2xl border`}>
-          <h2 className="text-2xl font-semibold text-white mb-6">Get Started</h2>
+        <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-6 md:p-8 max-w-sm md:max-w-md mx-auto shadow-2xl border`}>
+          <h2 className="text-xl md:text-2xl font-semibold text-white mb-6">Get Started</h2>
 
           {!connected ? (
             <div>
@@ -60,7 +60,7 @@ export const Landing = () => {
               </p>
               <Link
                 to="/dashboard"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
               >
                 Go to Dashboard
               </Link>
