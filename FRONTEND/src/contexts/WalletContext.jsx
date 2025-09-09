@@ -10,13 +10,8 @@ export const WalletContextProvider = ({ children }) => {
   const [connecting, setConnecting] = useState(false);
   const [publicKey, setPublicKey] = useState(null);
 
-  // Check for existing Phantom connection on mount
-  useEffect(() => {
-    if (window.solana?.isConnected && window.solana?.publicKey) {
-      setConnected(true);
-      setPublicKey(window.solana.publicKey);
-    }
-  }, []);
+  // Note: We no longer auto-connect on page load
+  // Connection will only happen when user explicitly clicks connect button
 
   // Listen for Phantom connection events
   useEffect(() => {
