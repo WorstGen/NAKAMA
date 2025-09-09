@@ -40,8 +40,14 @@ const AppContent = () => {
 
   console.log('🎨 Theme isDark:', isDark);
 
+  const bgStyle = {
+    backgroundColor: isDark ? '#000000' : '#f9fafb',
+    minHeight: '100vh',
+    transition: 'background-color 0.5s ease'
+  };
+
   return (
-    <div className={`${isDark ? 'bg-black' : 'bg-gray-50'} min-h-screen transition-all duration-500`}>
+    <div style={bgStyle}>
       <Header />
       <main className="container mx-auto px-4 py-8">
         <Routes>
