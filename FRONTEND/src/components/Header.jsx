@@ -51,13 +51,34 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img
-              src="/logo/nakama-logo.png"
-              alt="NAKAMA"
-              className="h-12 w-auto"
-              style={{ maxWidth: '180px' }}
-              onError={(e) => console.log('Logo failed to load, using fallback')}
-            />
+            <div className="h-12 flex items-center">
+              <svg
+                width="120"
+                height="32"
+                viewBox="0 0 120 32"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-auto h-full"
+              >
+                {/* NAKAMA text with gradient */}
+                <text
+                  x="0"
+                  y="24"
+                  fill="white"
+                  fontSize="18"
+                  fontWeight="bold"
+                  fontFamily="Arial, sans-serif"
+                  letterSpacing="0.5px"
+                >
+                  <tspan fill="#fb923c">NAKA</tspan>
+                  <tspan fill="#3b82f6">MA</tspan>
+                </text>
+
+                {/* Decorative elements */}
+                <circle cx="8" cy="8" r="2" fill="#fb923c" opacity="0.8"/>
+                <circle cx="112" cy="24" r="2" fill="#3b82f6" opacity="0.8"/>
+              </svg>
+            </div>
           </Link>
 
           {/* Profile/Connect Button */}
