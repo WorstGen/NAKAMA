@@ -137,7 +137,7 @@ export const Dashboard = () => {
           <h3 className={`text-white font-semibold text-base md:text-lg mb-3 md:mb-4`}>Recent Transactions</h3>
           {transactions?.transactions?.slice(0, 5).map((tx) => {
             const partner = getTransactionPartner(tx);
-            const direction = getTransactionDirection(tx);
+            const direction = tx.fromUsername === user.username ? 'To' : 'From';
             
             return (
               <div key={tx.signature} className="flex items-center justify-between py-2">
