@@ -107,15 +107,15 @@ export const Header = () => {
 
           {/* Universal Navigation Menu */}
           {connected && mobileMenuOpen && (
-            <div className="dropdown-overlay">
+            <div className="nuclear-dropdown">
               {/* Backdrop */}
               <div
-                className="dropdown-backdrop bg-black bg-opacity-50 backdrop-blur-sm"
+                className="nuclear-backdrop bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={() => setMobileMenuOpen(false)}
               />
 
               {/* Navigation Menu Panel */}
-              <div className="dropdown-panel w-80 bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-2xl">
+              <div className="nuclear-panel w-80 bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-2xl">
                 {/* Navigation Links */}
                 <nav className="p-3">
                   <div className="space-y-1">
