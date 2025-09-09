@@ -36,8 +36,8 @@ export const Landing = () => {
             <span className="drop-shadow-lg" style={{ color: '#fb923c' }}>NAKAMA</span>
           </h1>
           <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow-md px-4" style={{ color: '#e5e7eb' }}>
-            Connect with friends through secure SOL and SPL token transfers.
-            Build your Web3 social network with unique usernames and profiles.
+            Connect with friends to make secure SOL and SPL token transfers using only a username.
+            Build your on chain social network with unique usernames and profiles.
           </p>
         </div>
 
@@ -50,7 +50,7 @@ export const Landing = () => {
                 Click the "Connect Wallet" button in the header above to get started with your Solana wallet!
               </p>
               <p className="text-gray-400 text-sm mb-4">
-                Make sure you have the Phantom wallet extension installed.
+                Make sure you are using Phantom wallet on mobile or have the Phantom wallet extension installed on your browser.
               </p>
             </div>
           ) : (
@@ -82,11 +82,7 @@ export const Landing = () => {
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-blue-400">✅</span>
-              <span>Cross-chain support</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-orange-400">✅</span>
-              <span>Light & Dark themes</span>
+              <span>Cross-chain support (coming soon)</span>
             </div>
           </div>
         </div>
