@@ -38,37 +38,12 @@ export const Dashboard = () => {
     <div className="max-w-6xl mx-auto transition-all duration-500">
       {/* Welcome Section */}
       <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-4 md:p-6 mb-6 md:mb-8 shadow-2xl border`}>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex-1">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-lg">
-              Welcome back, @{user.username}!
-            </h1>
-            <p className="text-gray-200 drop-shadow-md text-sm md:text-base">
-              Manage your contacts and send transactions securely.
-            </p>
-          </div>
-          <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-lg self-center md:self-auto">
-            {user.profilePicture ? (
-              <img
-                src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
-                alt={`${user.username}'s profile`}
-                className="w-full h-full rounded-full object-cover"
-                style={(() => {
-                  const settings = window.getSavedImageSettings?.(user.username) || { position: { x: 50, y: 50 }, zoom: 100 };
-                  return {
-                    objectPosition: `${settings.position.x}% ${settings.position.y}%`,
-                    transform: `scale(${settings.zoom / 100})`,
-                    transformOrigin: 'center center'
-                  };
-                })()}
-              />
-            ) : (
-              <span className={`text-white font-bold text-2xl`}>
-                {user.username.charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
-        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-lg">
+          Welcome back, @{user.username}!
+        </h1>
+        <p className="text-gray-200 drop-shadow-md text-sm md:text-base">
+          Manage your contacts and send transactions securely.
+        </p>
       </div>
 
       {/* Quick Actions */}
