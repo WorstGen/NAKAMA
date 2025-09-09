@@ -6,10 +6,16 @@ import { Navigate, Link } from 'react-router-dom';
 export const Landing = () => {
   const { connected } = useWallet();
   const { user } = useAuth();
-  const theme = useTheme();
+  const { isDark, colors } = useTheme();
 
   // Handle case where theme context might not be available
-  const isDark = theme ? theme.isDark : true;
+  const currentColors = colors ? (isDark ? colors.dark : colors.light) : {
+    text: 'text-white',
+    card: 'bg-gray-800 border-gray-700',
+    accent: 'text-orange-400',
+    textSecondary: 'text-gray-200',
+    textMuted: 'text-gray-400'
+  };
 
   // Redirect to dashboard if already connected and has profile
   if (connected && user) {
@@ -30,12 +36,6 @@ export const Landing = () => {
     transition: 'background-color 0.5s ease'
   };
 
-  const cardStyle = {
-    backgroundColor: isDark ? '#1f2937' : '#ffffff',
-    border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
-    color: isDark ? '#ffffff' : '#111827'
-  };
-
   return (
     <div style={containerStyle}>
       <div className="text-center">
@@ -49,7 +49,7 @@ export const Landing = () => {
           </p>
         </div>
 
-        <div className="backdrop-blur-md rounded-2xl p-8 max-w-md mx-auto shadow-2xl" style={cardStyle}>
+        <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 max-w-md mx-auto shadow-2xl border`}>
           <h2 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-6`}>Get Started</h2>
 
           {!connected ? (

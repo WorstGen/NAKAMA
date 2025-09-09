@@ -12,10 +12,16 @@ import {
 
 export const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
-  const theme = useTheme();
+  const { isDark, colors } = useTheme();
 
   // Handle case where theme context might not be available
-  const isDark = theme ? theme.isDark : true;
+  const currentColors = colors ? (isDark ? colors.dark : colors.light) : {
+    bg: 'bg-black',
+    surface: 'bg-gray-900',
+    text: 'text-white',
+    card: 'bg-gray-800 border-gray-700',
+    border: 'border-gray-700'
+  };
 
   const { data: contacts } = useQuery('contacts', api.getContacts, {
     enabled: isAuthenticated,
@@ -36,16 +42,10 @@ export const Dashboard = () => {
     );
   }
 
-  const cardStyle = {
-    backgroundColor: isDark ? '#1f2937' : '#ffffff',
-    border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
-    color: isDark ? '#ffffff' : '#111827'
-  };
-
   return (
-    <div className="max-w-6xl mx-auto transition-all duration-500" style={{ color: isDark ? '#ffffff' : '#111827' }}>
+    <div className="max-w-6xl mx-auto transition-all duration-500">
       {/* Welcome Section */}
-      <div className="backdrop-blur-md rounded-2xl p-6 mb-8 shadow-2xl" style={cardStyle}>
+      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-6 mb-8 shadow-2xl border`}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} mb-2 drop-shadow-lg`}>
@@ -83,17 +83,7 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Link
           to="/profile"
-          className="backdrop-blur-md rounded-xl p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-          style={{
-            backgroundColor: isDark ? '#1f2937' : '#ffffff',
-            border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = isDark ? '#374151' : '#f3f4f6';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = isDark ? '#1f2937' : '#ffffff';
-          }}
+          className={`${currentColors.card} backdrop-blur-md rounded-xl p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border`}
         >
           <WalletIcon className={`w-8 h-8 ${isDark ? 'text-blue-400' : 'text-blue-500'} mb-3`} />
           <h3 className={`${isDark ? 'text-white' : 'text-gray-900'} font-semibold mb-2`}>Profile</h3>

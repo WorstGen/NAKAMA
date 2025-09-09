@@ -8,10 +8,15 @@ import { ClockIcon, CheckCircleIcon, XCircleIcon, ArrowUpIcon, ArrowDownIcon } f
 export const Transactions = () => {
   const { isAuthenticated } = useAuth();
   const { publicKey } = useWallet();
-  const theme = useTheme();
+  const { isDark, colors } = useTheme();
 
   // Handle case where theme context might not be available
-  const isDark = theme ? theme.isDark : true;
+  const currentColors = colors ? (isDark ? colors.dark : colors.light) : {
+    card: 'bg-gray-800 border-gray-700',
+    text: 'text-white',
+    textSecondary: 'text-gray-200',
+    textMuted: 'text-gray-400'
+  };
   
   const { data: transactions, isLoading } = useQuery('transactions', api.getTransactions, {
     enabled: isAuthenticated,
@@ -58,7 +63,7 @@ export const Transactions = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} backdrop-blur-md rounded-2xl p-8 border`}>
+      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 border`}>
         <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} mb-8`}>Transaction History</h1>
 
         {isLoading ? (
@@ -70,7 +75,7 @@ export const Transactions = () => {
             {transactions.transactions.map((tx) => {
               const type = getTransactionType(tx);
               return (
-                <div key={tx.signature} className={`${isDark ? 'bg-gray-700/50' : 'bg-gray-100'} rounded-lg p-4`}>
+                <div key={tx.signature} className={`${isDark ? 'bg-gray-700/50' : 'bg-gray-100'} rounded-lg p-4 border`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${

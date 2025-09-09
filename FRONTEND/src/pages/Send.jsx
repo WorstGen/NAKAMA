@@ -18,10 +18,16 @@ export const Send = () => {
   const { isAuthenticated } = useAuth();
   const { signTransaction } = useWallet();
   const [searchParams] = useSearchParams();
-  const theme = useTheme();
+  const { isDark, colors } = useTheme();
 
   // Handle case where theme context might not be available
-  const isDark = theme ? theme.isDark : true;
+  const currentColors = colors ? (isDark ? colors.dark : colors.light) : {
+    card: 'bg-gray-800 border-gray-700',
+    text: 'text-white',
+    textSecondary: 'text-gray-200',
+    textMuted: 'text-gray-400',
+    button: 'bg-orange-500 hover:bg-orange-600 text-white'
+  };
   
   const [formData, setFormData] = useState({
     recipient: searchParams.get('recipient') || '',
@@ -127,7 +133,7 @@ export const Send = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} backdrop-blur-md rounded-2xl p-8 border`}>
+      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 border`}>
         <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} mb-8 text-center`}>Send Tokens</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
