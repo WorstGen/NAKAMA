@@ -12,7 +12,14 @@ import {
 
 export const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
-  const { isDark } = useTheme();
+
+  let isDark = true; // default to dark
+  try {
+    const theme = useTheme();
+    isDark = theme.isDark;
+  } catch (error) {
+    console.error('🎨 Dashboard: Theme hook failed, using dark fallback:', error);
+  }
 
   const { data: contacts } = useQuery('contacts', api.getContacts, {
     enabled: isAuthenticated,

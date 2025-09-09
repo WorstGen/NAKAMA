@@ -16,9 +16,16 @@ const SUPPORTED_TOKENS = [
 
 export const Send = () => {
   const { isAuthenticated } = useAuth();
-  const { isDark } = useTheme();
   const { signTransaction } = useWallet();
   const [searchParams] = useSearchParams();
+
+  let isDark = true; // default to dark
+  try {
+    const theme = useTheme();
+    isDark = theme.isDark;
+  } catch (error) {
+    console.error('🎨 Send: Theme hook failed, using dark fallback:', error);
+  }
   
   const [formData, setFormData] = useState({
     recipient: searchParams.get('recipient') || '',
