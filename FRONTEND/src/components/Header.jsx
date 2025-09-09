@@ -97,15 +97,19 @@ export const Header = () => {
 
           {/* Mobile Navigation Menu */}
           {connected && mobileMenuOpen && (
-            <div className="md:hidden fixed inset-0 z-50">
+            <div className="md:hidden fixed inset-0 z-[100]">
               {/* Backdrop */}
               <div
-                className="absolute inset-0 bg-black bg-opacity-50"
+                className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={() => setMobileMenuOpen(false)}
+                style={{ zIndex: 101 }}
               />
 
               {/* Mobile Menu Panel */}
-              <div className="absolute right-0 top-0 h-full w-80 bg-gray-900 border-l border-gray-700 shadow-2xl">
+              <div
+                className="absolute right-0 top-0 h-full w-80 bg-gray-900 border-l border-gray-700 shadow-2xl"
+                style={{ zIndex: 102 }}
+              >
                 <div className="flex flex-col h-full">
                   {/* Mobile Menu Header */}
                   <div className="flex items-center justify-between p-4 border-b border-gray-700">
