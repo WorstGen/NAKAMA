@@ -54,7 +54,7 @@ export const Header = () => {
           <Link to="/" className="flex items-center">
             {!logoError ? (
               <img
-                src="/logo/nakama-logo.svg"
+                src="/logo/nakama-logo.png"
                 alt="NAKAMA"
                 className="h-12 w-auto"
                 style={{ maxWidth: '180px' }}
