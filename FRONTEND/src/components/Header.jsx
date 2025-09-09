@@ -5,7 +5,7 @@ import { useTheme, useAuth } from '../contexts/AuthContext';
 
 export const Header = () => {
   const location = useLocation();
-  const { connected, publicKey, wallet, connect, disconnect } = useWallet();
+  const { connected, publicKey, connect, disconnect } = useWallet();
   const { user } = useAuth();
   const theme = useTheme();
   const currentColors = theme.classes; // Always dark colors now
