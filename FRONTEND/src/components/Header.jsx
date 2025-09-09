@@ -6,8 +6,20 @@ import { useTheme, ThemeToggle } from '../contexts/AuthContext';
 export const Header = () => {
   const location = useLocation();
   const { connected, publicKey, wallet, connect } = useWallet();
-  const { isDark } = useTheme();
-  const classes = useTheme().classes;
+
+  let isDark = true; // default to dark
+  let classes = {
+    text: 'text-white',
+    header: 'bg-black/90 border-gray-800'
+  };
+
+  try {
+    const theme = useTheme();
+    isDark = theme.isDark;
+    classes = theme.classes;
+  } catch (error) {
+    console.error('🎨 Header: Theme hook failed, using dark fallback:', error);
+  }
 
   const isActive = (path) => location.pathname === path;
 
