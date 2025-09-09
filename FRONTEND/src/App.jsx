@@ -38,8 +38,10 @@ function App() {
 const AppContent = () => {
   const { isDark } = useTheme();
 
+  console.log('🎨 Theme isDark:', isDark);
+
   return (
-    <div className={`${isDark ? 'bg-black min-h-screen' : 'bg-gray-50 min-h-screen'} transition-all duration-500`}>
+    <div className={`${isDark ? 'bg-black' : 'bg-gray-50'} min-h-screen transition-all duration-500`}>
       <Header />
       <main className="container mx-auto px-4 py-8">
         <Routes>
