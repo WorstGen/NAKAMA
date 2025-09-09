@@ -36,16 +36,24 @@ export const ThemeContext = createContext();
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
+    console.error('🎨 useTheme: ThemeContext not found! Make sure ThemeProvider is wrapping the component.');
     throw new Error('useTheme must be used within a ThemeProvider');
   }
+  console.log('🎨 useTheme: context found, isDark:', context.isDark);
   return context;
 };
 
 export const ThemeProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(() => {
     // Check localStorage or default to dark mode
-    const saved = localStorage.getItem('nakama-theme');
-    return saved ? JSON.parse(saved) : true;
+    try {
+      const saved = localStorage.getItem('nakama-theme');
+      console.log('🎨 ThemeProvider: saved theme from localStorage:', saved);
+      return saved ? JSON.parse(saved) : true;
+    } catch (error) {
+      console.error('🎨 ThemeProvider: Error reading localStorage:', error);
+      return true; // default to dark mode
+    }
   });
 
   useEffect(() => {
