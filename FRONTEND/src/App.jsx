@@ -36,10 +36,10 @@ function App() {
 
 // Separate component to use theme hook
 const AppContent = () => {
-  const { classes } = useTheme();
+  const { isDark } = useTheme();
 
   return (
-    <div className={`${classes.container} transition-all duration-500`}>
+    <div className={`${isDark ? 'bg-black min-h-screen' : 'bg-gray-50 min-h-screen'} transition-all duration-500`}>
       <Header />
       <main className="container mx-auto px-4 py-8">
         <Routes>
