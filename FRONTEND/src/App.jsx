@@ -36,38 +36,12 @@ function App() {
 
 // Separate component to use theme hook
 const AppContent = () => {
-  try {
-    const { isDark } = useTheme();
+  const themeResult = useTheme();
 
-    console.log('🎨 AppContent: Theme working, isDark:', isDark);
+  // Handle case where theme context might not be available
+  if (!themeResult) {
+    console.error('🎨 AppContent: Theme context not available, using fallback');
 
-    const bgStyle = {
-      backgroundColor: isDark ? '#000000' : '#f9fafb',
-      minHeight: '100vh',
-      transition: 'background-color 0.5s ease'
-    };
-
-    return (
-      <div style={bgStyle}>
-        <Header />
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/contacts" element={<Contacts />} />
-            <Route path="/send" element={<Send />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/oauth/authorize" element={<OAuth />} />
-          </Routes>
-        </main>
-        <Toaster position="bottom-right" />
-      </div>
-    );
-  } catch (error) {
-    console.error('🎨 AppContent: Theme hook failed, using fallback:', error);
-
-    // Fallback: always show black background
     const fallbackStyle = {
       backgroundColor: '#000000',
       minHeight: '100vh',
@@ -96,6 +70,33 @@ const AppContent = () => {
       </div>
     );
   }
+
+  const { isDark } = themeResult;
+  console.log('🎨 AppContent: Theme working, isDark:', isDark);
+
+  const bgStyle = {
+    backgroundColor: isDark ? '#000000' : '#f9fafb',
+    minHeight: '100vh',
+    transition: 'background-color 0.5s ease'
+  };
+
+  return (
+    <div style={bgStyle}>
+      <Header />
+      <main className="container mx-auto px-4 py-8">
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/contacts" element={<Contacts />} />
+          <Route path="/send" element={<Send />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/oauth/authorize" element={<OAuth />} />
+        </Routes>
+      </main>
+      <Toaster position="bottom-right" />
+    </div>
+  );
 };
 
 export default App;
