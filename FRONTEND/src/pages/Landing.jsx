@@ -18,20 +18,35 @@ export const Landing = () => {
     return <Navigate to="/profile" replace />;
   }
 
+  const containerStyle = {
+    backgroundColor: isDark ? '#000000' : '#f9fafb',
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'background-color 0.5s ease'
+  };
+
+  const cardStyle = {
+    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+    border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
+    color: isDark ? '#ffffff' : '#111827'
+  };
+
   return (
-    <div className={`min-h-screen flex items-center justify-center transition-all duration-500 ${isDark ? 'bg-black' : 'bg-gray-50'}`}>
+    <div style={containerStyle}>
       <div className="text-center">
         <div className="mb-8">
-          <h1 className={`text-6xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'} drop-shadow-lg`}>
-            <span className={`${isDark ? 'text-orange-400' : 'text-orange-500'} drop-shadow-lg`}>NAKAMA</span>
+          <h1 className={`text-6xl font-bold mb-4 drop-shadow-lg`} style={{ color: isDark ? '#ffffff' : '#111827' }}>
+            <span className="drop-shadow-lg" style={{ color: isDark ? '#fb923c' : '#f97316' }}>NAKAMA</span>
           </h1>
-          <p className={`text-xl ${isDark ? 'text-gray-200' : 'text-gray-600'} mb-8 max-w-2xl mx-auto drop-shadow-md`}>
+          <p className={`text-xl mb-8 max-w-2xl mx-auto drop-shadow-md`} style={{ color: isDark ? '#e5e7eb' : '#4b5563' }}>
             Connect with friends through secure SOL and SPL token transfers.
             Build your Web3 social network with unique usernames and profiles.
           </p>
         </div>
 
-        <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} backdrop-blur-md rounded-2xl p-8 max-w-md mx-auto shadow-2xl border`}>
+        <div className="backdrop-blur-md rounded-2xl p-8 max-w-md mx-auto shadow-2xl" style={cardStyle}>
           <h2 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-6`}>Get Started</h2>
 
           {!connected ? (
