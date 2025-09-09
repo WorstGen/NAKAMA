@@ -21,10 +21,6 @@ export const Header = () => {
     transition: 'all 0.3s ease'
   };
 
-  const navItemStyle = (isActive) => ({
-    color: isActive ? '#fb923c' : '#e5e7eb'
-  });
-
   return (
     <header style={headerStyle}>
       <div className="container mx-auto px-4">
