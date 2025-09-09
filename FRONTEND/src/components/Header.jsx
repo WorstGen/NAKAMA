@@ -108,7 +108,7 @@ export const Header = () => {
           {/* Universal Navigation Menu */}
           {connected && mobileMenuOpen && (
             <div className="fixed inset-0" style={{
-              zIndex: 999999999,
+              zIndex: 2147483647, // Maximum possible z-index value
               position: 'fixed',
               top: 0,
               left: 0,
@@ -120,7 +120,7 @@ export const Header = () => {
                 className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={() => setMobileMenuOpen(false)}
                 style={{
-                  zIndex: 999999999,
+                  zIndex: 2147483647,
                   position: 'absolute',
                   top: 0,
                   left: 0,
@@ -133,10 +133,13 @@ export const Header = () => {
               <div
                 className="absolute right-4 top-20 w-80 bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-2xl"
                 style={{
-                  zIndex: 1000000000,
+                  zIndex: 2147483647,
                   position: 'absolute',
                   right: '16px',
-                  top: '80px'
+                  top: '80px',
+                  isolation: 'isolate',
+                  transform: 'translateZ(0)',
+                  willChange: 'transform'
                 }}
               >
                 {/* Navigation Links */}
