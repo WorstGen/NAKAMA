@@ -1,12 +1,13 @@
 import React from 'react';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, useTheme } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
 import { ClockIcon, CheckCircleIcon, XCircleIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
 
 export const Transactions = () => {
   const { isAuthenticated } = useAuth();
+  const { isDark } = useTheme();
   const { publicKey } = useWallet();
   
   const { data: transactions, isLoading } = useQuery('transactions', api.getTransactions, {

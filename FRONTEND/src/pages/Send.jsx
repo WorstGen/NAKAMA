@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { Transaction } from '@solana/web3.js';
 import { api } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, useTheme } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 
@@ -16,6 +16,7 @@ const SUPPORTED_TOKENS = [
 
 export const Send = () => {
   const { isAuthenticated } = useAuth();
+  const { isDark } = useTheme();
   const { signTransaction } = useWallet();
   const [searchParams] = useSearchParams();
   
