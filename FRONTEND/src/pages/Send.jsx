@@ -118,7 +118,7 @@ export const Send = () => {
   if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className={`${isDark ? 'text-white' : 'text-gray-900'} text-lg`}>Please connect your wallet first.</p>
+        <p className="text-white text-lg">Please connect your wallet first.</p>
       </div>
     );
   }
@@ -126,12 +126,12 @@ export const Send = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 border`}>
-        <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} mb-8 text-center`}>Send Tokens</h1>
+        <h1 className="text-3xl font-bold text-white mb-8 text-center">Send Tokens</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Recipient */}
           <div>
-            <label className="block text-white dark:text-gray-900 font-medium mb-2">
+            <label className="block text-white font-medium mb-2">
               Recipient *
             </label>
             <div className="space-y-2">
@@ -141,7 +141,7 @@ export const Send = () => {
                 value={formData.recipient}
                 onChange={handleInputChange}
                 placeholder="Enter username"
-                className="w-full px-4 py-3 bg-gray-700 dark:bg-gray-50 text-white dark:text-gray-900 border-gray-600 dark:border-gray-300 placeholder-gray-400 focus:outline-none focus:border-orange-400"
+                className="w-full px-4 py-3 bg-gray-700 text-white border-gray-600 placeholder-gray-400 focus:outline-none focus:border-orange-400"
                 required
               />
               {contacts?.contacts?.length > 0 && (
@@ -169,7 +169,7 @@ export const Send = () => {
 
           {/* Amount */}
           <div>
-            <label className="block text-white dark:text-gray-900 font-medium mb-2">
+            <label className="block text-white font-medium mb-2">
               Amount *
             </label>
             <input
@@ -180,14 +180,14 @@ export const Send = () => {
               placeholder="0.0"
               step="0.000000001"
               min="0.000000001"
-              className="w-full px-4 py-3 bg-gray-700 dark:bg-gray-50 text-white dark:text-gray-900 border-gray-600 dark:border-gray-300 placeholder-gray-400 focus:outline-none focus:border-orange-400"
+              className="w-full px-4 py-3 bg-gray-700 text-white border-gray-600 placeholder-gray-400 focus:outline-none focus:border-orange-400"
               required
             />
           </div>
 
           {/* Token Selection */}
           <div>
-            <label className="block text-white dark:text-gray-900 font-medium mb-2">
+            <label className="block text-white font-medium mb-2">
               Token *
             </label>
             <select
@@ -206,7 +206,7 @@ export const Send = () => {
 
           {/* Memo */}
           <div>
-            <label className="block text-white dark:text-gray-900 font-medium mb-2">
+            <label className="block text-white font-medium mb-2">
               Memo (Optional)
             </label>
             <input
@@ -216,7 +216,7 @@ export const Send = () => {
               onChange={handleInputChange}
               placeholder="Payment for..."
               maxLength={280}
-              className="w-full px-4 py-3 bg-gray-700 dark:bg-gray-50 text-white dark:text-gray-900 border-gray-600 dark:border-gray-300 placeholder-gray-400 focus:outline-none focus:border-orange-400"
+              className="w-full px-4 py-3 bg-gray-700 text-white border-gray-600 placeholder-gray-400 focus:outline-none focus:border-orange-400"
             />
           </div>
 
