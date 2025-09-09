@@ -6,16 +6,8 @@ import { Navigate, Link } from 'react-router-dom';
 export const Landing = () => {
   const { connected } = useWallet();
   const { user } = useAuth();
-  const { isDark, colors } = useTheme();
-
-  // Handle case where theme context might not be available
-  const currentColors = colors ? (isDark ? colors.dark : colors.light) : {
-    text: 'text-white',
-    card: 'bg-gray-800 border-gray-700',
-    accent: 'text-orange-400',
-    textSecondary: 'text-gray-200',
-    textMuted: 'text-gray-400'
-  };
+  const { classes } = useTheme();
+  const currentColors = classes; // Always dark colors now
 
   // Redirect to dashboard if already connected and has profile
   if (connected && user) {

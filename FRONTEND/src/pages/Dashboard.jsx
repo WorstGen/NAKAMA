@@ -12,16 +12,8 @@ import {
 
 export const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
-  const { isDark, colors } = useTheme();
-
-  // Handle case where theme context might not be available
-  const currentColors = colors ? (isDark ? colors.dark : colors.light) : {
-    bg: 'bg-black',
-    surface: 'bg-gray-900',
-    text: 'text-white',
-    card: 'bg-gray-800 border-gray-700',
-    border: 'border-gray-700'
-  };
+  const { classes } = useTheme();
+  const currentColors = classes; // Always dark colors now
 
   const { data: contacts } = useQuery('contacts', api.getContacts, {
     enabled: isAuthenticated,

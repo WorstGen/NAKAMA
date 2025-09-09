@@ -18,16 +18,8 @@ export const Send = () => {
   const { isAuthenticated } = useAuth();
   const { signTransaction } = useWallet();
   const [searchParams] = useSearchParams();
-  const { isDark, colors } = useTheme();
-
-  // Handle case where theme context might not be available
-  const currentColors = colors ? (isDark ? colors.dark : colors.light) : {
-    card: 'bg-gray-800 border-gray-700',
-    text: 'text-white',
-    textSecondary: 'text-gray-200',
-    textMuted: 'text-gray-400',
-    button: 'bg-orange-500 hover:bg-orange-600 text-white'
-  };
+  const { classes } = useTheme();
+  const currentColors = classes; // Always dark colors now
   
   const [formData, setFormData] = useState({
     recipient: searchParams.get('recipient') || '',

@@ -9,15 +9,8 @@ import { CameraIcon } from '@heroicons/react/24/outline';
 export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
   const { publicKey } = useWallet();
-  const theme = useTheme();
-
-  // Handle case where theme context might not be available
-  const isDark = theme ? theme.isDark : true;
-  const classes = theme ? theme.classes : {
-    text: 'text-white',
-    input: 'bg-gray-700 text-white border-gray-600',
-    border: 'border-gray-700'
-  };
+  const { classes } = useTheme();
+  const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -189,8 +182,8 @@ export const Profile = () => {
   }
 
   return (
-    <div className={`max-w-2xl mx-auto transition-all duration-500 ${isDark ? 'text-white dark:text-white' : 'text-gray-900'}`}>
-      <div className={`${classes.card} backdrop-blur-md rounded-2xl p-8 shadow-2xl ${classes.border} border-2`}>
+    <div className="max-w-2xl mx-auto transition-all duration-500 text-white">
+      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 shadow-2xl ${currentColors.border} border-2`}>
         <h1 className={`text-3xl font-bold text-white dark:text-white mb-8 text-center drop-shadow-lg`}>
           {user ? 'Update Profile' : 'Create Profile'}
         </h1>
@@ -198,7 +191,7 @@ export const Profile = () => {
         {/* Profile Picture */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-4">
-            <div className={`w-24 h-24 ${isDark ? 'bg-gradient-to-r from-orange-400 to-blue-400' : 'bg-gradient-to-r from-orange-500 to-blue-500'} rounded-full flex items-center justify-center overflow-hidden shadow-xl`}>
+            <div className="w-24 h-24 bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-xl">
               {user?.profilePicture ? (
                 <img
                   src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}

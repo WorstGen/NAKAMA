@@ -8,15 +8,8 @@ import { ClockIcon, CheckCircleIcon, XCircleIcon, ArrowUpIcon, ArrowDownIcon } f
 export const Transactions = () => {
   const { isAuthenticated } = useAuth();
   const { publicKey } = useWallet();
-  const { isDark, colors } = useTheme();
-
-  // Handle case where theme context might not be available
-  const currentColors = colors ? (isDark ? colors.dark : colors.light) : {
-    card: 'bg-gray-800 border-gray-700',
-    text: 'text-white',
-    textSecondary: 'text-gray-200',
-    textMuted: 'text-gray-400'
-  };
+  const { classes } = useTheme();
+  const currentColors = classes; // Always dark colors now
   
   const { data: transactions, isLoading } = useQuery('transactions', api.getTransactions, {
     enabled: isAuthenticated,
