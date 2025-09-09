@@ -95,7 +95,7 @@ export const Header = () => {
           )}
 
 
-          {/* Manual Connect Button - appears when Phantom available but not connected */}
+          {/* Connect Button - appears when Phantom available but not connected */}
           {!connected && window.solana?.isPhantom && (
             <button
               onClick={async () => {
@@ -115,6 +115,29 @@ export const Header = () => {
               }}
             >
               Connect Wallet
+            </button>
+          )}
+
+          {/* Disconnect Button - appears when connected */}
+          {connected && (
+            <button
+              onClick={async () => {
+                try {
+                  console.log('🔌 Disconnecting from Phantom...');
+                  await disconnect();
+                  console.log('✅ Disconnection completed');
+                } catch (error) {
+                  console.error('❌ Disconnection failed:', error);
+                  alert(`Disconnection failed: ${error.message}`);
+                }
+              }}
+              className="px-4 py-2 rounded-lg font-medium transition-colors mr-2 shadow-lg"
+              style={{
+                backgroundColor: '#dc2626',
+                color: '#ffffff'
+              }}
+            >
+              Disconnect
             </button>
           )}
 
