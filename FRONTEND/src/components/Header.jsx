@@ -52,11 +52,13 @@ export const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-blue-400 rounded-lg flex items-center justify-center shadow-lg">
-              <span className={`font-bold text-lg ${currentColors.text}`}>N</span>
-            </div>
-            <span className={`font-bold text-xl ${currentColors.text}`}>NAKAMA</span>
+          <Link to="/" className="flex items-center">
+            <img
+              src="/logo/nakama-logo.svg"
+              alt="NAKAMA"
+              className="h-12 w-auto"
+              style={{ maxWidth: '180px' }}
+            />
           </Link>
 
           {/* Profile/Connect Button */}
