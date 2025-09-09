@@ -9,27 +9,36 @@ export const WalletContextProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [publicKey, setPublicKey] = useState(null);
+  const [manuallyConnected, setManuallyConnected] = useState(false);
 
   // Note: We no longer auto-connect on page load
   // Connection will only happen when user explicitly clicks connect button
 
-  // Listen for Phantom connection events
+  // Listen for Phantom connection events - but only respond if user manually connected
   useEffect(() => {
     if (window.solana?.isPhantom) {
 
       const handleConnect = (pubKey) => {
-        setConnected(true);
-        setConnecting(false);
-        setPublicKey(pubKey);
+        // Only update state if user manually initiated connection
+        if (manuallyConnected) {
+          setConnected(true);
+          setConnecting(false);
+          setPublicKey(pubKey);
+        }
       };
 
       const handleDisconnect = () => {
+        // Always handle disconnect events to clean up state
         setConnected(false);
         setPublicKey(null);
+        setManuallyConnected(false);
       };
 
       const handleAccountChange = (pubKey) => {
-        setPublicKey(pubKey);
+        // Only update if we're connected
+        if (connected) {
+          setPublicKey(pubKey);
+        }
       };
 
       // Add event listeners
@@ -44,7 +53,7 @@ export const WalletContextProvider = ({ children }) => {
         window.solana.off('accountChanged', handleAccountChange);
       };
     }
-  }, []);
+  }, [manuallyConnected, connected]);
 
   // Connect function
   const connect = async () => {
@@ -54,11 +63,13 @@ export const WalletContextProvider = ({ children }) => {
 
     try {
       setConnecting(true);
+      setManuallyConnected(true); // Mark as manually connected
       const result = await window.solana.connect();
       // Event listener will handle state updates
       return result;
     } catch (error) {
       setConnecting(false);
+      setManuallyConnected(false); // Reset on failure
       throw error;
     }
   };
