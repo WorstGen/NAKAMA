@@ -55,6 +55,35 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Maximum z-index override for dropdown */
+  .dropdown-overlay {
+    z-index: 2147483647 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+
+  .dropdown-backdrop {
+    z-index: 2147483647 !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+
+  .dropdown-panel {
+    z-index: 2147483648 !important;
+    position: absolute !important;
+    right: 16px !important;
+    top: 80px !important;
+    isolation: isolate;
+    transform: translateZ(0);
+    will-change: transform;
+  }
 }
 
 code {
