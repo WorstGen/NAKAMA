@@ -33,53 +33,6 @@ export const Header = () => {
             <span className={`font-bold text-xl ${currentColors.text}`}>NAKAMA</span>
           </Link>
 
-          {/* Mobile Menu Button / Connect Button */}
-          <div className="md:hidden ml-4">
-            {connected ? (
-              // Hamburger menu when connected
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="px-4 py-2 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                style={{
-                  backgroundColor: '#f97316',
-                  color: '#ffffff'
-                }}
-                aria-label="Toggle mobile menu"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {mobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            ) : (
-              // Connect button when not connected
-              window.solana?.isPhantom && (
-                <button
-                  onClick={async () => {
-                    try {
-                      console.log('🔌 Connecting to Phantom...');
-                      await connect();
-                      console.log('✅ Connection initiated');
-                    } catch (error) {
-                      console.error('❌ Connection failed:', error);
-                      alert(`Connection failed: ${error.message}`);
-                    }
-                  }}
-                  className="px-4 py-2 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                  style={{
-                    backgroundColor: '#f97316',
-                    color: '#ffffff'
-                  }}
-                >
-                  Connect
-                </button>
-              )
-            )}
-          </div>
-
           {/* Profile/Connect Button */}
           <div className="ml-4">
             {connected && user ? (
@@ -154,18 +107,37 @@ export const Header = () => {
 
           {/* Universal Navigation Menu */}
           {connected && mobileMenuOpen && (
-            <div className="fixed inset-0" style={{ zIndex: 2147483647 }}>
+            <div className="fixed inset-0" style={{
+              zIndex: 999999999,
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0
+            }}>
               {/* Backdrop */}
               <div
                 className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={() => setMobileMenuOpen(false)}
-                style={{ zIndex: 2147483647 }}
+                style={{
+                  zIndex: 999999999,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0
+                }}
               />
 
               {/* Navigation Menu Panel */}
               <div
                 className="absolute right-4 top-20 w-80 bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-2xl"
-                style={{ zIndex: 2147483647 }}
+                style={{
+                  zIndex: 1000000000,
+                  position: 'absolute',
+                  right: '16px',
+                  top: '80px'
+                }}
               >
                 {/* Navigation Links */}
                 <nav className="p-3">
