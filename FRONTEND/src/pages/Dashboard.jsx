@@ -34,6 +34,21 @@ export const Dashboard = () => {
     );
   }
 
+  const getTransactionPartner = (tx) => {
+    // If current user is the sender, show the recipient
+    // If current user is the recipient, show the sender
+    if (tx.fromUsername === user.username) {
+      return tx.toUsername;
+    } else {
+      return tx.fromUsername;
+    }
+  };
+
+  const getTransactionType = (tx) => {
+    // Determine if this transaction was sent or received by the current user
+    return tx.fromUsername === user.username ? 'sent' : 'received';
+  };
+
   return (
     <div className="max-w-6xl mx-auto transition-all duration-500">
       {/* Welcome Section */}
@@ -128,25 +143,30 @@ export const Dashboard = () => {
         {/* Recent Transactions */}
         <div className={`bg-gray-800 border-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 shadow-xl border`}>
           <h3 className={`text-white font-semibold text-base md:text-lg mb-3 md:mb-4`}>Recent Transactions</h3>
-          {transactions?.transactions?.slice(0, 5).map((tx) => (
-            <div key={tx.signature} className="flex items-center justify-between py-2">
-              <div>
-                <p className={`text-white font-medium`}>
-                  {tx.amount} {tx.token}
-                </p>
-                <p className="text-gray-400 text-sm">
-                  to @{tx.toUsername}
-                </p>
+          {transactions?.transactions?.slice(0, 5).map((tx) => {
+            const transactionType = getTransactionType(tx);
+            const partner = getTransactionPartner(tx);
+            
+            return (
+              <div key={tx.signature} className="flex items-center justify-between py-2">
+                <div>
+                  <p className={`text-white font-medium`}>
+                    {tx.amount} {tx.token}
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    {transactionType === 'sent' ? 'To' : 'From'}: @{partner || 'Unknown'}
+                  </p>
+                </div>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                  tx.status === 'confirmed' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                  tx.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                  'bg-red-500/20 text-red-400 border border-red-500/30'
+                }`}>
+                  {tx.status}
+                </span>
               </div>
-              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                tx.status === 'confirmed' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                tx.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                'bg-red-500/20 text-red-400 border border-red-500/30'
-              }`}>
-                {tx.status}
-              </span>
-            </div>
-          )) || <p className={`text-gray-400`}>No transactions yet</p>}
+            );
+          }) || <p className={`text-gray-400`}>No transactions yet</p>}
         </div>
       </div>
     </div>
