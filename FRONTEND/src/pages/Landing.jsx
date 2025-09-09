@@ -46,7 +46,7 @@ export const Landing = () => {
 
           {!connected ? (
             <div>
-              <p className={`${text-gray-200} mb-4`}>
+              <p className="text-gray-200 mb-4">
                 Click the "Connect Wallet" button in the header above to get started with your Solana wallet!
               </p>
               <p className="text-gray-400 text-sm mb-4">
@@ -67,25 +67,25 @@ export const Landing = () => {
             </div>
           )}
 
-          <div className={`mt-6 ${text-gray-400} text-sm space-y-2`}>
+          <div className="mt-6 text-gray-400 text-sm space-y-2">
             <div className="flex items-center space-x-2">
-              <span className={text-orange-400}>✅</span>
+              <span className="text-orange-400">✅</span>
               <span>Secure wallet authentication</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className={text-blue-400}>✅</span>
+              <span className="text-blue-400">✅</span>
               <span>Username-based transfers</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className={text-orange-400}>✅</span>
+              <span className="text-orange-400">✅</span>
               <span>Contact book management</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className={text-blue-400}>✅</span>
+              <span className="text-blue-400">✅</span>
               <span>Cross-chain support</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className={text-orange-400}>✅</span>
+              <span className="text-orange-400">✅</span>
               <span>Light & Dark themes</span>
             </div>
           </div>
