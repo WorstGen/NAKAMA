@@ -10,10 +10,13 @@ export const Header = () => {
 
   // Handle case where theme context might not be available
   const isDark = theme ? theme.isDark : true;
-  const classes = theme ? theme.classes : {
-    text: 'text-white',
-    header: 'bg-black/90 border-gray-800'
+  const colors = theme ? theme.colors : {
+    dark: {
+      text: 'text-white',
+      header: 'bg-black/90 border-gray-800'
+    }
   };
+  const currentColors = colors ? (isDark ? colors.dark : colors.light) : colors.dark;
 
   const isActive = (path) => location.pathname === path;
 
@@ -24,6 +27,10 @@ export const Header = () => {
     backdropFilter: 'blur(10px)',
     transition: 'all 0.3s ease'
   };
+
+  const navItemStyle = (isActive) => ({
+    color: isActive ? (isDark ? '#fb923c' : '#f97316') : (isDark ? '#e5e7eb' : '#6b7280')
+  });
 
   return (
     <header style={headerStyle}>
@@ -42,41 +49,36 @@ export const Header = () => {
             <nav className="hidden md:flex space-x-6">
               <Link
                 to="/dashboard"
-                className={`${classes.textSecondary} hover:${classes.accent} transition-colors ${
-                  isActive('/dashboard') ? `${classes.accent} font-semibold` : ''
-                }`}
+                style={navItemStyle(isActive('/dashboard'))}
+                className={`transition-colors font-medium ${isActive('/dashboard') ? 'font-semibold' : ''}`}
               >
                 Dashboard
               </Link>
               <Link
                 to="/profile"
-                className={`${classes.textSecondary} hover:${classes.accent} transition-colors ${
-                  isActive('/profile') ? `${classes.accent} font-semibold` : ''
-                }`}
+                style={navItemStyle(isActive('/profile'))}
+                className={`transition-colors font-medium ${isActive('/profile') ? 'font-semibold' : ''}`}
               >
                 Profile
               </Link>
               <Link
                 to="/contacts"
-                className={`${classes.textSecondary} hover:${classes.accent} transition-colors ${
-                  isActive('/contacts') ? `${classes.accent} font-semibold` : ''
-                }`}
+                style={navItemStyle(isActive('/contacts'))}
+                className={`transition-colors font-medium ${isActive('/contacts') ? 'font-semibold' : ''}`}
               >
                 Contacts
               </Link>
               <Link
                 to="/send"
-                className={`${classes.textSecondary} hover:${classes.accent} transition-colors ${
-                  isActive('/send') ? `${classes.accent} font-semibold` : ''
-                }`}
+                style={navItemStyle(isActive('/send'))}
+                className={`transition-colors font-medium ${isActive('/send') ? 'font-semibold' : ''}`}
               >
                 Send
               </Link>
               <Link
                 to="/transactions"
-                className={`${classes.textSecondary} hover:${classes.accent} transition-colors ${
-                  isActive('/transactions') ? `${classes.accent} font-semibold` : ''
-                }`}
+                style={navItemStyle(isActive('/transactions'))}
+                className={`transition-colors font-medium ${isActive('/transactions') ? 'font-semibold' : ''}`}
               >
                 History
               </Link>
@@ -85,11 +87,16 @@ export const Header = () => {
 
           {/* Wallet Status Display */}
           {connected && publicKey && (
-            <div className={`hidden md:flex items-center space-x-2 ${classes.card} backdrop-blur-sm rounded-lg px-3 py-2 mr-4 border`}>
-              <div className={`${classes.accent} w-2 h-2 rounded-full animate-pulse`}></div>
-              <div className={`${classes.text} text-sm`}>
+            <div className="hidden md:flex items-center space-x-2 backdrop-blur-sm rounded-lg px-3 py-2 mr-4"
+                 style={{
+                   backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                   border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`
+                 }}>
+              <div className="w-2 h-2 rounded-full animate-pulse"
+                   style={{ backgroundColor: isDark ? '#fb923c' : '#f97316' }}></div>
+              <div className="text-sm" style={{ color: isDark ? '#ffffff' : '#111827' }}>
                 <div className="font-medium">{wallet?.adapter?.name || 'Wallet'}</div>
-                <div className={`${classes.textSecondary} text-xs`}>
+                <div className="text-xs" style={{ color: isDark ? '#e5e7eb' : '#6b7280' }}>
                   {publicKey.toString().slice(0, 4)}...{publicKey.toString().slice(-4)}
                 </div>
               </div>
@@ -112,7 +119,11 @@ export const Header = () => {
                   alert(`Connection failed: ${error.message}`);
                 }
               }}
-              className={`${classes.button} px-4 py-2 rounded-lg font-medium transition-colors mr-2 shadow-lg`}
+              className="px-4 py-2 rounded-lg font-medium transition-colors mr-2 shadow-lg"
+              style={{
+                backgroundColor: isDark ? '#f97316' : '#f97316',
+                color: '#ffffff'
+              }}
             >
               Connect Wallet
             </button>
