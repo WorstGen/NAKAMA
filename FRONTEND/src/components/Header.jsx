@@ -6,7 +6,7 @@ import { useTheme, ThemeToggle } from '../contexts/AuthContext';
 export const Header = () => {
   const location = useLocation();
   const { connected, publicKey, wallet, connect } = useWallet();
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
   const classes = useTheme().classes;
 
   const isActive = (path) => location.pathname === path;
