@@ -48,26 +48,26 @@ export const Transactions = () => {
   if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-white text-lg">Please connect your wallet first.</p>
+        <p className={`${isDark ? 'text-white' : 'text-gray-900'} text-lg`}>Please connect your wallet first.</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8">
-        <h1 className="text-3xl font-bold text-white mb-8">Transaction History</h1>
+      <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} backdrop-blur-md rounded-2xl p-8 border`}>
+        <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} mb-8`}>Transaction History</h1>
 
         {isLoading ? (
           <div className="text-center py-8">
-            <p className="text-white/60">Loading transactions...</p>
+            <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Loading transactions...</p>
           </div>
         ) : transactions?.transactions?.length > 0 ? (
           <div className="space-y-4">
             {transactions.transactions.map((tx) => {
               const type = getTransactionType(tx);
               return (
-                <div key={tx.signature} className="bg-white/5 rounded-lg p-4">
+                <div key={tx.signature} className={`${isDark ? 'bg-gray-700/50' : 'bg-gray-100'} rounded-lg p-4`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -81,7 +81,7 @@ export const Transactions = () => {
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <p className="text-white font-semibold">
+                          <p className={`${isDark ? 'text-white' : 'text-gray-900'} font-semibold`}>
                             {type === 'sent' ? 'Sent' : 'Received'} {tx.amount} {tx.token}
                           </p>
                           <div className="flex items-center space-x-1">
@@ -111,7 +111,7 @@ export const Transactions = () => {
                       >
                         View on Explorer
                       </a>
-                      <p className="text-white/40 text-xs font-mono">
+                      <p className={`${isDark ? 'text-gray-500' : 'text-gray-500'} text-xs font-mono`}>
                         {tx.signature.slice(0, 8)}...{tx.signature.slice(-8)}
                       </p>
                     </div>
@@ -122,9 +122,9 @@ export const Transactions = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <ClockIcon className="w-16 h-16 text-white/30 mx-auto mb-4" />
-            <p className="text-white/60 text-lg mb-2">No transactions yet</p>
-            <p className="text-white/40">Your transaction history will appear here once you start sending or receiving tokens.</p>
+            <ClockIcon className={`w-16 h-16 ${isDark ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} />
+            <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-lg mb-2`}>No transactions yet</p>
+            <p className={`${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Your transaction history will appear here once you start sending or receiving tokens.</p>
           </div>
         )}
       </div>
