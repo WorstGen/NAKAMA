@@ -51,17 +51,49 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img
-              src="/logo/nakama-logo.png"
-              alt="NAKAMA Logo"
+            <svg
+              width="180"
+              height="48"
+              viewBox="0 0 180 48"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
               className="h-12 w-auto"
               style={{ maxWidth: '180px', minWidth: '120px' }}
-              onError={(e) => {
-                console.log('PNG failed, trying SVG:', e);
-                e.target.src = '/logo/nakama-logo.svg';
-              }}
-              onLoad={() => console.log('Logo loaded successfully')}
-            />
+            >
+              {/* Background gradient */}
+              <defs>
+                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: '#fb923c', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
+                </linearGradient>
+              </defs>
+
+              {/* Main logo shape - simplified version */}
+              <rect x="10" y="12" width="160" height="24" rx="12" fill="url(#logoGradient)" />
+
+              {/* NAKAMA Text */}
+              <text
+                x="90"
+                y="30"
+                textAnchor="middle"
+                fill="white"
+                fontSize="16"
+                fontWeight="bold"
+                fontFamily="Arial, sans-serif"
+                letterSpacing="1px"
+              >
+                NAKAMA
+              </text>
+
+              {/* Decorative elements */}
+              <circle cx="25" cy="24" r="3" fill="white" opacity="0.8"/>
+              <circle cx="155" cy="24" r="3" fill="white" opacity="0.8"/>
+              <rect x="35" y="20" width="4" height="8" fill="white" opacity="0.6"/>
+              <rect x="45" y="18" width="4" height="12" fill="white" opacity="0.6"/>
+              <rect x="55" y="22" width="4" height="4" fill="white" opacity="0.6"/>
+              <rect x="65" y="20" width="4" height="8" fill="white" opacity="0.6"/>
+              <rect x="75" y="16" width="4" height="16" fill="white" opacity="0.6"/>
+            </svg>
           </Link>
 
           {/* Profile/Connect Button */}
