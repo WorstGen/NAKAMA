@@ -36,7 +36,7 @@ function App() {
 
 // Separate component to use theme hook
 const AppContent = () => {
-  const { isDark, classes } = useTheme();
+  const { classes } = useTheme();
 
   return (
     <div className={`${classes.container} transition-all duration-500`}>
