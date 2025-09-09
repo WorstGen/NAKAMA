@@ -36,33 +36,66 @@ function App() {
 
 // Separate component to use theme hook
 const AppContent = () => {
-  const { isDark } = useTheme();
+  try {
+    const { isDark } = useTheme();
 
-  console.log('🎨 Theme isDark:', isDark);
+    console.log('🎨 AppContent: Theme working, isDark:', isDark);
 
-  const bgStyle = {
-    backgroundColor: isDark ? '#000000' : '#f9fafb',
-    minHeight: '100vh',
-    transition: 'background-color 0.5s ease'
-  };
+    const bgStyle = {
+      backgroundColor: isDark ? '#000000' : '#f9fafb',
+      minHeight: '100vh',
+      transition: 'background-color 0.5s ease'
+    };
 
-  return (
-    <div style={bgStyle}>
-      <Header />
-      <main className="container mx-auto px-4 py-8">
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/contacts" element={<Contacts />} />
-          <Route path="/send" element={<Send />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/oauth/authorize" element={<OAuth />} />
-        </Routes>
-      </main>
-      <Toaster position="bottom-right" />
-    </div>
-  );
+    return (
+      <div style={bgStyle}>
+        <Header />
+        <main className="container mx-auto px-4 py-8">
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/contacts" element={<Contacts />} />
+            <Route path="/send" element={<Send />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/oauth/authorize" element={<OAuth />} />
+          </Routes>
+        </main>
+        <Toaster position="bottom-right" />
+      </div>
+    );
+  } catch (error) {
+    console.error('🎨 AppContent: Theme hook failed, using fallback:', error);
+
+    // Fallback: always show black background
+    const fallbackStyle = {
+      backgroundColor: '#000000',
+      minHeight: '100vh',
+      color: '#ffffff',
+      padding: '20px'
+    };
+
+    return (
+      <div style={fallbackStyle}>
+        <h1 style={{ color: '#ffffff', marginBottom: '20px' }}>NAKAMA - Theme Loading...</h1>
+        <p style={{ color: '#cccccc' }}>
+          Theme system is initializing. If you see this for more than a few seconds, there might be an issue.
+        </p>
+        <div style={{
+          backgroundColor: '#1f2937',
+          padding: '20px',
+          borderRadius: '8px',
+          marginTop: '20px',
+          border: '1px solid #374151'
+        }}>
+          <h2 style={{ color: '#ffffff', marginBottom: '10px' }}>Fallback Theme Active</h2>
+          <p style={{ color: '#cccccc' }}>
+            Black background with gray cards - this means the theme system encountered an error but the app is working.
+          </p>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default App;
