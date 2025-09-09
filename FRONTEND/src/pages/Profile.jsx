@@ -9,8 +9,15 @@ import { CameraIcon } from '@heroicons/react/24/outline';
 export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
   const { publicKey } = useWallet();
-  const { isDark } = useTheme();
-  const classes = useTheme().classes;
+  const theme = useTheme();
+
+  // Handle case where theme context might not be available
+  const isDark = theme ? theme.isDark : true;
+  const classes = theme ? theme.classes : {
+    text: 'text-white',
+    input: 'bg-gray-700 text-white border-gray-600',
+    border: 'border-gray-700'
+  };
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({

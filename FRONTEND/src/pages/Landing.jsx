@@ -6,14 +6,10 @@ import { Navigate, Link } from 'react-router-dom';
 export const Landing = () => {
   const { connected } = useWallet();
   const { user } = useAuth();
+  const theme = useTheme();
 
-  let isDark = true; // default to dark
-  try {
-    const theme = useTheme();
-    isDark = theme.isDark;
-  } catch (error) {
-    console.error('🎨 Landing: Theme hook failed, using dark fallback:', error);
-  }
+  // Handle case where theme context might not be available
+  const isDark = theme ? theme.isDark : true;
 
   // Redirect to dashboard if already connected and has profile
   if (connected && user) {

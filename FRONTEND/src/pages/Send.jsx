@@ -18,14 +18,10 @@ export const Send = () => {
   const { isAuthenticated } = useAuth();
   const { signTransaction } = useWallet();
   const [searchParams] = useSearchParams();
+  const theme = useTheme();
 
-  let isDark = true; // default to dark
-  try {
-    const theme = useTheme();
-    isDark = theme.isDark;
-  } catch (error) {
-    console.error('🎨 Send: Theme hook failed, using dark fallback:', error);
-  }
+  // Handle case where theme context might not be available
+  const isDark = theme ? theme.isDark : true;
   
   const [formData, setFormData] = useState({
     recipient: searchParams.get('recipient') || '',

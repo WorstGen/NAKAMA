@@ -8,14 +8,10 @@ import { ClockIcon, CheckCircleIcon, XCircleIcon, ArrowUpIcon, ArrowDownIcon } f
 export const Transactions = () => {
   const { isAuthenticated } = useAuth();
   const { publicKey } = useWallet();
+  const theme = useTheme();
 
-  let isDark = true; // default to dark
-  try {
-    const theme = useTheme();
-    isDark = theme.isDark;
-  } catch (error) {
-    console.error('🎨 Transactions: Theme hook failed, using dark fallback:', error);
-  }
+  // Handle case where theme context might not be available
+  const isDark = theme ? theme.isDark : true;
   
   const { data: transactions, isLoading } = useQuery('transactions', api.getTransactions, {
     enabled: isAuthenticated,
