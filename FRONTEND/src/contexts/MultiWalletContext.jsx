@@ -127,6 +127,25 @@ export const MultiWalletProvider = ({ children }) => {
     }
   }, [solanaWallet, evmConnected, switchNetwork]);
 
+  // Connect to all available wallets
+  const connectAllWallets = useCallback(async () => {
+    try {
+      // Connect Solana first
+      if (!solanaWallet.connected) {
+        await solanaWallet.connect();
+        toast.success('Solana wallet connected!');
+      }
+      
+      // For EVM, we'll rely on the modal triggering Web3Modal
+      // The actual EVM connection happens through the Web3Modal interface
+      
+    } catch (error) {
+      console.error('Error connecting all wallets:', error);
+      toast.error('Failed to connect all wallets');
+      throw error;
+    }
+  }, [solanaWallet]);
+
   // Disconnect from a specific wallet
   const disconnectWallet = useCallback(async (chainName) => {
     try {
@@ -246,6 +265,7 @@ export const MultiWalletProvider = ({ children }) => {
     
     // Wallet actions
     connectWallet,
+    connectAllWallets,
     disconnectWallet,
     switchActiveChain,
     signMessage,
