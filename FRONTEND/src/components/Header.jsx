@@ -75,7 +75,7 @@ export const Header = () => {
               >
                 {/* Profile Picture */}
                 <ProfileImage
-                  src={user?.profilePicture ? `https://nakama-production-1850.up.railway.app${user.profilePicture}` : null}
+                  src={user?.profilePicture || null}
                   username={user?.username || 'User'}
                   size="sm"
                   className="border-2"
@@ -242,7 +242,7 @@ export const Header = () => {
                           alert(`Disconnection failed: ${error.message}`);
                         }
                       }}
-                      className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-all duration-200 shadow-lg"
+                      className="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm"
                     >
                       🚪 Disconnect Wallet
                     </button>
