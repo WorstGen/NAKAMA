@@ -6,6 +6,7 @@ import { WalletContextProvider } from './contexts/WalletContext';
 import { AuthProvider, ThemeProvider, useTheme } from './contexts/AuthContext';
 import { CloudinaryProvider } from './contexts/CloudinaryContext';
 import { Header } from './components/Header';
+import CloudinaryDebug from './components/CloudinaryDebug';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
 import { Contacts } from './pages/Contacts';
@@ -85,6 +86,7 @@ const AppContent = () => {
 
   return (
     <div style={bgStyle}>
+      <CloudinaryDebug />
       <Header />
       <main className="container mx-auto px-4 py-8">
         <Routes>
