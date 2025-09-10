@@ -219,7 +219,7 @@ export const Profile = () => {
   return (
     <div className="max-w-2xl mx-auto transition-all duration-500 text-white">
       <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 shadow-2xl ${currentColors.border} border-2`}>
-        <h1 className={`text-3xl font-bold text-white dark:text-white mb-8 text-center drop-shadow-lg`}>
+        <h1 className="text-2xl font-semibold text-white mb-6 text-center">
           {user ? 'Update Profile' : 'Create Profile'}
         </h1>
 
@@ -236,8 +236,8 @@ export const Profile = () => {
                 ...getImageStyle()
               }}
             />
-            <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 cursor-pointer shadow-lg">
-              <CameraIcon className="w-4 h-4 text-gray-600" />
+            <label className="absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 rounded-full p-2 cursor-pointer shadow-lg transition-colors">
+              <CameraIcon className="w-4 h-4 text-white" />
               <input
                 type="file"
                 accept="image/*"
@@ -305,7 +305,7 @@ export const Profile = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Username */}
           <div>
-            <label className="block text-white dark:text-white font-medium mb-2">
+            <label className="block text-white/90 font-medium mb-2 text-sm">
               Username *
             </label>
             <input
@@ -314,12 +314,12 @@ export const Profile = () => {
               value={formData.username}
               onChange={handleInputChange}
               placeholder="Enter a unique username"
-              className="w-full px-4 py-3 bg-gray-700/50 dark:bg-gray-700/50 border-gray-600 dark:border-gray-600 border rounded-lg text-white dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors"
+              className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
               required
               pattern="[a-zA-Z0-9_]{3,20}"
               title="Username must be 3-20 characters, letters, numbers, and underscores only"
             />
-            <p className="text-white dark:text-white/60 text-sm mt-1">
+            <p className="text-white/60 text-xs mt-1">
               This will be your permanent username - choose wisely!
             </p>
           </div>

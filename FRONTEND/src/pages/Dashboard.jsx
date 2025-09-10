@@ -134,9 +134,9 @@ export const Dashboard = () => {
                   </p>
                 </div>
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  tx.status === 'confirmed' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                  tx.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                  'bg-red-500/20 text-red-400 border border-red-500/30'
+                  tx.status === 'confirmed' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                  tx.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
+                  'bg-orange-500/10 text-orange-400 border border-orange-500/20'
                 }`}>
                   {tx.status}
                 </span>

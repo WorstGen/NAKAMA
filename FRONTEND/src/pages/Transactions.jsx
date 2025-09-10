@@ -18,9 +18,9 @@ export const Transactions = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'confirmed':
-        return <CheckCircleIcon className="w-5 h-5 text-green-400" />;
+        return <CheckCircleIcon className="w-5 h-5 text-blue-400" />;
       case 'failed':
-        return <XCircleIcon className="w-5 h-5 text-red-400" />;
+        return <XCircleIcon className="w-5 h-5 text-orange-400" />;
       default:
         return <ClockIcon className="w-5 h-5 text-yellow-400" />;
     }
@@ -29,9 +29,9 @@ export const Transactions = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-green-500/20 text-green-300';
+        return 'bg-blue-500/10 text-blue-300';
       case 'failed':
-        return 'bg-red-500/20 text-red-300';
+        return 'bg-orange-500/10 text-orange-300';
       default:
         return 'bg-yellow-500/20 text-yellow-300';
     }
@@ -72,12 +72,12 @@ export const Transactions = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center space-x-4">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        type === 'sent' ? 'bg-red-500/20' : 'bg-green-500/20'
+                        type === 'sent' ? 'bg-orange-500/10' : 'bg-blue-500/10'
                       }`}>
                         {type === 'sent' ? (
-                          <ArrowUpIcon className="w-5 h-5 text-red-400" />
+                          <ArrowUpIcon className="w-5 h-5 text-orange-400" />
                         ) : (
-                          <ArrowDownIcon className="w-5 h-5 text-green-400" />
+                          <ArrowDownIcon className="w-5 h-5 text-blue-400" />
                         )}
                       </div>
                       <div>

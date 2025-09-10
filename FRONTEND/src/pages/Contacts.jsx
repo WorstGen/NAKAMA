@@ -125,14 +125,14 @@ export const Contacts = () => {
                       <p className="text-white font-semibold">@{searchResults.username}</p>
                       <p className="text-white/60 text-sm">{searchResults.bio}</p>
                       {searchResults.isVerified && (
-                        <span className="text-green-400 text-xs">✓ Verified</span>
+                        <span className="text-blue-400 text-xs font-medium">✓ Verified</span>
                       )}
                     </div>
                   </div>
                   <button
                     onClick={() => handleAddContact(searchResults.username)}
                     disabled={addContactMutation.isLoading}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-md hover:shadow-lg"
                   >
                     <UserPlusIcon className="w-4 h-4" />
                     Add Contact
@@ -170,14 +170,14 @@ export const Contacts = () => {
                       <p className="text-white/60 text-sm">{contact.bio}</p>
                       <p className="text-white/40 text-xs font-mono">{contact.walletAddress.slice(0, 8)}...{contact.walletAddress.slice(-8)}</p>
                       {contact.isVerified && (
-                        <span className="text-green-400 text-xs">✓ Verified</span>
+                        <span className="text-blue-400 text-xs font-medium">✓ Verified</span>
                       )}
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
                     <Link
                       to={`/send?recipient=${contact.username}`}
-                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg"
                     >
                       <PaperAirplaneIcon className="w-4 h-4" />
                       <span className="hidden sm:inline">Send</span>
@@ -185,7 +185,7 @@ export const Contacts = () => {
                     <button
                       onClick={() => handleRemoveContact(contact.username)}
                       disabled={removeContactMutation.isLoading}
-                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg"
                     >
                       <TrashIcon className="w-4 h-4" />
                       <span className="hidden sm:inline">Remove</span>
