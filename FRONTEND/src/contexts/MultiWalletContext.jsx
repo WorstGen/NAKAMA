@@ -94,7 +94,7 @@ export const MultiWalletProvider = ({ children }) => {
 
 
   // Connect to a specific wallet type
-  const connectWallet = useCallback(async (chainName, connectorType = null) => {
+  const connectWallet = useCallback(async (chainName) => {
     try {
       if (chainName === 'solana') {
         if (!solanaWallet.connected) {
@@ -103,41 +103,30 @@ export const MultiWalletProvider = ({ children }) => {
         }
         setActiveChain('solana');
       } else {
-        // EVM chains
-        const chainInfo = chainConfig[chainName];
-        if (!chainInfo) {
-          throw new Error(`Unsupported chain: ${chainName}`);
-        }
-
-        // If already connected to an EVM wallet, just switch networks
+        // EVM chains - Web3Modal handles the connection
+        // Just switch to the chain if already connected
         if (evmConnected) {
-          try {
-            await switchNetwork?.({ chainId: chainInfo.id });
-          } catch (error) {
-            console.log('Network switch failed, but continuing:', error);
+          const chainInfo = chainConfig[chainName];
+          if (chainInfo) {
+            try {
+              await switchNetwork?.({ chainId: chainInfo.id });
+              setActiveChain(chainName);
+              toast.success(`Switched to ${chainInfo.name}`);
+            } catch (error) {
+              console.log('Network switch failed:', error);
+              toast.error(`Failed to switch to ${chainInfo.name}`);
+            }
           }
-          setActiveChain(chainName);
         } else {
-          // Connect to EVM wallet
-          const connector = connectors.find(c => 
-            connectorType ? c.name.toLowerCase().includes(connectorType.toLowerCase()) : true
-          ) || connectors[0];
-
-          if (!connector) {
-            throw new Error('No EVM wallet connector available');
-          }
-
-          await evmConnect({ connector });
-          toast.success(`${chainInfo.name} wallet connected!`);
-          setActiveChain(chainName);
+          toast.info('Please connect your Ethereum wallet using the Connect button');
         }
       }
     } catch (error) {
-      console.error(`Error connecting to ${chainName}:`, error);
+      console.error(`Error with ${chainName}:`, error);
       toast.error(`Failed to connect to ${chainName}: ${error.message}`);
       throw error;
     }
-  }, [solanaWallet, evmConnected, evmConnect, connectors, switchNetwork]);
+  }, [solanaWallet, evmConnected, switchNetwork]);
 
   // Disconnect from a specific wallet
   const disconnectWallet = useCallback(async (chainName) => {
