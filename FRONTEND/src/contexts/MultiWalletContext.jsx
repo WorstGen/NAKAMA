@@ -19,7 +19,7 @@ export const MultiWalletProvider = ({ children }) => {
   const solanaWallet = useSolanaWallet();
   
   // EVM wallet state (new)
-  const { address: evmAddress, isConnected: evmConnected, connector: currentChain } = useAccount();
+  const { address: evmAddress, isConnected: evmConnected } = useAccount();
   const { connect: evmConnect, connectors } = useConnect();
   const { disconnect: evmDisconnect } = useDisconnect();
   const { signMessageAsync: evmSignMessage } = useSignMessage();
@@ -92,11 +92,6 @@ export const MultiWalletProvider = ({ children }) => {
     }
   }, [evmConnected, evmAddress, solanaWallet.connected]);
 
-  // Helper function to get chain name from chain ID
-  const getChainNameFromId = (chainId) => {
-    const chainEntry = Object.entries(chainConfig).find(([_, config]) => config.id === chainId);
-    return chainEntry ? chainEntry[0] : null;
-  };
 
   // Connect to a specific wallet type
   const connectWallet = useCallback(async (chainName, connectorType = null) => {
