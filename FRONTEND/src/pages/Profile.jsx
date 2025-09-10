@@ -262,118 +262,57 @@ export const Profile = () => {
             </label>
           </div>
 
-          {/* Image Customization Controls */}
+          {/* Compact Image Controls */}
           {user?.profilePicture && (
-            <div className="w-full max-w-md space-y-6">
-              {/* Zoom Control */}
-              <div>
-                <label className="block text-white dark:text-white font-medium mb-3 text-sm">
-                  Zoom: {imageSettings.zoom}%
-                </label>
-                <input
-                  type="range"
-                  min="50"
-                  max="200"
-                  value={imageSettings.zoom}
-                  onChange={(e) => handleZoomChange(parseInt(e.target.value))}
-                  className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
-                  style={{
-                    background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${(imageSettings.zoom - 50) / 1.5}%, rgba(255,255,255,0.2) ${(imageSettings.zoom - 50) / 1.5}%, rgba(255,255,255,0.2) 100%)`
-                  }}
-                />
-                <div className="flex justify-between text-xs text-white dark:text-white/60 mt-1">
-                  <span>50%</span>
-                  <span>100%</span>
-                  <span>200%</span>
-                </div>
-              </div>
-
-              {/* Position Control */}
-              <div>
-                <label className="block text-white dark:text-white font-medium mb-3 text-sm">
-                  Position
-                </label>
-                <div className="relative w-32 h-32 mx-auto bg-white/10 rounded-lg overflow-hidden">
-                  {/* Position Indicator Grid */}
-                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
-                    {Array.from({ length: 9 }).map((_, index) => {
-                      const row = Math.floor(index / 3);
-                      const col = index % 3;
-                      const x = (col * 33.33) + 16.665;
-                      const y = (row * 33.33) + 16.665;
-
-                      return (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => handlePositionChange(x, y)}
-                          className="w-full h-full flex items-center justify-center hover:bg-white/20 transition-colors"
-                        >
-                          {(Math.abs(imageSettings.position.x - x) < 20 && Math.abs(imageSettings.position.y - y) < 20) && (
-                            <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Current Position Indicator */}
-                  <div
-                    className="absolute w-3 h-3 bg-purple-600 rounded-full border-2 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200"
-                    style={{
-                      left: `${imageSettings.position.x}%`,
-                      top: `${imageSettings.position.y}%`
-                    }}
+            <div className="w-full max-w-lg">
+              <div className="grid grid-cols-3 gap-4 text-xs">
+                {/* Zoom Control */}
+                <div>
+                  <label className="block text-white/60 mb-1">Zoom {imageSettings.zoom}%</label>
+                  <input
+                    type="range"
+                    min="50"
+                    max="200"
+                    value={imageSettings.zoom}
+                    onChange={(e) => handleZoomChange(parseInt(e.target.value))}
+                    className="w-full h-1 bg-white/20 rounded appearance-none cursor-pointer"
                   />
                 </div>
 
-                {/* Manual Position Controls */}
-                <div className="flex justify-center gap-4 mt-3">
-                  <div className="flex flex-col items-center">
-                    <label className="text-xs text-white dark:text-white/60 mb-1">X</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={imageSettings.position.x}
-                      onChange={(e) => handlePositionChange(parseInt(e.target.value), imageSettings.position.y)}
-                      className="w-16 h-1 bg-white/20 rounded appearance-none cursor-pointer"
-                      style={{
-                        background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${imageSettings.position.x}%, rgba(255,255,255,0.2) ${imageSettings.position.x}%, rgba(255,255,255,0.2) 100%)`
-                      }}
-                    />
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <label className="text-xs text-white dark:text-white/60 mb-1">Y</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={imageSettings.position.y}
-                      onChange={(e) => handlePositionChange(imageSettings.position.x, parseInt(e.target.value))}
-                      className="w-16 h-1 bg-white/20 rounded appearance-none cursor-pointer"
-                      style={{
-                        background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${imageSettings.position.y}%, rgba(255,255,255,0.2) ${imageSettings.position.y}%, rgba(255,255,255,0.2) 100%)`
-                      }}
-                    />
-                  </div>
+                {/* Horizontal Position */}
+                <div>
+                  <label className="block text-white/60 mb-1">Horizontal</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={imageSettings.position.x}
+                    onChange={(e) => handlePositionChange(parseInt(e.target.value), imageSettings.position.y)}
+                    className="w-full h-1 bg-white/20 rounded appearance-none cursor-pointer"
+                  />
                 </div>
 
-                {/* Reset Button */}
-                <div className="flex justify-center mt-4 space-y-2">
-                  <button
-                    type="button"
-                    onClick={resetImageSettings}
-                    className="px-4 py-2 bg-white/10 text-white dark:text-white/80 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors"
-                    title="Reset to default settings"
-                  >
-                    🔄 Reset to Default
-                  </button>
-                  <p className="text-white dark:text-white/50 text-xs text-center">
-                    💾 Settings saved automatically
-                  </p>
+                {/* Vertical Position */}
+                <div>
+                  <label className="block text-white/60 mb-1">Vertical</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={imageSettings.position.y}
+                    onChange={(e) => handlePositionChange(imageSettings.position.x, parseInt(e.target.value))}
+                    className="w-full h-1 bg-white/20 rounded appearance-none cursor-pointer"
+                  />
                 </div>
               </div>
+              
+              <button
+                type="button"
+                onClick={resetImageSettings}
+                className="mt-2 px-3 py-1 bg-white/10 text-white/60 hover:bg-white/20 rounded text-xs transition-colors"
+              >
+                Reset
+              </button>
             </div>
           )}
         </div>
