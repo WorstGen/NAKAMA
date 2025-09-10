@@ -15,7 +15,6 @@ export const Header = () => {
   const { 
     activeChain, 
     isAnyWalletConnected, 
-    connectWallet,
     getActiveWallet
   } = useMultiWallet();
   const { user } = useAuth();
