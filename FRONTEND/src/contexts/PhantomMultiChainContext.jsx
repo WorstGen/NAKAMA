@@ -305,9 +305,9 @@ export const PhantomMultiChainProvider = ({ children }) => {
       chainId: chain.chainId,
       chainName: chain.chainName,
       isConnected: chain.isConnected,
-      signMessage: phantomSignMessage // Include the signMessage function
+      signMessage: signMessage // Include the signMessage function
     };
-  }, [activeChain, connectedChains, phantomSignMessage]);
+  }, [activeChain, connectedChains, signMessage]);
 
   // Get tokens for active chain
   const getActiveChainTokens = useCallback(() => {
