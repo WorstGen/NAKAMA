@@ -73,7 +73,7 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const { publicKey, signMessage, connected } = useWallet();
+  const { publicKey, connected } = useWallet();
   const { getActiveWallet, isAnyChainConnected, phantomSignMessage } = usePhantomMultiChain();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
