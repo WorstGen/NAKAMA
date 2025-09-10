@@ -340,9 +340,10 @@ const uploadToCloudinary = async (filePath, userId) => {
       public_id: `profile-${userId}`,
       transformation: [
         { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-        { quality: 'auto', fetch_format: 'auto' }
+        { quality: 'auto:good', fetch_format: 'auto' }
       ],
-      overwrite: true
+      overwrite: true,
+      resource_type: 'auto'
     });
     
     console.log('Cloudinary upload successful:', result.secure_url);
