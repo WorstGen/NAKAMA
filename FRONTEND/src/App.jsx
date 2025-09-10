@@ -40,6 +40,10 @@ function App() {
             </WalletContextProvider>
           </ThemeProvider>
         </CloudinaryProvider>
+        {/* Hidden Web3Modal - triggered programmatically */}
+        <div style={{ display: 'none' }}>
+          <w3m-connect-button />
+        </div>
         <Web3Modal 
           projectId={projectId} 
           ethereumClient={ethereumClient}
