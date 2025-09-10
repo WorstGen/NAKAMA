@@ -87,7 +87,10 @@ export const PhantomMultiChainProvider = ({ children }) => {
   const getConnectedChains = useCallback(async () => {
     console.log('🔗 getConnectedChains called - isPhantomAvailable:', isPhantomAvailable(), 'connected:', connected);
     
-    if (!isPhantomAvailable() || !connected) {
+    // Check if Phantom is available and either connected via old context OR has a public key
+    const isPhantomConnected = isPhantomAvailable() && (connected || (window.solana && window.solana.isConnected));
+    
+    if (!isPhantomConnected) {
       console.log('🔗 Returning empty chains - Phantom not available or not connected');
       return {};
     }
@@ -96,11 +99,12 @@ export const PhantomMultiChainProvider = ({ children }) => {
       const chains = {};
       
       // Solana is always available when Phantom is connected
-      if (publicKey) {
-        console.log('🔗 Adding Solana chain with publicKey:', publicKey.toString());
+      const solanaPublicKey = publicKey || (window.solana && window.solana.publicKey);
+      if (solanaPublicKey) {
+        console.log('🔗 Adding Solana chain with publicKey:', solanaPublicKey.toString());
         chains.solana = {
           isConnected: true,
-          address: publicKey.toString(),
+          address: solanaPublicKey.toString(),
           chainId: 'solana',
           chainName: 'Solana'
         };
@@ -150,7 +154,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
       console.error('🔗 Error getting connected chains:', error);
       return {};
     }
-  }, [connected, publicKey]);
+  }, [connected, publicKey, isPhantomAvailable]);
 
   // Connect to all available chains
   const connectAllChains = useCallback(async () => {
@@ -373,7 +377,8 @@ export const PhantomMultiChainProvider = ({ children }) => {
     phantomChains,
     
     // Computed
-    isAnyChainConnected: Object.values(connectedChains).some(chain => chain.isConnected),
+    isAnyChainConnected: Object.values(connectedChains).some(chain => chain.isConnected) || 
+                        (isPhantomAvailable() && window.solana && window.solana.isConnected),
     connectedChainCount: Object.keys(connectedChains).length
   };
 
