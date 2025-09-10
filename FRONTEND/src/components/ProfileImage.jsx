@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Image } from 'cloudinary-react';
+import { useCloudinary } from '../contexts/CloudinaryContext';
 
 // Helper function to extract public ID from Cloudinary URL
 const extractPublicId = (url) => {
@@ -31,6 +32,19 @@ const ProfileImage = ({
   const [timeoutId, setTimeoutId] = useState(null);
   const maxRetries = 2;
   const loadingTimeout = 5000; // 5 seconds timeout
+  
+  // Get Cloudinary configuration from context
+  let cloudName;
+  try {
+    const cloudinaryContext = useCloudinary();
+    cloudName = cloudinaryContext?.cloudName;
+  } catch (error) {
+    console.warn('Cloudinary context not available, falling back to regular img tag');
+    cloudName = null;
+  }
+  
+  // Debug Cloudinary configuration
+  console.log('ProfileImage Cloudinary config:', { cloudName, isCloudinaryImage, publicId });
 
   // Sanitize URL to fix double URL issues
   const sanitizeUrl = (url) => {
@@ -190,9 +204,9 @@ const ProfileImage = ({
         </div>
       )}
       {!isLoading && !imageError && src && (
-        isCloudinaryImage ? (
+        isCloudinaryImage && cloudName ? (
           <Image
-            cloudName={process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}
+            cloudName={cloudName}
             publicId={publicId}
             width="400"
             height="400"
