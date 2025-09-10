@@ -34,11 +34,11 @@ const ProfileImage = ({
 
   // Reset error state when src changes
   useEffect(() => {
-    setImageError(false);
-    setIsLoading(true);
-    
-    // Debug: Log the src URL
-    console.log(`ProfileImage src for ${username}:`, sanitizedSrc);
+    if (sanitizedSrc) {
+      setImageError(false);
+      setIsLoading(true);
+      console.log(`ProfileImage src for ${username}:`, sanitizedSrc);
+    }
   }, [sanitizedSrc, username]);
 
 
@@ -78,17 +78,7 @@ const ProfileImage = ({
     }
   };
 
-  const getImageSettings = () => {
-    if (username && window.getSavedImageSettings) {
-      const settings = window.getSavedImageSettings(username) || { position: { x: 50, y: 50 }, zoom: 100 };
-      return {
-        objectPosition: `${settings.position.x}% ${settings.position.y}%`,
-        transform: `scale(${settings.zoom / 100})`,
-        transformOrigin: 'center center'
-      };
-    }
-    return {};
-  };
+  // Simplified - no complex image settings that might cause issues
 
   const fallbackInitial = username ? username.charAt(0).toUpperCase() : '?';
 
@@ -107,13 +97,7 @@ const ProfileImage = ({
   // Debug Cloudinary configuration
   console.log('ProfileImage using sanitized URL:', sanitizedSrc);
   
-  // Test if the URL is accessible
-  if (sanitizedSrc && sanitizedSrc.startsWith('https://')) {
-    const testImg = new Image();
-    testImg.onload = () => console.log('✅ Image URL is accessible:', sanitizedSrc);
-    testImg.onerror = (e) => console.error('❌ Image URL failed to load:', sanitizedSrc, e);
-    testImg.src = sanitizedSrc;
-  }
+  // Remove test image - it might be interfering with the actual image
 
   return (
     <div className={`${getSizeClasses()} bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-md relative ${className}`}>
@@ -122,31 +106,20 @@ const ProfileImage = ({
           <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
         </div>
       )}
-      {!isLoading && !imageError && src && (
+      {src && (
         <img
           src={sanitizedSrc}
           alt={alt || `${username}'s profile`}
           className="w-full h-full rounded-full object-cover transition-opacity duration-200"
-          style={{
-            ...getImageSettings(),
-            ...style
-          }}
+          style={style}
           onError={(e) => {
             console.error('❌ IMG TAG ERROR for', username, ':', e);
-            console.error('Error details:', {
-              type: e.type,
-              target: e.target,
-              currentSrc: e.target?.currentSrc,
-              naturalWidth: e.target?.naturalWidth,
-              naturalHeight: e.target?.naturalHeight
-            });
             handleImageError();
           }}
           onLoad={(e) => {
             console.log('✅ IMG TAG LOADED for', username, ':', e.target?.currentSrc);
             handleImageLoad();
           }}
-          loading="lazy"
         />
       )}
       {(imageError || (!src && !isLoading)) && showFallback && (
