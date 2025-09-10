@@ -1,20 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image } from 'cloudinary-react';
-import { useCloudinary } from '../contexts/CloudinaryContext';
 
-// Helper function to extract public ID from Cloudinary URL
-const extractPublicId = (url) => {
-  if (!url) return null;
-  
-  // Check if it's a Cloudinary URL
-  if (url.includes('cloudinary.com')) {
-    const parts = url.split('/');
-    const folderAndId = parts[parts.length - 2] + '/' + parts[parts.length - 1].split('.')[0];
-    return folderAndId;
-  }
-  
-  return null;
-};
 
 const ProfileImage = ({ 
   src, 
@@ -33,15 +18,6 @@ const ProfileImage = ({
   const maxRetries = 2;
   const loadingTimeout = 5000; // 5 seconds timeout
   
-  // Get Cloudinary configuration from context
-  let cloudName;
-  try {
-    const cloudinaryContext = useCloudinary();
-    cloudName = cloudinaryContext?.cloudName;
-  } catch (error) {
-    console.warn('Cloudinary context not available, falling back to regular img tag');
-    cloudName = null;
-  }
 
   // Sanitize URL to fix double URL issues
   const sanitizeUrl = (url) => {
@@ -190,11 +166,8 @@ const ProfileImage = ({
     );
   }
 
-  const publicId = extractPublicId(sanitizedSrc);
-  const isCloudinaryImage = publicId !== null;
-  
   // Debug Cloudinary configuration
-  console.log('ProfileImage Cloudinary config:', { cloudName, isCloudinaryImage, publicId });
+  console.log('ProfileImage using sanitized URL:', sanitizedSrc);
 
   return (
     <div className={`${getSizeClasses()} bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-md relative ${className}`}>
@@ -204,33 +177,18 @@ const ProfileImage = ({
         </div>
       )}
       {!isLoading && !imageError && src && (
-        isCloudinaryImage && cloudName ? (
-          <Image
-            cloudName={cloudName}
-            publicId={publicId}
-            className="w-full h-full rounded-full object-cover transition-opacity duration-200"
-            style={{
-              ...getImageSettings(),
-              ...style
-            }}
-            onError={handleImageError}
-            onLoad={handleImageLoad}
-            loading="lazy"
-          />
-        ) : (
-          <img
-            src={sanitizedSrc}
-            alt={alt || `${username}'s profile`}
-            className="w-full h-full rounded-full object-cover transition-opacity duration-200"
-            style={{
-              ...getImageSettings(),
-              ...style
-            }}
-            onError={handleImageError}
-            onLoad={handleImageLoad}
-            loading="lazy"
-          />
-        )
+        <img
+          src={sanitizedSrc}
+          alt={alt || `${username}'s profile`}
+          className="w-full h-full rounded-full object-cover transition-opacity duration-200"
+          style={{
+            ...getImageSettings(),
+            ...style
+          }}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+          loading="lazy"
+        />
       )}
       {(imageError || (!src && !isLoading)) && showFallback && (
         <span className={`text-white font-semibold ${getTextSize()}`}>
