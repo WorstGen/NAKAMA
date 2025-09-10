@@ -6,6 +6,7 @@ import { WagmiConfig } from 'wagmi';
 import { Web3Modal } from '@web3modal/react';
 import { WalletContextProvider } from './contexts/WalletContext';
 import { MultiWalletProvider } from './contexts/MultiWalletContext';
+import { PhantomMultiChainProvider } from './contexts/PhantomMultiChainContext';
 import { AuthProvider, ThemeProvider, useTheme } from './contexts/AuthContext';
 import { CloudinaryProvider } from './contexts/CloudinaryContext';
 import { wagmiConfig, ethereumClient, projectId } from './config/web3Config';
@@ -31,11 +32,13 @@ function App() {
           <ThemeProvider>
             <WalletContextProvider>
               <MultiWalletProvider>
-                <AuthProvider>
-                  <Router>
-                    <AppContent />
-                  </Router>
-                </AuthProvider>
+                <PhantomMultiChainProvider>
+                  <AuthProvider>
+                    <Router>
+                      <AppContent />
+                    </Router>
+                  </AuthProvider>
+                </PhantomMultiChainProvider>
               </MultiWalletProvider>
             </WalletContextProvider>
           </ThemeProvider>
