@@ -4,6 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
 import { Link } from 'react-router-dom';
+import ProfileImage from '../components/ProfileImage';
 import {
   UserGroupIcon,
   PaperAirplaneIcon,
@@ -103,27 +104,12 @@ export const Dashboard = () => {
           <h3 className={`text-white font-semibold text-base md:text-lg mb-3 md:mb-4`}>Recent Contacts</h3>
           {contacts?.contacts?.slice(0, 5).map((contact) => (
             <div key={contact.username} className="flex items-center space-x-3 py-2">
-              <div className={`w-8 h-8 bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-md`}>
-                {contact.profilePicture ? (
-                  <img
-                    src={`https://nakama-production-1850.up.railway.app${contact.profilePicture}`}
-                    alt={`${contact.username}'s profile`}
-                    className="w-full h-full rounded-full object-cover"
-                    style={(() => {
-                      const settings = window.getSavedImageSettings?.(contact.username) || { position: { x: 50, y: 50 }, zoom: 100 };
-                      return {
-                        objectPosition: `${settings.position.x}% ${settings.position.y}%`,
-                        transform: `scale(${settings.zoom / 100})`,
-                        transformOrigin: 'center center'
-                      };
-                    })()}
-                  />
-                ) : (
-                  <span className={`text-white text-xs font-semibold`}>
-                    {contact.username.charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
+              <ProfileImage
+                src={contact.profilePicture ? `https://nakama-production-1850.up.railway.app${contact.profilePicture}` : null}
+                username={contact.username}
+                size="sm"
+                className="shadow-md"
+              />
               <div>
                 <p className={`text-white font-medium`}>@{contact.username}</p>
                 <p className="text-gray-400 text-sm">{contact.bio || 'No bio available'}</p>

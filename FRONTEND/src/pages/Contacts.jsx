@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import ProfileImage from '../components/ProfileImage';
 import { 
   UserPlusIcon, 
   PaperAirplaneIcon, 
@@ -115,27 +116,11 @@ export const Contacts = () => {
               {searchResults.found ? (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
-                      {searchResults.profilePicture ? (
-                        <img
-                          src={`https://nakama-production-1850.up.railway.app${searchResults.profilePicture}`}
-                          alt={`${searchResults.username}'s profile`}
-                          className="w-full h-full rounded-full object-cover"
-                          style={(() => {
-                            const settings = window.getSavedImageSettings?.(searchResults.username) || { position: { x: 50, y: 50 }, zoom: 100 };
-                            return {
-                              objectPosition: `${settings.position.x}% ${settings.position.y}%`,
-                              transform: `scale(${settings.zoom / 100})`,
-                              transformOrigin: 'center center'
-                            };
-                          })()}
-                        />
-                      ) : (
-                        <span className="text-white font-semibold">
-                          {searchResults.username.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
+                    <ProfileImage
+                      src={searchResults.profilePicture ? `https://nakama-production-1850.up.railway.app${searchResults.profilePicture}` : null}
+                      username={searchResults.username}
+                      size="md"
+                    />
                     <div>
                       <p className="text-white font-semibold">@{searchResults.username}</p>
                       <p className="text-white/60 text-sm">{searchResults.bio}</p>
@@ -175,27 +160,11 @@ export const Contacts = () => {
               {contacts.contacts.map((contact) => (
                 <div key={contact.username} className="bg-white/5 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
-                      {contact.profilePicture ? (
-                        <img
-                          src={`https://nakama-production-1850.up.railway.app${contact.profilePicture}`}
-                          alt={`${contact.username}'s profile`}
-                          className="w-full h-full rounded-full object-cover"
-                          style={(() => {
-                            const settings = window.getSavedImageSettings?.(contact.username) || { position: { x: 50, y: 50 }, zoom: 100 };
-                            return {
-                              objectPosition: `${settings.position.x}% ${settings.position.y}%`,
-                              transform: `scale(${settings.zoom / 100})`,
-                              transformOrigin: 'center center'
-                            };
-                          })()}
-                        />
-                      ) : (
-                        <span className="text-white font-semibold">
-                          {contact.username.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
+                    <ProfileImage
+                      src={contact.profilePicture ? `https://nakama-production-1850.up.railway.app${contact.profilePicture}` : null}
+                      username={contact.username}
+                      size="md"
+                    />
                     <div>
                       <p className="text-white font-semibold">@{contact.username}</p>
                       <p className="text-white/60 text-sm">{contact.bio}</p>

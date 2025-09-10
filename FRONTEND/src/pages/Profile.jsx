@@ -4,6 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
+import ProfileImage from '../components/ProfileImage';
 import { CameraIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
@@ -191,23 +192,16 @@ export const Profile = () => {
         {/* Profile Picture */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-4">
-            <div className="w-24 h-24 bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-xl">
-              {user?.profilePicture ? (
-                <img
-                  src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
-                  alt="Profile"
-                  className="w-full h-full rounded-full"
-                  style={{
-                    objectFit: 'cover',
-                    ...getImageStyle()
-                  }}
-                />
-              ) : (
-                <span className="text-white dark:text-white font-bold text-2xl">
-                  {formData.username.charAt(0).toUpperCase() || '?'}
-                </span>
-              )}
-            </div>
+            <ProfileImage
+              src={user?.profilePicture ? `https://nakama-production-1850.up.railway.app${user.profilePicture}` : null}
+              username={formData.username}
+              size="xl"
+              className="shadow-xl"
+              style={{
+                objectFit: 'cover',
+                ...getImageStyle()
+              }}
+            />
             <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 cursor-pointer shadow-lg">
               <CameraIcon className="w-4 h-4 text-gray-600" />
               <input
