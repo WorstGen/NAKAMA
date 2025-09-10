@@ -288,7 +288,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
       toast.error(`Failed to switch to ${chainName}: ${error.message}`);
       throw error;
     }
-  }, []);
+  }, [getConnectedChains]);
 
   // Get active wallet info
   const getActiveWallet = useCallback(() => {
