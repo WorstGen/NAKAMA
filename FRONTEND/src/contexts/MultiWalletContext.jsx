@@ -20,7 +20,6 @@ export const MultiWalletProvider = ({ children }) => {
   
   // EVM wallet state (new)
   const { address: evmAddress, isConnected: evmConnected } = useAccount();
-  const { connect: evmConnect, connectors } = useConnect();
   const { disconnect: evmDisconnect } = useDisconnect();
   const { signMessageAsync: evmSignMessage } = useSignMessage();
   const { switchNetwork } = useSwitchNetwork();
