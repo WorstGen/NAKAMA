@@ -143,10 +143,10 @@ export const Profile = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    // Validate file type - more lenient
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff'];
     if (!allowedTypes.includes(file.type)) {
-      toast.error('Invalid file type. Please upload JPEG, PNG, GIF, or WebP images only.');
+      toast.error('Invalid file type. Please upload a valid image file.');
       return;
     }
 
@@ -157,39 +157,24 @@ export const Profile = () => {
       return;
     }
 
-    // Validate image dimensions and integrity
+    // Basic image validation - just check if it's a valid image
     try {
       const img = new Image();
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
       
       await new Promise((resolve, reject) => {
         img.onload = () => {
-          // Check if image is too small or too large
-          if (img.width < 50 || img.height < 50) {
-            reject(new Error('Image too small. Please upload an image at least 50x50 pixels.'));
+          // Basic size check - more lenient
+          if (img.width < 10 || img.height < 10) {
+            reject(new Error('Image too small. Please upload a larger image.'));
             return;
           }
           
-          if (img.width > 4000 || img.height > 4000) {
-            reject(new Error('Image too large. Please upload an image smaller than 4000x4000 pixels.'));
+          if (img.width > 8000 || img.height > 8000) {
+            reject(new Error('Image too large. Please upload a smaller image.'));
             return;
           }
           
-          // Test if image can be drawn (integrity check)
-          try {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
-            const imageData = ctx.getImageData(0, 0, 1, 1);
-            if (!imageData.data || imageData.data.length === 0) {
-              reject(new Error('Invalid image file. The image appears to be corrupted.'));
-              return;
-            }
-            resolve();
-          } catch (drawError) {
-            reject(new Error('Invalid image file. The image appears to be corrupted.'));
-          }
+          resolve();
         };
         
         img.onerror = () => {
@@ -255,7 +240,7 @@ export const Profile = () => {
               <CameraIcon className="w-4 h-4 text-gray-600" />
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
+                accept="image/*"
                 onChange={handleProfilePictureUpload}
                 className="hidden"
               />
