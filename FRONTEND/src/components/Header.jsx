@@ -21,7 +21,6 @@ export const Header = () => {
   } = useMultiWallet();
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [chainSelectorOpen, setChainSelectorOpen] = useState(false);
   const [portalRoot, setPortalRoot] = useState(null);
 
   const isActive = (path) => location.pathname === path;
@@ -72,120 +71,20 @@ export const Header = () => {
           </Link>
 
           {/* Profile/Connect Button */}
-          <div className="flex items-center space-x-3">
-            {/* Chain Selector */}
-            {isAnyWalletConnected && (
-              <div className="relative">
-                <button
-                  onClick={() => setChainSelectorOpen(!chainSelectorOpen)}
-                  className="flex items-center space-x-2 backdrop-blur-sm rounded-lg px-3 py-2 border transition-all duration-200 hover:bg-gray-800/50"
-                  style={{
-                    backgroundColor: '#1f2937',
-                    border: '1px solid #374151'
-                  }}
-                >
-                  {activeChain && (
-                    <>
-                      <div 
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: chainConfig[activeChain]?.color || '#3b82f6' }}
-                      />
-                      <span className="text-white text-sm font-medium hidden sm:block">
-                        {chainConfig[activeChain]?.symbol || activeChain?.toUpperCase()}
-                      </span>
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </>
-                  )}
-                </button>
-
-                {/* Chain Selector Dropdown */}
-                {chainSelectorOpen && portalRoot && createPortal(
-                  <div
-                    className="fixed inset-0"
-                    style={{ zIndex: 2147483647 }}
-                    onClick={() => setChainSelectorOpen(false)}
-                  >
-                    <div
-                      className="absolute bg-gray-900/98 backdrop-blur-xl border border-gray-700/70 rounded-xl shadow-2xl p-2 min-w-48"
-                      style={{
-                        right: '100px',
-                        top: '70px',
-                        zIndex: 2147483648
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="text-xs text-gray-400 px-3 py-2">Connected Wallets</div>
-                      {Object.entries(connectedWallets).map(([chainName, wallet]) => {
-                        if (!wallet?.isConnected) return null;
-                        const chainInfo = chainConfig[chainName];
-                        return (
-                          <button
-                            key={chainName}
-                            onClick={async () => {
-                              try {
-                                await switchActiveChain(chainName);
-                                setChainSelectorOpen(false);
-                              } catch (error) {
-                                console.error('Failed to switch chain:', error);
-                              }
-                            }}
-                            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                              activeChain === chainName 
-                                ? 'bg-blue-500/20 text-blue-400' 
-                                : 'hover:bg-gray-800/50 text-gray-200'
-                            }`}
-                          >
-                            <div 
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: chainInfo?.color || '#3b82f6' }}
-                            />
-                            <div className="flex-1 text-left">
-                              <div className="font-medium">{chainInfo?.name}</div>
-                              <div className="text-xs text-gray-400">
-                                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                              </div>
-                            </div>
-                            {activeChain === chainName && (
-                              <div className="w-2 h-2 bg-blue-400 rounded-full" />
-                            )}
-                          </button>
-                        );
-                      })}
-                      
-                      <div className="border-t border-gray-700/50 mt-2 pt-2">
-                        <div className="text-xs text-gray-400 px-3 py-1">Add Wallet</div>
-                        {Object.entries(chainConfig).map(([chainName, chainInfo]) => {
-                          if (connectedWallets[chainName]?.isConnected) return null;
-                          return (
-                            <button
-                              key={chainName}
-                              onClick={async () => {
-                                try {
-                                  await connectWallet(chainName);
-                                  setChainSelectorOpen(false);
-                                } catch (error) {
-                                  console.error('Failed to connect wallet:', error);
-                                }
-                              }}
-                              className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800/50 text-gray-300"
-                            >
-                              <div 
-                                className="w-3 h-3 rounded-full opacity-50"
-                                style={{ backgroundColor: chainInfo.color }}
-                              />
-                              <span>Connect {chainInfo.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>,
-                  portalRoot
-                )}
+          <div className="flex items-center space-x-2">
+            {/* Simplified Chain Indicator */}
+            {isAnyWalletConnected && activeChain && (
+              <div className="flex items-center space-x-1 px-2 py-1 bg-gray-800/50 rounded-md">
+                <div 
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: chainConfig[activeChain]?.color || '#3b82f6' }}
+                />
+                <span className="text-white text-xs font-medium hidden sm:block">
+                  {chainConfig[activeChain]?.symbol}
+                </span>
               </div>
             )}
+
 
             {(connected || isAnyWalletConnected) && user ? (
               // User profile button when connected
@@ -229,53 +128,26 @@ export const Header = () => {
                 </div>
               </button>
             ) : (
-              // Connect button when not connected
+              // Clean connect buttons
               <div className="flex items-center space-x-2">
                 {/* Solana Connect */}
                 {window.solana?.isPhantom && (
                   <button
                     onClick={async () => {
                       try {
-                        console.log('🔌 Connecting to Solana...');
                         await connectWallet('solana');
-                        console.log('✅ Solana connection initiated');
                       } catch (error) {
-                        console.error('❌ Solana connection failed:', error);
-                        alert(`Solana connection failed: ${error.message}`);
+                        console.error('Solana connection failed:', error);
                       }
                     }}
-                    className="px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                    style={{
-                      backgroundColor: '#14F195',
-                      color: '#000000'
-                    }}
+                    className="px-3 py-2 bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
                   >
-                    <span className="hidden sm:inline">Solana</span>
-                    <span className="sm:hidden">SOL</span>
+                    Solana
                   </button>
                 )}
                 
                 {/* EVM Connect */}
-                <button
-                  onClick={async () => {
-                    try {
-                      console.log('🔌 Connecting to Ethereum...');
-                      await connectWallet('ethereum');
-                      console.log('✅ Ethereum connection initiated');
-                    } catch (error) {
-                      console.error('❌ Ethereum connection failed:', error);
-                      alert(`Ethereum connection failed: ${error.message}`);
-                    }
-                  }}
-                  className="px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                  style={{
-                    backgroundColor: '#627EEA',
-                    color: '#ffffff'
-                  }}
-                >
-                  <span className="hidden sm:inline">Ethereum</span>
-                  <span className="sm:hidden">ETH</span>
-                </button>
+                <w3m-connect-button />
               </div>
             )}
           </div>
