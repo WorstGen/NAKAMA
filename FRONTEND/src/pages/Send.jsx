@@ -183,66 +183,41 @@ export const Send = () => {
         <h1 className="text-3xl font-bold text-white mb-8 text-center">Send Tokens</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Chain Selection */}
+          {/* Simplified Network Selection */}
           <div>
-            <label className="block text-white font-medium mb-3">
-              Select Network *
+            <label className="block text-white font-medium mb-2">
+              Network
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <select
+              value={selectedChain}
+              onChange={(e) => handleChainChange(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
+            >
               {Object.entries(chainConfig).map(([chainName, chainInfo]) => {
                 const isConnected = connectedWallets[chainName]?.isConnected;
-                const isSelected = selectedChain === chainName;
-                
                 return (
-                  <button
-                    key={chainName}
-                    type="button"
-                    onClick={() => handleChainChange(chainName)}
+                  <option 
+                    key={chainName} 
+                    value={chainName} 
                     disabled={!isConnected}
-                    className={`relative p-4 rounded-xl border-2 transition-all duration-200 ${
-                      isSelected
-                        ? 'border-blue-400 bg-blue-500/10 shadow-lg'
-                        : isConnected
-                        ? 'border-gray-600 bg-gray-800/50 hover:border-gray-500 hover:bg-gray-800/70'
-                        : 'border-gray-700 bg-gray-900/50 opacity-50 cursor-not-allowed'
-                    }`}
+                    className="bg-gray-800"
                   >
-                    <div className="flex items-center space-x-3">
-                      <div 
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: chainInfo.color }}
-                      />
-                      <div className="text-left">
-                        <div className={`font-medium ${isSelected ? 'text-blue-400' : 'text-white'}`}>
-                          {chainInfo.name}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {chainInfo.symbol}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 w-2 h-2 bg-blue-400 rounded-full" />
-                    )}
-                    
-                    {!isConnected && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-                        <span className="text-xs text-gray-400">Not Connected</span>
-                      </div>
-                    )}
-                  </button>
+                    {chainInfo.name} {isConnected ? '' : '(Not Connected)'}
+                  </option>
                 );
               })}
-            </div>
+            </select>
             
-            {/* Active wallet info */}
+            {/* Current network indicator */}
             {connectedWallets[selectedChain]?.isConnected && (
-              <div className="mt-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700">
-                <div className="text-xs text-gray-400 mb-1">Active Wallet</div>
-                <div className="font-mono text-sm text-white">
-                  {connectedWallets[selectedChain].address.slice(0, 8)}...{connectedWallets[selectedChain].address.slice(-6)}
-                </div>
+              <div className="mt-2 flex items-center space-x-2 text-sm text-gray-400">
+                <div 
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: chainConfig[selectedChain]?.color }}
+                />
+                <span>
+                  Connected: {connectedWallets[selectedChain].address.slice(0, 6)}...{connectedWallets[selectedChain].address.slice(-4)}
+                </span>
               </div>
             )}
           </div>
