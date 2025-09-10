@@ -317,7 +317,19 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Cloudinary upload function
 const uploadToCloudinary = async (filePath, userId) => {
+  // Check if Cloudinary is configured
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.log('Cloudinary not configured, skipping upload');
+    return null;
+  }
+
   try {
+    console.log('Uploading to Cloudinary:', {
+      filePath,
+      userId,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME
+    });
+
     const result = await cloudinary.uploader.upload(filePath, {
       folder: 'nakama-profiles',
       public_id: `profile-${userId}`,
@@ -328,9 +340,16 @@ const uploadToCloudinary = async (filePath, userId) => {
       overwrite: true
     });
     
+    console.log('Cloudinary upload successful:', result.secure_url);
     return result.secure_url;
   } catch (error) {
     console.error('Cloudinary upload error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      http_code: error.http_code,
+      error_code: error.error?.code,
+      error_name: error.error?.name
+    });
     throw error;
   }
 };
@@ -559,11 +578,11 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    try {
-      // Upload to Cloudinary
-      const cloudinaryUrl = await uploadToCloudinary(req.file.path, user._id.toString());
-      
-      // Remove local file after successful upload
+    // Try Cloudinary first, fallback to local storage
+    const cloudinaryUrl = await uploadToCloudinary(req.file.path, user._id.toString());
+    
+    if (cloudinaryUrl) {
+      // Remove local file after successful Cloudinary upload
       fs.unlinkSync(req.file.path);
       
       console.log('Image uploaded to Cloudinary successfully:', cloudinaryUrl);
@@ -578,12 +597,10 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
       res.json({
         success: true,
         profilePicture: cloudinaryUrl,
-        message: 'Profile picture uploaded successfully'
+        message: 'Profile picture uploaded successfully to Cloudinary'
       });
-    } catch (cloudinaryError) {
-      console.error('Cloudinary upload failed:', cloudinaryError);
-      
-      // Fallback: use local file if Cloudinary fails
+    } else {
+      // Use local file storage
       const profilePictureUrl = `/uploads/${req.file.filename}`;
       
       const result = await User.findOneAndUpdate(
@@ -595,7 +612,7 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
       res.json({
         success: true,
         profilePicture: profilePictureUrl,
-        message: 'Profile picture uploaded successfully (local fallback)'
+        message: 'Profile picture uploaded successfully (local storage)'
       });
     }
   } catch (error) {
