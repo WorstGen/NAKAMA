@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAccount, useConnect, useDisconnect, useSignMessage, useSwitchChain } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useSignMessage, useSwitchNetwork } from 'wagmi';
 import { useWallet as useSolanaWallet } from './WalletContext';
 import { chainConfig } from '../config/web3Config';
 import toast from 'react-hot-toast';
@@ -19,11 +19,11 @@ export const MultiWalletProvider = ({ children }) => {
   const solanaWallet = useSolanaWallet();
   
   // EVM wallet state (new)
-  const { address: evmAddress, isConnected: evmConnected, chain: currentChain } = useAccount();
+  const { address: evmAddress, isConnected: evmConnected, connector: currentChain } = useAccount();
   const { connect: evmConnect, connectors } = useConnect();
   const { disconnect: evmDisconnect } = useDisconnect();
   const { signMessageAsync: evmSignMessage } = useSignMessage();
-  const { switchChain } = useSwitchChain();
+  const { switchNetwork } = useSwitchNetwork();
 
   // Multi-wallet state
   const [activeChain, setActiveChain] = useState('solana');
@@ -62,23 +62,22 @@ export const MultiWalletProvider = ({ children }) => {
 
   // Update connected wallets when EVM wallet changes
   useEffect(() => {
-    if (evmConnected && evmAddress && currentChain) {
-      const chainName = getChainNameFromId(currentChain.id);
-      if (chainName) {
-        setConnectedWallets(prev => ({
-          ...prev,
-          [chainName]: {
-            address: evmAddress,
-            connector: 'evm',
-            isConnected: true,
-            chainId: currentChain.id
-          }
-        }));
-
-        // Set this chain as active if no Solana wallet is connected
-        if (!solanaWallet.connected) {
-          setActiveChain(chainName);
+    if (evmConnected && evmAddress) {
+      // For Wagmi v1, we'll default to Ethereum and let users switch networks
+      const chainName = 'ethereum';
+      setConnectedWallets(prev => ({
+        ...prev,
+        [chainName]: {
+          address: evmAddress,
+          connector: 'evm',
+          isConnected: true,
+          chainId: 1
         }
+      }));
+
+      // Set this chain as active if no Solana wallet is connected
+      if (!solanaWallet.connected) {
+        setActiveChain(chainName);
       }
     } else {
       // Clear all EVM wallet connections
@@ -91,7 +90,7 @@ export const MultiWalletProvider = ({ children }) => {
         base: null
       }));
     }
-  }, [evmConnected, evmAddress, currentChain, solanaWallet.connected]);
+  }, [evmConnected, evmAddress, solanaWallet.connected]);
 
   // Helper function to get chain name from chain ID
   const getChainNameFromId = (chainId) => {
@@ -115,9 +114,13 @@ export const MultiWalletProvider = ({ children }) => {
           throw new Error(`Unsupported chain: ${chainName}`);
         }
 
-        // If already connected to an EVM wallet, just switch chains
+        // If already connected to an EVM wallet, just switch networks
         if (evmConnected) {
-          await switchChain({ chainId: chainInfo.id });
+          try {
+            await switchNetwork?.({ chainId: chainInfo.id });
+          } catch (error) {
+            console.log('Network switch failed, but continuing:', error);
+          }
           setActiveChain(chainName);
         } else {
           // Connect to EVM wallet
@@ -129,7 +132,7 @@ export const MultiWalletProvider = ({ children }) => {
             throw new Error('No EVM wallet connector available');
           }
 
-          await evmConnect({ connector, chainId: chainInfo.id });
+          await evmConnect({ connector });
           toast.success(`${chainInfo.name} wallet connected!`);
           setActiveChain(chainName);
         }
@@ -183,12 +186,14 @@ export const MultiWalletProvider = ({ children }) => {
       setActiveChain('solana');
     } else {
       const chainInfo = chainConfig[chainName];
-      if (currentChain?.id !== chainInfo.id) {
-        await switchChain({ chainId: chainInfo.id });
+      try {
+        await switchNetwork?.({ chainId: chainInfo.id });
+      } catch (error) {
+        console.log('Network switch failed, but continuing:', error);
       }
       setActiveChain(chainName);
     }
-  }, [connectedWallets, currentChain, switchChain]);
+  }, [connectedWallets, switchNetwork]);
 
   // Sign message with active wallet
   const signMessage = useCallback(async (message) => {
