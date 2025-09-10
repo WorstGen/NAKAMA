@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWallet } from './WalletContext';
+import { usePhantomMultiChain } from './PhantomMultiChainContext';
 import { api } from '../services/api';
 import bs58 from 'bs58';
 import toast from 'react-hot-toast';
@@ -73,6 +74,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const { publicKey, signMessage, connected } = useWallet();
+  const { getActiveWallet, isAnyChainConnected } = usePhantomMultiChain();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [authToken, setAuthToken] = useState(null);
@@ -270,12 +272,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (connected && publicKey && !user && !loading && !api.hasAuthHeaders()) {
+    // Use both old and new context for compatibility
+    const isConnected = connected || isAnyChainConnected;
+    const activeWallet = getActiveWallet();
+    const hasPublicKey = publicKey || activeWallet?.address;
+    
+    console.log('🔐 Auth useEffect - connected:', connected, 'isAnyChainConnected:', isAnyChainConnected, 'hasPublicKey:', hasPublicKey);
+    
+    if (isConnected && hasPublicKey && !user && !loading && !api.hasAuthHeaders()) {
+      console.log('🔐 Triggering authentication...');
       authenticate();
-    } else if (!connected || !publicKey) {
+    } else if (!isConnected || !hasPublicKey) {
+      console.log('🔐 Logging out - no connection or public key');
       logout();
     }
-  }, [connected, publicKey, authenticate, user, loading]);
+  }, [connected, isAnyChainConnected, publicKey, getActiveWallet, authenticate, user, loading]);
 
   // Try to restore authentication on page load if wallet is connected
   useEffect(() => {
@@ -283,12 +294,16 @@ export const AuthProvider = ({ children }) => {
       // Only attempt restoration if we haven't tried authentication before
       // and user is connected but has no authentication state
       const hasAuthHeaders = api.hasAuthHeaders();
-      if (connected && publicKey && !user && !loading && !hasAuthHeaders) {
-        console.log('Attempting to restore authentication...');
+      const isConnected = connected || isAnyChainConnected;
+      const activeWallet = getActiveWallet();
+      const hasPublicKey = publicKey || activeWallet?.address;
+      
+      if (isConnected && hasPublicKey && !user && !loading && !hasAuthHeaders) {
+        console.log('🔐 Attempting to restore authentication...');
         try {
           await authenticate();
         } catch (error) {
-          console.log('Failed to restore authentication:', error);
+          console.log('🔐 Failed to restore authentication:', error);
         }
       }
     };
@@ -296,7 +311,7 @@ export const AuthProvider = ({ children }) => {
     // Small delay to ensure wallet state is fully initialized
     const timeoutId = setTimeout(restoreAuth, 500);
     return () => clearTimeout(timeoutId);
-  }, [connected, publicKey, user, loading, authenticate]);
+  }, [connected, isAnyChainConnected, publicKey, getActiveWallet, user, loading, authenticate]);
 
   const value = {
     user,

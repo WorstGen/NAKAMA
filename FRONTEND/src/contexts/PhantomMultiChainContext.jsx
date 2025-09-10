@@ -215,24 +215,38 @@ export const PhantomMultiChainProvider = ({ children }) => {
       // For EVM chains, request chain switch
       if (window.ethereum && phantomChains[chainName]) {
         const chainConfig = phantomChains[chainName];
+        console.log('🔄 EVM chain config:', chainConfig);
+        
+        // Fix chain ID mapping - use actual chain IDs
         const chainId = `0x${chainConfig.id === 'ethereum' ? '1' : 
                       chainConfig.id === 'polygon' ? '89' : 
                       chainConfig.id === 'base' ? '2105' : '1'}`;
+        
+        // Convert decimal to hex properly
+        const chainIdDecimal = chainConfig.id === 'ethereum' ? 1 : 
+                              chainConfig.id === 'polygon' ? 137 : 
+                              chainConfig.id === 'base' ? 8453 : 1;
+        const chainIdHex = `0x${chainIdDecimal.toString(16)}`;
+        
+        console.log('🔄 Attempting to switch to chain ID:', chainIdHex);
 
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId }],
+            params: [{ chainId: chainIdHex }],
           });
+          console.log('🔄 Chain switch successful');
           setActiveChain(chainName);
           toast.success(`Switched to ${chainConfig.name}`);
         } catch (switchError) {
+          console.log('🔄 Chain switch failed:', switchError);
           // If chain not added, try to add it
           if (switchError.code === 4902) {
+            console.log('🔄 Adding new chain...');
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
               params: [{
-                chainId,
+                chainId: chainIdHex,
                 chainName: chainConfig.name,
                 nativeCurrency: {
                   name: chainConfig.symbol,
@@ -243,12 +257,16 @@ export const PhantomMultiChainProvider = ({ children }) => {
                 blockExplorerUrls: [chainConfig.blockExplorer],
               }],
             });
+            console.log('🔄 Chain added successfully');
             setActiveChain(chainName);
             toast.success(`Added and switched to ${chainConfig.name}`);
           } else {
+            console.error('🔄 Chain switch error:', switchError);
             throw switchError;
           }
         }
+      } else {
+        console.log('🔄 No ethereum provider or chain config not found');
       }
     } catch (error) {
       console.error('Chain switch failed:', error);
