@@ -142,7 +142,7 @@ export const MultiWalletProvider = ({ children }) => {
       toast.error(`Failed to connect to ${chainName}: ${error.message}`);
       throw error;
     }
-  }, [solanaWallet, evmConnected, evmConnect, connectors, switchChain]);
+  }, [solanaWallet, evmConnected, evmConnect, connectors, switchNetwork]);
 
   // Disconnect from a specific wallet
   const disconnectWallet = useCallback(async (chainName) => {
