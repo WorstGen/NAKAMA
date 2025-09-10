@@ -1,4 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { Image, Transformation } from 'cloudinary-react';
+
+// Helper function to extract public ID from Cloudinary URL
+const extractPublicId = (url) => {
+  if (!url) return null;
+  
+  // Check if it's a Cloudinary URL
+  if (url.includes('cloudinary.com')) {
+    const parts = url.split('/');
+    const folderAndId = parts[parts.length - 2] + '/' + parts[parts.length - 1].split('.')[0];
+    return folderAndId;
+  }
+  
+  return null;
+};
 
 const ProfileImage = ({ 
   src, 
@@ -145,6 +160,9 @@ const ProfileImage = ({
     );
   }
 
+  const publicId = extractPublicId(src);
+  const isCloudinaryImage = publicId !== null;
+
   return (
     <div className={`${getSizeClasses()} bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-md relative ${className}`}>
       {isLoading && !imageError && (
@@ -152,19 +170,40 @@ const ProfileImage = ({
           <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
         </div>
       )}
-      {!isLoading && !imageError && (
-        <img
-          src={src}
-          alt={alt || `${username}'s profile`}
-          className="w-full h-full rounded-full object-cover transition-opacity duration-200"
-          style={{
-            ...getImageSettings(),
-            ...style
-          }}
-          onError={handleImageError}
-          onLoad={handleImageLoad}
-          loading="lazy"
-        />
+      {!isLoading && !imageError && src && (
+        isCloudinaryImage ? (
+          <Image
+            cloudName={process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}
+            publicId={publicId}
+            width="400"
+            height="400"
+            crop="fill"
+            gravity="face"
+            quality="auto"
+            fetchFormat="auto"
+            className="w-full h-full rounded-full object-cover transition-opacity duration-200"
+            style={{
+              ...getImageSettings(),
+              ...style
+            }}
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+            loading="lazy"
+          />
+        ) : (
+          <img
+            src={src}
+            alt={alt || `${username}'s profile`}
+            className="w-full h-full rounded-full object-cover transition-opacity duration-200"
+            style={{
+              ...getImageSettings(),
+              ...style
+            }}
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+            loading="lazy"
+          />
+        )
       )}
       {(imageError || (!src && !isLoading)) && showFallback && (
         <span className={`text-white font-semibold ${getTextSize()}`}>

@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { useAuth } from '../contexts/AuthContext';
 import ProfileImage from './ProfileImage';
+import Logo from './Logo';
 
 export const Header = () => {
   const location = useLocation();
@@ -52,49 +53,11 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <svg
-              width="180"
-              height="48"
-              viewBox="0 0 180 48"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+            <Logo 
+              size="medium" 
               className="h-12 w-auto"
               style={{ maxWidth: '180px', minWidth: '120px' }}
-            >
-              {/* Background with gradient */}
-              <defs>
-                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style={{ stopColor: '#fb923c', stopOpacity: 1 }} />
-                  <stop offset="100%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
-                </linearGradient>
-              </defs>
-
-              {/* Main logo shape */}
-              <rect x="0" y="8" width="180" height="32" rx="16" fill="url(#logoGradient)" />
-
-              {/* NAKAMA text */}
-              <text
-                x="90"
-                y="30"
-                textAnchor="middle"
-                fill="white"
-                fontSize="20"
-                fontWeight="bold"
-                fontFamily="Arial, sans-serif"
-                letterSpacing="2px"
-              >
-                NAKAMA
-              </text>
-
-              {/* Decorative elements */}
-              <circle cx="30" cy="24" r="4" fill="white" opacity="0.9"/>
-              <circle cx="150" cy="24" r="4" fill="white" opacity="0.9"/>
-              <rect x="50" y="20" width="6" height="8" fill="white" opacity="0.8"/>
-              <rect x="65" y="18" width="6" height="12" fill="white" opacity="0.8"/>
-              <rect x="80" y="22" width="6" height="4" fill="white" opacity="0.8"/>
-              <rect x="95" y="20" width="6" height="8" fill="white" opacity="0.8"/>
-              <rect x="110" y="16" width="6" height="16" fill="white" opacity="0.8"/>
-            </svg>
+            />
           </Link>
 
           {/* Profile/Connect Button */}
