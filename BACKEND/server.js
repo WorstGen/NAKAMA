@@ -338,10 +338,6 @@ const uploadToCloudinary = async (filePath, userId) => {
     const result = await cloudinary.uploader.upload(filePath, {
       folder: 'nakama-profiles',
       public_id: `profile-${userId}`,
-      transformation: [
-        { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-        { quality: 'auto:good', fetch_format: 'auto' }
-      ],
       overwrite: true,
       resource_type: 'auto'
     });
