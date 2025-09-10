@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWallet } from './WalletContext';
-import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
 
 const PhantomMultiChainContext = createContext();
