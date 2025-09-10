@@ -10,15 +10,13 @@ import { chainConfig } from '../config/web3Config';
 
 export const Header = () => {
   const location = useLocation();
-  const { connected, publicKey, connect, disconnect } = useWallet();
+  const { connected, publicKey, disconnect } = useWallet();
   const { 
     activeChain, 
     connectedWallets, 
     isAnyWalletConnected, 
     connectWallet, 
-    disconnectWallet,
     switchActiveChain,
-    getAllConnectedWallets,
     getActiveWallet
   } = useMultiWallet();
   const { user } = useAuth();
