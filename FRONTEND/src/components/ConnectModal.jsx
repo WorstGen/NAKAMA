@@ -20,18 +20,38 @@ const ConnectModal = ({ isOpen, onClose }) => {
       } else if (type === 'evm') {
         // Trigger Web3Modal for EVM wallets
         try {
-          // Use the ethereumClient from web3Config
+          // Try multiple approaches to open Web3Modal
+          let modalOpened = false;
+          
+          // Method 1: Try ethereumClient.openModal (if available)
           if (ethereumClient && typeof ethereumClient.openModal === 'function') {
             await ethereumClient.openModal();
-          } else {
-            // Fallback: try to find and click the Web3Modal button
+            modalOpened = true;
+          }
+          
+          // Method 2: Try to find and click the Web3Modal button
+          if (!modalOpened) {
             const w3mButton = document.querySelector('w3m-connect-button');
             if (w3mButton) {
               w3mButton.click();
-            } else {
-              throw new Error('Web3Modal not available');
+              modalOpened = true;
             }
           }
+          
+          // Method 3: Try to trigger via custom event
+          if (!modalOpened) {
+            const event = new CustomEvent('w3m-open');
+            window.dispatchEvent(event);
+            modalOpened = true;
+          }
+          
+          if (!modalOpened) {
+            throw new Error('Web3Modal not available');
+          }
+          
+          // Don't close our modal immediately, let user complete EVM connection
+          toast.success('EVM wallet connection opened!');
+          
         } catch (modalError) {
           console.error('Web3Modal error:', modalError);
           throw new Error('Unable to open wallet connection modal');
@@ -62,14 +82,34 @@ const ConnectModal = ({ isOpen, onClose }) => {
       
       // Then trigger EVM connection via Web3Modal
       try {
+        let modalOpened = false;
+        
+        // Method 1: Try ethereumClient.openModal (if available)
         if (ethereumClient && typeof ethereumClient.openModal === 'function') {
           await ethereumClient.openModal();
-        } else {
+          modalOpened = true;
+        }
+        
+        // Method 2: Try to find and click the Web3Modal button
+        if (!modalOpened) {
           const w3mButton = document.querySelector('w3m-connect-button');
           if (w3mButton) {
             w3mButton.click();
+            modalOpened = true;
           }
         }
+        
+        // Method 3: Try to trigger via custom event
+        if (!modalOpened) {
+          const event = new CustomEvent('w3m-open');
+          window.dispatchEvent(event);
+          modalOpened = true;
+        }
+        
+        if (modalOpened) {
+          toast.success('EVM wallet connection opened!');
+        }
+        
       } catch (modalError) {
         console.error('Web3Modal error in connect all:', modalError);
         // Continue even if EVM connection fails
@@ -86,7 +126,7 @@ const ConnectModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
@@ -94,7 +134,7 @@ const ConnectModal = ({ isOpen, onClose }) => {
       />
       
       {/* Modal */}
-      <div className="relative bg-gray-900 rounded-2xl border border-gray-700 p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="relative bg-gray-900 rounded-2xl border border-gray-700 p-6 max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">Connect Wallet</h2>
@@ -117,6 +157,25 @@ const ConnectModal = ({ isOpen, onClose }) => {
           ) : (
             '🚀 Connect All Wallets'
           )}
+        </button>
+
+        {/* Debug Web3Modal Button */}
+        <button
+          onClick={() => {
+            console.log('Debug: ethereumClient:', ethereumClient);
+            console.log('Debug: w3mButton:', document.querySelector('w3m-connect-button'));
+            console.log('Debug: w3mModal:', document.querySelector('w3m-modal'));
+            const w3mButton = document.querySelector('w3m-connect-button');
+            if (w3mButton) {
+              console.log('Debug: Clicking w3m button');
+              w3mButton.click();
+            } else {
+              console.log('Debug: No w3m button found');
+            }
+          }}
+          className="w-full mb-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm"
+        >
+          🔧 Debug Web3Modal
         </button>
 
         <div className="text-center text-gray-400 text-sm mb-4">or connect individually</div>
@@ -207,3 +266,4 @@ const ConnectModal = ({ isOpen, onClose }) => {
 };
 
 export default ConnectModal;
+
