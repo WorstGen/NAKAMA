@@ -1,6 +1,7 @@
 // Web3Modal and Wagmi Configuration for Multi-Chain Support
-import { defaultWagmiConfig } from '@web3modal/wagmi/react/config';
-import { createWeb3Modal } from '@web3modal/wagmi/react';
+import { EthereumClient, w3mConnectors, w3mProvider } from '@web3modal/ethereum';
+import { Web3Modal } from '@web3modal/react';
+import { configureChains, createConfig } from 'wagmi';
 import { mainnet, polygon, arbitrum, optimism, base } from 'wagmi/chains';
 
 // Get projectId from https://cloud.walletconnect.com
@@ -8,6 +9,22 @@ const projectId = process.env.REACT_APP_WALLETCONNECT_PROJECT_ID || 'your-projec
 
 // Define the chains we support
 export const supportedChains = [mainnet, polygon, arbitrum, optimism, base];
+
+// Configure chains
+const { chains, publicClient } = configureChains(
+  supportedChains,
+  [w3mProvider({ projectId })]
+);
+
+// Create wagmi config
+export const wagmiConfig = createConfig({
+  autoConnect: true,
+  connectors: w3mConnectors({ projectId, chains }),
+  publicClient
+});
+
+// Create ethereum client
+export const ethereumClient = new EthereumClient(wagmiConfig, chains);
 
 // Chain configuration with custom details
 export const chainConfig = {
@@ -97,36 +114,8 @@ export const chainConfig = {
   }
 };
 
-// Metadata for Web3Modal
-const metadata = {
-  name: 'NAKAMA',
-  description: 'Cross-chain social payment platform',
-  url: 'https://nakama.app',
-  icons: ['https://nakama.app/logo/nakama-logo.png']
-};
-
-// Create wagmi config
-export const wagmiConfig = defaultWagmiConfig({
-  chains: supportedChains,
-  projectId,
-  metadata,
-  enableWalletConnect: true,
-  enableInjected: true,
-  enableEIP6963: true,
-  enableCoinbase: true
-});
-
-// Create Web3Modal instance
-createWeb3Modal({
-  wagmiConfig,
-  projectId,
-  enableAnalytics: true,
-  themeMode: 'dark',
-  themeVariables: {
-    '--w3m-accent': '#3b82f6', // Blue theme to match NAKAMA
-    '--w3m-border-radius-master': '8px'
-  }
-});
+// Export projectId for Web3Modal component
+export { projectId };
 
 // Utility functions
 export const getChainById = (chainId) => {
