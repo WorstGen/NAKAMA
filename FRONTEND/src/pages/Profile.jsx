@@ -157,6 +157,55 @@ export const Profile = () => {
       return;
     }
 
+    // Validate image dimensions and integrity
+    try {
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          // Check if image is too small or too large
+          if (img.width < 50 || img.height < 50) {
+            reject(new Error('Image too small. Please upload an image at least 50x50 pixels.'));
+            return;
+          }
+          
+          if (img.width > 4000 || img.height > 4000) {
+            reject(new Error('Image too large. Please upload an image smaller than 4000x4000 pixels.'));
+            return;
+          }
+          
+          // Test if image can be drawn (integrity check)
+          try {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, 1, 1);
+            if (!imageData.data || imageData.data.length === 0) {
+              reject(new Error('Invalid image file. The image appears to be corrupted.'));
+              return;
+            }
+            resolve();
+          } catch (drawError) {
+            reject(new Error('Invalid image file. The image appears to be corrupted.'));
+          }
+        };
+        
+        img.onerror = () => {
+          reject(new Error('Invalid image file. Please try a different image.'));
+        };
+        
+        img.src = URL.createObjectURL(file);
+      });
+      
+      // Clean up object URL
+      URL.revokeObjectURL(img.src);
+    } catch (validationError) {
+      toast.error(validationError.message);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('profilePicture', file);
 
