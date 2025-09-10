@@ -149,6 +149,10 @@ export const PhantomMultiChainProvider = ({ children }) => {
 
   // Connect to all available chains
   const connectAllChains = useCallback(async () => {
+    console.log('🔗 connectAllChains called');
+    console.log('🔗 isPhantomAvailable:', isPhantomAvailable());
+    console.log('🔗 connected:', connected);
+    
     if (!isPhantomAvailable()) {
       throw new Error('Phantom wallet not found');
     }
@@ -157,8 +161,12 @@ export const PhantomMultiChainProvider = ({ children }) => {
     try {
       // First connect to Solana (Phantom's primary chain)
       if (!connected) {
+        console.log('🔗 Connecting to Solana...');
         await window.solana.connect();
+        console.log('🔗 Solana connected successfully');
         toast.success('Solana connected!');
+      } else {
+        console.log('🔗 Solana already connected');
       }
 
       // Then request EVM access
@@ -189,12 +197,16 @@ export const PhantomMultiChainProvider = ({ children }) => {
 
   // Switch to a specific chain
   const switchToChain = useCallback(async (chainName) => {
+    console.log('🔄 switchToChain called with:', chainName);
+    console.log('🔄 isPhantomAvailable:', isPhantomAvailable());
+    
     if (!isPhantomAvailable()) {
       throw new Error('Phantom wallet not found');
     }
 
     try {
       if (chainName === 'solana') {
+        console.log('🔄 Switching to Solana');
         setActiveChain('solana');
         toast.success('Switched to Solana');
         return;
