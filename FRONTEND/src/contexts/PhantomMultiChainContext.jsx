@@ -294,26 +294,6 @@ export const PhantomMultiChainProvider = ({ children }) => {
     }
   }, [getConnectedChains, isPhantomAvailable]);
 
-  // Get active wallet info
-  const getActiveWallet = useCallback(() => {
-    const chain = connectedChains[activeChain];
-    if (!chain) return null;
-    
-    return {
-      publicKey: chain.address, // Use address as publicKey for compatibility
-      address: chain.address,
-      chainId: chain.chainId,
-      chainName: chain.chainName,
-      isConnected: chain.isConnected,
-      signMessage: signMessage // Include the signMessage function
-    };
-  }, [activeChain, connectedChains, signMessage]);
-
-  // Get tokens for active chain
-  const getActiveChainTokens = useCallback(() => {
-    return phantomChains[activeChain]?.tokens || [];
-  }, [activeChain]);
-
   // Sign message with active wallet
   const signMessage = useCallback(async (message) => {
     if (!isPhantomAvailable()) {
@@ -351,6 +331,26 @@ export const PhantomMultiChainProvider = ({ children }) => {
       throw error;
     }
   }, [activeChain, publicKey, isPhantomAvailable]);
+
+  // Get active wallet info
+  const getActiveWallet = useCallback(() => {
+    const chain = connectedChains[activeChain];
+    if (!chain) return null;
+    
+    return {
+      publicKey: chain.address, // Use address as publicKey for compatibility
+      address: chain.address,
+      chainId: chain.chainId,
+      chainName: chain.chainName,
+      isConnected: chain.isConnected,
+      signMessage: signMessage // Include the signMessage function
+    };
+  }, [activeChain, connectedChains, signMessage]);
+
+  // Get tokens for active chain
+  const getActiveChainTokens = useCallback(() => {
+    return phantomChains[activeChain]?.tokens || [];
+  }, [activeChain]);
 
   // Update connected chains when wallet connection changes
   useEffect(() => {
