@@ -6,6 +6,7 @@ import { useMultiWallet } from '../contexts/MultiWalletContext';
 import { useAuth } from '../contexts/AuthContext';
 import ProfileImage from './ProfileImage';
 import Logo from './Logo';
+import ConnectModal from './ConnectModal';
 import { chainConfig } from '../config/web3Config';
 
 export const Header = () => {
@@ -19,6 +20,7 @@ export const Header = () => {
   } = useMultiWallet();
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
   const [portalRoot, setPortalRoot] = useState(null);
 
   const isActive = (path) => location.pathname === path;
@@ -126,27 +128,13 @@ export const Header = () => {
                 </div>
               </button>
             ) : (
-              // Clean connect buttons
-              <div className="flex items-center space-x-2">
-                {/* Solana Connect */}
-                {window.solana?.isPhantom && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        await connectWallet('solana');
-                      } catch (error) {
-                        console.error('Solana connection failed:', error);
-                      }
-                    }}
-                    className="px-3 py-2 bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
-                  >
-                    Solana
-                  </button>
-                )}
-                
-                {/* EVM Connect */}
-                <w3m-connect-button />
-              </div>
+              // Compact Connect Button
+              <button
+                onClick={() => setConnectModalOpen(true)}
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg font-medium text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                Connect Wallet
+              </button>
             )}
           </div>
 
@@ -281,6 +269,12 @@ export const Header = () => {
 
         </div>
       </div>
+      
+      {/* Connect Modal */}
+      <ConnectModal 
+        isOpen={connectModalOpen} 
+        onClose={() => setConnectModalOpen(false)} 
+      />
     </header>
   );
 };
