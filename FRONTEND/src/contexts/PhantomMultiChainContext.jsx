@@ -79,9 +79,9 @@ export const PhantomMultiChainProvider = ({ children }) => {
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Check if Phantom is available
-  const isPhantomAvailable = () => {
+  const isPhantomAvailable = useCallback(() => {
     return window.solana && window.solana.isPhantom;
-  };
+  }, []);
 
   // Get all connected chains from Phantom
   const getConnectedChains = useCallback(async () => {
