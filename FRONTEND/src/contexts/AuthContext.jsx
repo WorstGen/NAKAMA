@@ -74,14 +74,22 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const { publicKey, signMessage, connected } = useWallet();
-  const { getActiveWallet, isAnyChainConnected } = usePhantomMultiChain();
+  const { getActiveWallet, isAnyChainConnected, phantomSignMessage } = usePhantomMultiChain();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [authToken, setAuthToken] = useState(null);
 
   const authenticate = useCallback(async () => {
-    if (!publicKey || !signMessage) {
+    // Get the active wallet from PhantomMultiChain context
+    const activeWallet = getActiveWallet();
+    const activePublicKey = activeWallet?.publicKey;
+    const activeSignMessage = activeWallet?.signMessage || phantomSignMessage;
+    
+    if (!activePublicKey || !activeSignMessage) {
       console.log('Authentication skipped: missing publicKey or signMessage function');
+      console.log('Active wallet:', activeWallet);
+      console.log('Active public key:', activePublicKey);
+      console.log('Active sign message function:', !!activeSignMessage);
       return;
     }
 
@@ -93,7 +101,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Validating wallet configuration...');
 
       // Check if wallet is connected and has the expected properties
-      if (!publicKey.toString() || publicKey.toString().length !== 44) {
+      if (!activePublicKey.toString() || activePublicKey.toString().length !== 44) {
         throw new Error('Invalid Solana public key format');
       }
 
@@ -110,7 +118,7 @@ export const AuthProvider = ({ children }) => {
         console.log('Message bytes length:', messageBytes.length);
 
         // Add timeout for signing operation
-        const signPromise = signMessage(message); // Pass string, not bytes
+        const signPromise = activeSignMessage(message); // Pass string, not bytes
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Wallet signing timeout')), 30000)
         );
@@ -181,13 +189,13 @@ export const AuthProvider = ({ children }) => {
       // We now always encode with bs58 for backend compatibility
       console.log('Final signature (base58 encoded):', encodedSignature);
 
-      console.log('Public key:', publicKey.toString());
+      console.log('Public key:', activePublicKey.toString());
 
       // Set auth headers to match backend expectations
       api.setAuthHeaders({
         'X-Signature': encodedSignature,
         'X-Message': message,
-        'X-Public-Key': publicKey.toString()
+        'X-Public-Key': activePublicKey.toString()
       });
 
       console.log('Auth headers set successfully');
@@ -262,7 +270,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [publicKey, signMessage]);
+  }, [getActiveWallet, phantomSignMessage]);
 
   const logout = () => {
     setUser(null);
