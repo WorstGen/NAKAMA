@@ -30,12 +30,10 @@ const ProfileImage = ({
     
     // Set a timeout to stop loading if image takes too long
     const timeout = setTimeout(() => {
-      if (isLoading) {
-        console.warn(`Profile image loading timeout for ${username}:`, src);
-        setImageError(true);
-        setIsLoading(false);
-        if (onError) onError();
-      }
+      console.warn(`Profile image loading timeout for ${username}:`, src);
+      setImageError(true);
+      setIsLoading(false);
+      if (onError) onError();
     }, loadingTimeout);
     
     setTimeoutId(timeout);
