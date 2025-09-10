@@ -73,8 +73,7 @@ export const phantomChains = {
 };
 
 export const PhantomMultiChainProvider = ({ children }) => {
-  const { connected, publicKey, disconnect } = useWallet();
-  const { user } = useAuth();
+  const { connected, publicKey } = useWallet();
   
   const [connectedChains, setConnectedChains] = useState({});
   const [activeChain, setActiveChain] = useState('solana');
