@@ -2,21 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
-import { useMultiWallet } from '../contexts/MultiWalletContext';
+import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useAuth } from '../contexts/AuthContext';
 import ProfileImage from './ProfileImage';
 import Logo from './Logo';
 import ConnectModal from './ConnectModal';
-import { chainConfig } from '../config/web3Config';
 
 export const Header = () => {
   const location = useLocation();
   const { connected, publicKey, disconnect } = useWallet();
   const { 
     activeChain, 
-    isAnyWalletConnected, 
-    getActiveWallet
-  } = useMultiWallet();
+    isAnyChainConnected, 
+    getActiveWallet,
+    phantomChains
+  } = usePhantomMultiChain();
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [connectModalOpen, setConnectModalOpen] = useState(false);
@@ -72,20 +72,20 @@ export const Header = () => {
           {/* Profile/Connect Button */}
           <div className="flex items-center space-x-2">
             {/* Simplified Chain Indicator */}
-            {isAnyWalletConnected && activeChain && (
+            {isAnyChainConnected && activeChain && (
               <div className="flex items-center space-x-1 px-2 py-1 bg-gray-800/50 rounded-md">
                 <div 
                   className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: chainConfig[activeChain]?.color || '#3b82f6' }}
+                  style={{ backgroundColor: phantomChains[activeChain]?.color || '#3b82f6' }}
                 />
                 <span className="text-white text-xs font-medium hidden sm:block">
-                  {chainConfig[activeChain]?.symbol}
+                  {phantomChains[activeChain]?.symbol}
                 </span>
               </div>
             )}
 
 
-            {(connected || isAnyWalletConnected) && user ? (
+            {(connected || isAnyChainConnected) && user ? (
               // User profile button when connected
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
