@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth, useTheme } from '../contexts/AuthContext';
+import { useWallet } from '../contexts/WalletContext';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
 import { Link } from 'react-router-dom';
@@ -12,6 +13,7 @@ import {
 
 export const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
+  const { publicKey } = useWallet();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
 
@@ -22,6 +24,11 @@ export const Dashboard = () => {
   const { data: transactions } = useQuery('transactions', api.getTransactions, {
     enabled: isAuthenticated,
   });
+
+  const getTransactionType = (tx) => {
+    const myAddress = publicKey?.toString();
+    return tx.fromAddress === myAddress ? 'sent' : 'received';
+  };
 
   if (!isAuthenticated || !user) {
     return (
@@ -128,25 +135,28 @@ export const Dashboard = () => {
         {/* Recent Transactions */}
         <div className={`bg-gray-800 border-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 shadow-xl border`}>
           <h3 className={`text-white font-semibold text-base md:text-lg mb-3 md:mb-4`}>Recent Transactions</h3>
-          {transactions?.transactions?.slice(0, 5).map((tx) => (
-            <div key={tx.signature} className="flex items-center justify-between py-2">
-              <div>
-                <p className={`text-white font-medium`}>
-                  {tx.amount} {tx.token}
-                </p>
-                <p className="text-gray-400 text-sm">
-                  to @{tx.toUsername}
-                </p>
+          {transactions?.transactions?.slice(0, 5).map((tx) => {
+            const type = getTransactionType(tx);
+            return (
+              <div key={tx.signature} className="flex items-center justify-between py-2">
+                <div>
+                  <p className={`text-white font-medium`}>
+                    {tx.amount} {tx.token}
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    {type === 'sent' ? 'To' : 'From'}: @{type === 'sent' ? tx.toUsername : tx.fromUsername || 'Unknown'}
+                  </p>
+                </div>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                  tx.status === 'confirmed' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                  tx.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                  'bg-red-500/20 text-red-400 border border-red-500/30'
+                }`}>
+                  {tx.status}
+                </span>
               </div>
-              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                tx.status === 'confirmed' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                tx.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                'bg-red-500/20 text-red-400 border border-red-500/30'
-              }`}>
-                {tx.status}
-              </span>
-            </div>
-          )) || <p className={`text-gray-400`}>No transactions yet</p>}
+            );
+          }) || <p className={`text-gray-400`}>No transactions yet</p>}
         </div>
       </div>
     </div>

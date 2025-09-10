@@ -93,7 +93,7 @@ export const Transactions = () => {
                           </div>
                         </div>
                         <p className="text-white/60 text-sm">
-                          {type === 'sent' ? 'To' : 'From'}: @{tx.toUsername || 'Unknown'}
+                          {type === 'sent' ? 'To' : 'From'}: @{type === 'sent' ? tx.toUsername : tx.fromUsername || 'Unknown'}
                         </p>
                         {tx.memo && (
                           <p className="text-white/40 text-sm italic">"{tx.memo}"</p>
