@@ -55,8 +55,8 @@ export const Transactions = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 border`}>
+    <div className="max-w-4xl mx-auto px-4 sm:px-0">
+      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-4 sm:p-8 border`}>
         <h1 className="text-3xl font-bold text-white mb-8">Transaction History</h1>
 
         {isLoading ? (
@@ -69,7 +69,7 @@ export const Transactions = () => {
               const type = getTransactionType(tx);
               return (
                 <div key={tx.signature} className="bg-gray-700/50 rounded-lg p-4 border">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center space-x-4">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                         type === 'sent' ? 'bg-red-500/20' : 'bg-green-500/20'
@@ -103,16 +103,16 @@ export const Transactions = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                       <a
                         href={`https://explorer.solana.com/tx/${tx.signature}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 text-sm underline"
+                        className="text-blue-400 hover:text-blue-300 text-sm underline break-all sm:break-normal"
                       >
                         View on Explorer
                       </a>
-                      <p className="text-gray-500 text-xs font-mono">
+                      <p className="text-gray-500 text-xs font-mono break-all sm:break-normal">
                         {tx.signature.slice(0, 8)}...{tx.signature.slice(-8)}
                       </p>
                     </div>

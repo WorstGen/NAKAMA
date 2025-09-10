@@ -82,14 +82,14 @@ export const Contacts = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-0">
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-8">
         <h1 className="text-3xl font-bold text-white mb-8">Contact Book</h1>
 
         {/* Search Section */}
         <div className="bg-white/5 rounded-xl p-6 mb-8">
           <h2 className="text-xl font-semibold text-white mb-4">Add New Contact</h2>
-          <form onSubmit={handleSearch} className="flex gap-4 mb-4">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 mb-4">
             <div className="flex-1">
               <input
                 type="text"
@@ -102,7 +102,7 @@ export const Contacts = () => {
             <button
               type="submit"
               disabled={searching || !searchUsername.trim()}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-6 py-3 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-6 py-3 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <MagnifyingGlassIcon className="w-5 h-5" />
               {searching ? 'Searching...' : 'Search'}
@@ -113,7 +113,7 @@ export const Contacts = () => {
           {searchResults && (
             <div className="bg-white/10 rounded-lg p-4">
               {searchResults.found ? (
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
                       {searchResults.profilePicture ? (
@@ -173,7 +173,7 @@ export const Contacts = () => {
           ) : contacts?.contacts?.length > 0 ? (
             <div className="space-y-4">
               {contacts.contacts.map((contact) => (
-                <div key={contact.username} className="bg-white/5 rounded-lg p-4 flex items-center justify-between">
+                <div key={contact.username} className="bg-white/5 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden">
                       {contact.profilePicture ? (
@@ -205,21 +205,21 @@ export const Contacts = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
                     <Link
                       to={`/send?recipient=${contact.username}`}
-                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
                       <PaperAirplaneIcon className="w-4 h-4" />
-                      Send
+                      <span className="hidden sm:inline">Send</span>
                     </Link>
                     <button
                       onClick={() => handleRemoveContact(contact.username)}
                       disabled={removeContactMutation.isLoading}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
                       <TrashIcon className="w-4 h-4" />
-                      Remove
+                      <span className="hidden sm:inline">Remove</span>
                     </button>
                   </div>
                 </div>

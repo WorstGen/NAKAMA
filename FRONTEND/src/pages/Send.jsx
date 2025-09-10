@@ -124,8 +124,8 @@ export const Send = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-8 border`}>
+    <div className="max-w-2xl mx-auto px-4 sm:px-0">
+      <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-4 sm:p-8 border`}>
         <h1 className="text-3xl font-bold text-white mb-8 text-center">Send Tokens</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -147,14 +147,16 @@ export const Send = () => {
               {contacts?.contacts?.length > 0 && (
                 <div className="max-h-40 overflow-y-auto">
                   <p className="text-white/60 text-sm mb-2">Or select from contacts:</p>
-                  <div className="space-y-1">
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
                     {contacts.contacts.map((contact) => (
                       <button
                         key={contact.username}
                         type="button"
                         onClick={() => setFormData({ ...formData, recipient: contact.username })}
-                        className={`w-full text-left px-3 py-2 rounded bg-gray-700 dark:bg-gray-100 hover:bg-gray-600 dark:hover:bg-gray-200 transition-colors ${
-                          formData.recipient === contact.username ? 'bg-purple-500/20 border border-purple-400' : ''
+                        className={`w-full text-left px-3 py-2 rounded transition-colors ${
+                          formData.recipient === contact.username 
+                            ? 'bg-purple-500/20 border border-purple-400 text-white' 
+                            : 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600'
                         }`}
                       >
                         <span className="text-white">@{contact.username}</span>
