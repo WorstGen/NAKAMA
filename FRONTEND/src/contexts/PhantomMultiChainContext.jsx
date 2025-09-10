@@ -202,7 +202,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
     } finally {
       setIsConnecting(false);
     }
-  }, [connected, getConnectedChains]);
+  }, [connected, getConnectedChains, isPhantomAvailable]);
 
   // Switch to a specific chain
   const switchToChain = useCallback(async (chainName) => {
@@ -292,7 +292,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
       toast.error(`Failed to switch to ${chainName}: ${error.message}`);
       throw error;
     }
-  }, [getConnectedChains]);
+  }, [getConnectedChains, isPhantomAvailable]);
 
   // Get active wallet info
   const getActiveWallet = useCallback(() => {
@@ -348,7 +348,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
       console.error('Sign message failed:', error);
       throw error;
     }
-  }, [activeChain, publicKey]);
+  }, [activeChain, publicKey, isPhantomAvailable]);
 
   // Update connected chains when wallet connection changes
   useEffect(() => {
