@@ -85,7 +85,10 @@ export const PhantomMultiChainProvider = ({ children }) => {
 
   // Get all connected chains from Phantom
   const getConnectedChains = useCallback(async () => {
+    console.log('🔗 getConnectedChains called - isPhantomAvailable:', isPhantomAvailable(), 'connected:', connected);
+    
     if (!isPhantomAvailable() || !connected) {
+      console.log('🔗 Returning empty chains - Phantom not available or not connected');
       return {};
     }
 
@@ -94,6 +97,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
       
       // Solana is always available when Phantom is connected
       if (publicKey) {
+        console.log('🔗 Adding Solana chain with publicKey:', publicKey.toString());
         chains.solana = {
           isConnected: true,
           address: publicKey.toString(),
@@ -140,9 +144,10 @@ export const PhantomMultiChainProvider = ({ children }) => {
         }
       }
 
+      console.log('🔗 Final chains object:', chains);
       return chains;
     } catch (error) {
-      console.error('Error getting connected chains:', error);
+      console.error('🔗 Error getting connected chains:', error);
       return {};
     }
   }, [connected, publicKey]);
@@ -208,6 +213,11 @@ export const PhantomMultiChainProvider = ({ children }) => {
       if (chainName === 'solana') {
         console.log('🔄 Switching to Solana');
         setActiveChain('solana');
+        
+        // Update connected chains after switching
+        const chains = await getConnectedChains();
+        setConnectedChains(chains);
+        
         toast.success('Switched to Solana');
         return;
       }
@@ -232,6 +242,11 @@ export const PhantomMultiChainProvider = ({ children }) => {
           });
           console.log('🔄 Chain switch successful');
           setActiveChain(chainName);
+          
+          // Update connected chains after switching
+          const chains = await getConnectedChains();
+          setConnectedChains(chains);
+          
           toast.success(`Switched to ${chainConfig.name}`);
         } catch (switchError) {
           console.log('🔄 Chain switch failed:', switchError);
@@ -254,6 +269,11 @@ export const PhantomMultiChainProvider = ({ children }) => {
             });
             console.log('🔄 Chain added successfully');
             setActiveChain(chainName);
+            
+            // Update connected chains after adding
+            const chains = await getConnectedChains();
+            setConnectedChains(chains);
+            
             toast.success(`Added and switched to ${chainConfig.name}`);
           } else {
             console.error('🔄 Chain switch error:', switchError);
