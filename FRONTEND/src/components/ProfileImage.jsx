@@ -38,6 +38,9 @@ const ProfileImage = ({
     setIsLoading(true);
     setRetryCount(0);
     
+    // Debug: Log the src URL
+    console.log(`ProfileImage src for ${username}:`, src);
+    
     // Set a timeout to stop loading if image takes too long
     const timeout = setTimeout(() => {
       console.warn(`Profile image loading timeout for ${username}:`, src);
