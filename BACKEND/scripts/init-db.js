@@ -27,6 +27,7 @@ async function initDatabase() {
     const TransactionSchema = new mongoose.Schema({
       fromAddress: { type: String, required: true, index: true },
       toAddress: { type: String, required: true },
+      fromUsername: { type: String },
       toUsername: { type: String },
       amount: { type: Number, required: true },
       token: { type: String, required: true },
