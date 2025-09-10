@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAccount, useConnect, useDisconnect, useSignMessage, useSwitchNetwork } from 'wagmi';
+import { useAccount, useDisconnect, useSignMessage, useSwitchNetwork } from 'wagmi';
 import { useWallet as useSolanaWallet } from './WalletContext';
 import { chainConfig } from '../config/web3Config';
 import toast from 'react-hot-toast';
