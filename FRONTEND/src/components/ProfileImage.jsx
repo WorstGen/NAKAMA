@@ -84,7 +84,7 @@ const ProfileImage = ({
 
   if (!src || imageError) {
     return (
-      <div className={`${getSizeClasses()} bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-md ${className}`}>
+      <div className={`${getSizeClasses()} bg-gradient-to-r from-orange-400 to-blue-400 rounded-lg flex items-center justify-center overflow-hidden shadow-md ${className}`}>
         {showFallback && (
           <span className={`text-white font-semibold ${getTextSize()}`}>
             {fallbackInitial}
@@ -100,7 +100,7 @@ const ProfileImage = ({
   // Remove test image - it might be interfering with the actual image
 
   return (
-    <div className={`${getSizeClasses()} bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-md relative ${className}`}>
+    <div className={`${getSizeClasses()} bg-gradient-to-r from-orange-400 to-blue-400 rounded-lg flex items-center justify-center overflow-hidden shadow-md relative ${className}`}>
       {isLoading && !imageError && (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-orange-400 to-blue-400">
           <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
@@ -110,7 +110,7 @@ const ProfileImage = ({
         <img
           src={sanitizedSrc}
           alt={alt || `${username}'s profile`}
-          className="w-full h-full rounded-full object-cover transition-opacity duration-200"
+          className="w-full h-full rounded-lg object-cover transition-opacity duration-200"
           style={style}
           onError={(e) => {
             console.error('❌ IMG TAG ERROR for', username, ':', e);
