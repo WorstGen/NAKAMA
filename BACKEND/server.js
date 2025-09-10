@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
+const sharp = require('sharp');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
@@ -137,6 +138,30 @@ app.use('/uploads', (req, res, next) => {
   }
 });
 
+// Serve static files with proper cache headers
+app.use('/uploads', express.static('public/uploads', {
+  maxAge: '1y', // Cache for 1 year
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    // Set proper content type for images
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (path.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (path.endsWith('.gif')) {
+      res.setHeader('Content-Type', 'image/gif');
+    } else if (path.endsWith('.webp')) {
+      res.setHeader('Content-Type', 'image/webp');
+    }
+    
+    // Set cache control headers
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Expires', new Date(Date.now() + 31536000000).toUTCString());
+  }
+}));
+
+// Serve other static files
 app.use(express.static('public'));
 
 // Apply rate limiting to all API routes
@@ -185,6 +210,34 @@ const uploadsDir = 'public/uploads/';
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+
+// Image optimization function
+const optimizeImage = async (inputPath, outputPath) => {
+  try {
+    await sharp(inputPath)
+      .resize(400, 400, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .jpeg({
+        quality: 85,
+        progressive: true,
+        mozjpeg: true
+      })
+      .toFile(outputPath);
+    
+    // Verify the optimized image is valid
+    const metadata = await sharp(outputPath).metadata();
+    if (!metadata.width || !metadata.height) {
+      throw new Error('Invalid image after optimization');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Image optimization error:', error);
+    throw error;
+  }
+};
 
 // File upload configuration
 const storage = multer.diskStorage({
@@ -388,7 +441,32 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
       size: req.file.size
     });
 
-    const profilePictureUrl = `/uploads/${req.file.filename}`;
+    const originalPath = req.file.path;
+    const optimizedFilename = `optimized-${req.file.filename}`;
+    const optimizedPath = path.join(uploadsDir, optimizedFilename);
+
+    try {
+      // Optimize the image
+      await optimizeImage(originalPath, optimizedPath);
+      
+      // Remove the original file
+      fs.unlinkSync(originalPath);
+      
+      console.log('Image optimized successfully:', optimizedFilename);
+    } catch (optimizationError) {
+      console.error('Image optimization failed:', optimizationError);
+      // If optimization fails, use the original file
+      const fallbackFilename = req.file.filename;
+      const fallbackPath = path.join(uploadsDir, fallbackFilename);
+      
+      // Move original to final location
+      if (originalPath !== fallbackPath) {
+        fs.renameSync(originalPath, fallbackPath);
+      }
+    }
+
+    const finalFilename = fs.existsSync(optimizedPath) ? optimizedFilename : req.file.filename;
+    const profilePictureUrl = `/uploads/${finalFilename}`;
 
     const result = await User.findOneAndUpdate(
       { walletAddress: req.walletAddress },
