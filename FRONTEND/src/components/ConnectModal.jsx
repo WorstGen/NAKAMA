@@ -10,7 +10,6 @@ const ConnectModal = ({ isOpen, onClose }) => {
     connectedChains, 
     activeChain, 
     isConnecting,
-    isPhantomAvailable,
     phantomChains,
     connectedChainCount
   } = usePhantomMultiChain();
