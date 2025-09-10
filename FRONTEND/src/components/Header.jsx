@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { useAuth } from '../contexts/AuthContext';
+import ProfileImage from './ProfileImage';
 
 export const Header = () => {
   const location = useLocation();
@@ -110,20 +111,13 @@ export const Header = () => {
                 aria-label="Toggle navigation menu"
               >
                 {/* Profile Picture */}
-                {user?.profilePicture ? (
-                  <img
-                    src={`https://nakama-production-1850.up.railway.app${user.profilePicture}`}
-                    alt={`${user.username}'s profile`}
-                    className="w-8 h-8 rounded-full object-cover border-2"
-                    style={{ borderColor: '#fb923c' }}
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-400 to-blue-400 flex items-center justify-center border-2 border-orange-400/60">
-                    <span className="text-white font-bold text-sm">
-                      {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
-                    </span>
-                  </div>
-                )}
+                <ProfileImage
+                  src={user?.profilePicture ? `https://nakama-production-1850.up.railway.app${user.profilePicture}` : null}
+                  username={user?.username || 'User'}
+                  size="sm"
+                  className="border-2"
+                  style={{ borderColor: '#fb923c' }}
+                />
 
                 {/* User Info */}
                 <div className="text-sm hidden sm:block">
