@@ -2,9 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
+import { WagmiProvider } from 'wagmi';
 import { WalletContextProvider } from './contexts/WalletContext';
+import { MultiWalletProvider } from './contexts/MultiWalletContext';
 import { AuthProvider, ThemeProvider, useTheme } from './contexts/AuthContext';
 import { CloudinaryProvider } from './contexts/CloudinaryContext';
+import { wagmiConfig } from './config/web3Config';
 import { Header } from './components/Header';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
@@ -22,17 +25,21 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CloudinaryProvider>
-        <ThemeProvider>
-          <WalletContextProvider>
-            <AuthProvider>
-              <Router>
-                <AppContent />
-              </Router>
-            </AuthProvider>
-          </WalletContextProvider>
-        </ThemeProvider>
-      </CloudinaryProvider>
+      <WagmiProvider config={wagmiConfig}>
+        <CloudinaryProvider>
+          <ThemeProvider>
+            <WalletContextProvider>
+              <MultiWalletProvider>
+                <AuthProvider>
+                  <Router>
+                    <AppContent />
+                  </Router>
+                </AuthProvider>
+              </MultiWalletProvider>
+            </WalletContextProvider>
+          </ThemeProvider>
+        </CloudinaryProvider>
+      </WagmiProvider>
     </QueryClientProvider>
   );
 }
