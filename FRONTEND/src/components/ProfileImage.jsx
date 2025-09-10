@@ -14,10 +14,6 @@ const ProfileImage = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
-  const [timeoutId, setTimeoutId] = useState(null);
-  const maxRetries = 2;
-  const loadingTimeout = 30000; // 30 seconds timeout - increased for debugging
   
 
   // Sanitize URL to fix double URL issues
@@ -40,18 +36,10 @@ const ProfileImage = ({
   useEffect(() => {
     setImageError(false);
     setIsLoading(true);
-    setRetryCount(0);
     
     // Debug: Log the src URL
     console.log(`ProfileImage src for ${username}:`, sanitizedSrc);
-    
-    // Remove timeout - let image load naturally
-    // The test image shows the URL is accessible, so timeout is unnecessary
-    
-    return () => {
-      // Cleanup if needed
-    };
-  }, [sanitizedSrc, username, onError]);
+  }, [sanitizedSrc, username]);
 
 
   const handleImageError = () => {
