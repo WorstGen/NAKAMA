@@ -44,78 +44,27 @@ const ProfileImage = ({
     // Debug: Log the src URL
     console.log(`ProfileImage src for ${username}:`, sanitizedSrc);
     
-    // Set a timeout to stop loading if image takes too long
-    const timeout = setTimeout(() => {
-      console.warn(`Profile image loading timeout for ${username}:`, sanitizedSrc);
-      setImageError(true);
-      setIsLoading(false);
-      if (onError) onError();
-    }, loadingTimeout);
-    
-    setTimeoutId(timeout);
+    // Remove timeout - let image load naturally
+    // The test image shows the URL is accessible, so timeout is unnecessary
     
     return () => {
-      clearTimeout(timeout);
+      // Cleanup if needed
     };
-  }, [sanitizedSrc, username, onError, loadingTimeout]);
+  }, [sanitizedSrc, username, onError]);
 
 
   const handleImageError = () => {
-    console.warn(`Failed to load profile image for ${username}:`, sanitizedSrc);
-    
-    // Clear timeout since we're handling the error
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      setTimeoutId(null);
-    }
-    
+    console.error(`Failed to load profile image for ${username}:`, sanitizedSrc);
+    setImageError(true);
     setIsLoading(false);
-    
-    if (retryCount < maxRetries) {
-      // Retry loading the image
-      setRetryCount(prev => prev + 1);
-      setImageError(false);
-      setIsLoading(true);
-      
-      // Force reload by adding timestamp
-      const retrySrc = `${sanitizedSrc}?retry=${Date.now()}`;
-      const img = new Image();
-      
-      // Set timeout for retry attempt
-      const retryTimeout = setTimeout(() => {
-        setImageError(true);
-        setIsLoading(false);
-        if (onError) onError();
-      }, loadingTimeout);
-      
-      img.onload = () => {
-        clearTimeout(retryTimeout);
-        setImageError(false);
-        setIsLoading(false);
-      };
-      img.onerror = () => {
-        clearTimeout(retryTimeout);
-        if (retryCount + 1 >= maxRetries) {
-          setImageError(true);
-          setIsLoading(false);
-          if (onError) onError();
-        }
-      };
-      img.src = retrySrc;
-    } else {
-      setImageError(true);
-      if (onError) onError();
-    }
+    if (onError) onError();
   };
 
   const handleImageLoad = () => {
-    // Clear timeout since image loaded successfully
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      setTimeoutId(null);
-    }
+    console.log(`✅ Image loaded successfully for ${username}`);
     setImageError(false);
     setIsLoading(false);
+    if (onLoad) onLoad();
   };
 
   const getSizeClasses = () => {
