@@ -42,9 +42,6 @@ const ProfileImage = ({
     console.warn('Cloudinary context not available, falling back to regular img tag');
     cloudName = null;
   }
-  
-  // Debug Cloudinary configuration
-  console.log('ProfileImage Cloudinary config:', { cloudName, isCloudinaryImage, publicId });
 
   // Sanitize URL to fix double URL issues
   const sanitizeUrl = (url) => {
@@ -195,6 +192,9 @@ const ProfileImage = ({
 
   const publicId = extractPublicId(sanitizedSrc);
   const isCloudinaryImage = publicId !== null;
+  
+  // Debug Cloudinary configuration
+  console.log('ProfileImage Cloudinary config:', { cloudName, isCloudinaryImage, publicId });
 
   return (
     <div className={`${getSizeClasses()} bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-md relative ${className}`}>
@@ -208,12 +208,6 @@ const ProfileImage = ({
           <Image
             cloudName={cloudName}
             publicId={publicId}
-            width="400"
-            height="400"
-            crop="fill"
-            gravity="face"
-            quality="auto"
-            fetchFormat="auto"
             className="w-full h-full rounded-full object-cover transition-opacity duration-200"
             style={{
               ...getImageSettings(),
