@@ -1,69 +1,39 @@
 import React, { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { useMultiWallet } from '../contexts/MultiWalletContext';
-import { chainConfig, ethereumClient } from '../config/web3Config';
+import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import toast from 'react-hot-toast';
 
 const ConnectModal = ({ isOpen, onClose }) => {
-  const { connectWallet, connectAllWallets, connectedWallets } = useMultiWallet();
+  const { 
+    connectAllChains, 
+    switchToChain, 
+    connectedChains, 
+    activeChain, 
+    isConnecting,
+    isPhantomAvailable,
+    phantomChains,
+    connectedChainCount
+  } = usePhantomMultiChain();
   const [connecting, setConnecting] = useState(null);
 
   if (!isOpen) return null;
 
-  const handleConnect = async (type, chainName = null) => {
+  const handleConnect = async (chainName) => {
     try {
-      setConnecting(type);
+      setConnecting(chainName);
       
-      if (type === 'solana') {
-        await connectWallet('solana');
-        toast.success('Solana wallet connected!');
-      } else if (type === 'evm') {
-        // Trigger Web3Modal for EVM wallets
-        try {
-          // Try multiple approaches to open Web3Modal
-          let modalOpened = false;
-          
-          // Method 1: Try ethereumClient.openModal (if available)
-          if (ethereumClient && typeof ethereumClient.openModal === 'function') {
-            await ethereumClient.openModal();
-            modalOpened = true;
-          }
-          
-          // Method 2: Try to find and click the Web3Modal button
-          if (!modalOpened) {
-            const w3mButton = document.querySelector('w3m-connect-button');
-            if (w3mButton) {
-              w3mButton.click();
-              modalOpened = true;
-            }
-          }
-          
-          // Method 3: Try to trigger via custom event
-          if (!modalOpened) {
-            const event = new CustomEvent('w3m-open');
-            window.dispatchEvent(event);
-            modalOpened = true;
-          }
-          
-          if (!modalOpened) {
-            throw new Error('Web3Modal not available');
-          }
-          
-          // Don't close our modal immediately, let user complete EVM connection
-          toast.success('EVM wallet connection opened!');
-          
-        } catch (modalError) {
-          console.error('Web3Modal error:', modalError);
-          throw new Error('Unable to open wallet connection modal');
-        }
-      } else if (chainName) {
-        await connectWallet(chainName);
+      if (chainName === 'all') {
+        await connectAllChains();
+        toast.success(`Connected to all available chains!`);
+      } else {
+        await switchToChain(chainName);
+        toast.success(`Switched to ${phantomChains[chainName]?.name}`);
       }
       
       // Close modal after successful connection
       setTimeout(() => {
         onClose();
-      }, 500);
+      }, 1000);
       
     } catch (error) {
       console.error('Connection failed:', error);
@@ -73,57 +43,6 @@ const ConnectModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleConnectAll = async () => {
-    try {
-      setConnecting('all');
-      
-      // Use the connectAllWallets function from context
-      await connectAllWallets();
-      
-      // Then trigger EVM connection via Web3Modal
-      try {
-        let modalOpened = false;
-        
-        // Method 1: Try ethereumClient.openModal (if available)
-        if (ethereumClient && typeof ethereumClient.openModal === 'function') {
-          await ethereumClient.openModal();
-          modalOpened = true;
-        }
-        
-        // Method 2: Try to find and click the Web3Modal button
-        if (!modalOpened) {
-          const w3mButton = document.querySelector('w3m-connect-button');
-          if (w3mButton) {
-            w3mButton.click();
-            modalOpened = true;
-          }
-        }
-        
-        // Method 3: Try to trigger via custom event
-        if (!modalOpened) {
-          const event = new CustomEvent('w3m-open');
-          window.dispatchEvent(event);
-          modalOpened = true;
-        }
-        
-        if (modalOpened) {
-          toast.success('EVM wallet connection opened!');
-        }
-        
-      } catch (modalError) {
-        console.error('Web3Modal error in connect all:', modalError);
-        // Continue even if EVM connection fails
-      }
-      
-      toast.success('Connecting to all available wallets...');
-      
-    } catch (error) {
-      console.error('Multi-connect failed:', error);
-      toast.error('Failed to connect all wallets');
-    } finally {
-      setConnecting(null);
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4">
@@ -146,102 +65,64 @@ const ConnectModal = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* Connect All Button */}
+        {/* Connect All Chains Button */}
         <button
-          onClick={handleConnectAll}
-          disabled={connecting === 'all'}
-          className="w-full mb-4 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-50 flex items-center justify-center"
+          onClick={() => handleConnect('all')}
+          disabled={connecting === 'all' || isConnecting}
+          className="w-full mb-4 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-50 flex items-center justify-center"
         >
-          {connecting === 'all' ? (
+          {(connecting === 'all' || isConnecting) ? (
             <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
           ) : (
-            '🚀 Connect All Wallets'
+            '👻 Connect All Phantom Chains'
           )}
         </button>
 
-        {/* Debug Web3Modal Button */}
-        <button
-          onClick={() => {
-            console.log('Debug: ethereumClient:', ethereumClient);
-            console.log('Debug: w3mButton:', document.querySelector('w3m-connect-button'));
-            console.log('Debug: w3mModal:', document.querySelector('w3m-modal'));
-            const w3mButton = document.querySelector('w3m-connect-button');
-            if (w3mButton) {
-              console.log('Debug: Clicking w3m button');
-              w3mButton.click();
-            } else {
-              console.log('Debug: No w3m button found');
-            }
-          }}
-          className="w-full mb-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm"
-        >
-          🔧 Debug Web3Modal
-        </button>
+        <div className="text-center text-gray-400 text-sm mb-4">
+          {connectedChainCount > 0 ? `${connectedChainCount} chains connected` : 'Connect to individual chains'}
+        </div>
 
-        <div className="text-center text-gray-400 text-sm mb-4">or connect individually</div>
-
-        {/* Wallet Options */}
+        {/* Chain Options */}
         <div className="space-y-3">
-          {/* Solana Wallets */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-300 mb-2">Solana</h3>
-            <button
-              onClick={() => handleConnect('solana')}
-              disabled={connecting === 'solana' || connectedWallets.solana?.isConnected}
-              className="w-full px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-all duration-200 disabled:opacity-50 flex items-center space-x-3"
-            >
-              <div 
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: chainConfig.solana.color }}
-              />
-              <span className="text-white font-medium">
-                {connectedWallets.solana?.isConnected ? '✅ Phantom Connected' : '👻 Phantom Wallet'}
-              </span>
-              {connecting === 'solana' && (
-                <div className="ml-auto animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-              )}
-            </button>
-          </div>
-
-          {/* EVM Wallets */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-300 mb-2">Ethereum & Layer 2</h3>
-            <button
-              onClick={() => handleConnect('evm')}
-              disabled={connecting === 'evm'}
-              className="w-full px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-all duration-200 disabled:opacity-50 flex items-center space-x-3"
-            >
-              <div className="flex -space-x-1">
+          {Object.entries(phantomChains).map(([chainKey, chainConfig]) => {
+            const isConnected = connectedChains[chainKey]?.isConnected;
+            const isActive = activeChain === chainKey;
+            const isConnectingThis = connecting === chainKey;
+            
+            return (
+              <button
+                key={chainKey}
+                onClick={() => handleConnect(chainKey)}
+                disabled={isConnectingThis || isConnecting}
+                className={`w-full px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 flex items-center space-x-3 ${
+                  isConnected 
+                    ? 'bg-green-900/30 border border-green-500/50 hover:bg-green-900/40' 
+                    : 'bg-gray-800 hover:bg-gray-700 border border-gray-600'
+                } ${isActive ? 'ring-2 ring-blue-500' : ''}`}
+              >
                 <div 
-                  className="w-3 h-3 rounded-full border border-gray-600"
-                  style={{ backgroundColor: chainConfig.ethereum.color }}
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: chainConfig.color }}
                 />
-                <div 
-                  className="w-3 h-3 rounded-full border border-gray-600"
-                  style={{ backgroundColor: chainConfig.polygon.color }}
-                />
-                <div 
-                  className="w-3 h-3 rounded-full border border-gray-600"
-                  style={{ backgroundColor: chainConfig.arbitrum.color }}
-                />
-              </div>
-              <span className="text-white font-medium">
-                🦊 MetaMask, WalletConnect & More
-              </span>
-              {connecting === 'evm' && (
-                <div className="ml-auto animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-              )}
-            </button>
-          </div>
+                <span className="text-white font-medium flex-1 text-left">
+                  {isConnected ? '✅' : '🔗'} {chainConfig.name}
+                  {isActive && ' (Active)'}
+                </span>
+                {isConnectingThis && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Connected Status */}
         <div className="mt-6 pt-4 border-t border-gray-700">
-          <div className="text-sm text-gray-400 mb-2">Connected Wallets:</div>
+          <div className="text-sm text-gray-400 mb-2">Connected Chains:</div>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(connectedWallets).map(([chainName, wallet]) => {
-              if (!wallet?.isConnected) return null;
-              const chainInfo = chainConfig[chainName];
+            {Object.entries(connectedChains).map(([chainName, chain]) => {
+              if (!chain?.isConnected) return null;
+              const chainInfo = phantomChains[chainName];
               return (
                 <div
                   key={chainName}
@@ -252,10 +133,13 @@ const ConnectModal = ({ isOpen, onClose }) => {
                     style={{ backgroundColor: chainInfo?.color }}
                   />
                   <span className="text-xs text-white">{chainInfo?.name}</span>
+                  {activeChain === chainName && (
+                    <span className="text-xs text-blue-400 ml-1">●</span>
+                  )}
                 </div>
               );
             })}
-            {Object.values(connectedWallets).every(wallet => !wallet?.isConnected) && (
+            {connectedChainCount === 0 && (
               <span className="text-sm text-gray-500">None connected</span>
             )}
           </div>
