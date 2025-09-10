@@ -105,7 +105,7 @@ export const Dashboard = () => {
           {contacts?.contacts?.slice(0, 5).map((contact) => (
             <div key={contact.username} className="flex items-center space-x-3 py-2">
               <ProfileImage
-                src={contact.profilePicture ? `https://nakama-production-1850.up.railway.app${contact.profilePicture}` : null}
+                src={contact.profilePicture || null}
                 username={contact.username}
                 size="sm"
                 className="shadow-md"

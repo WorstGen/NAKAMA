@@ -242,7 +242,7 @@ export const Profile = () => {
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-4">
             <ProfileImage
-              src={user?.profilePicture ? `https://nakama-production-1850.up.railway.app${user.profilePicture}` : null}
+              src={user?.profilePicture || null}
               username={formData.username}
               size="xl"
               className="shadow-xl"

@@ -117,7 +117,7 @@ export const Contacts = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center space-x-3">
                     <ProfileImage
-                      src={searchResults.profilePicture ? `https://nakama-production-1850.up.railway.app${searchResults.profilePicture}` : null}
+                      src={searchResults.profilePicture || null}
                       username={searchResults.username}
                       size="md"
                     />
@@ -161,7 +161,7 @@ export const Contacts = () => {
                 <div key={contact.username} className="bg-white/5 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center space-x-4">
                     <ProfileImage
-                      src={contact.profilePicture ? `https://nakama-production-1850.up.railway.app${contact.profilePicture}` : null}
+                      src={contact.profilePicture || null}
                       username={contact.username}
                       size="md"
                     />
