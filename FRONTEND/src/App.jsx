@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
 import { WalletContextProvider } from './contexts/WalletContext';
 import { AuthProvider, ThemeProvider, useTheme } from './contexts/AuthContext';
+import { CloudinaryProvider } from './contexts/CloudinaryContext';
 import { Header } from './components/Header';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
@@ -21,15 +22,17 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <WalletContextProvider>
-          <AuthProvider>
-            <Router>
-              <AppContent />
-            </Router>
-          </AuthProvider>
-        </WalletContextProvider>
-      </ThemeProvider>
+      <CloudinaryProvider>
+        <ThemeProvider>
+          <WalletContextProvider>
+            <AuthProvider>
+              <Router>
+                <AppContent />
+              </Router>
+            </AuthProvider>
+          </WalletContextProvider>
+        </ThemeProvider>
+      </CloudinaryProvider>
     </QueryClientProvider>
   );
 }
