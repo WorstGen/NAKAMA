@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useMultiWallet } from '../contexts/MultiWalletContext';
-import { chainConfig } from '../config/web3Config';
+import { chainConfig, ethereumClient } from '../config/web3Config';
 import toast from 'react-hot-toast';
 
 const ConnectModal = ({ isOpen, onClose }) => {
@@ -19,15 +19,22 @@ const ConnectModal = ({ isOpen, onClose }) => {
         toast.success('Solana wallet connected!');
       } else if (type === 'evm') {
         // Trigger Web3Modal for EVM wallets
-        const w3mModal = document.querySelector('w3m-modal');
-        if (w3mModal) {
-          w3mModal.open();
-        } else {
-          // Fallback: try to find and click the Web3Modal button
-          const w3mButton = document.querySelector('w3m-connect-button');
-          if (w3mButton) {
-            w3mButton.click();
+        try {
+          // Use the ethereumClient from web3Config
+          if (ethereumClient && typeof ethereumClient.openModal === 'function') {
+            await ethereumClient.openModal();
+          } else {
+            // Fallback: try to find and click the Web3Modal button
+            const w3mButton = document.querySelector('w3m-connect-button');
+            if (w3mButton) {
+              w3mButton.click();
+            } else {
+              throw new Error('Web3Modal not available');
+            }
           }
+        } catch (modalError) {
+          console.error('Web3Modal error:', modalError);
+          throw new Error('Unable to open wallet connection modal');
         }
       } else if (chainName) {
         await connectWallet(chainName);
@@ -54,9 +61,18 @@ const ConnectModal = ({ isOpen, onClose }) => {
       await connectAllWallets();
       
       // Then trigger EVM connection via Web3Modal
-      const w3mButton = document.querySelector('w3m-connect-button');
-      if (w3mButton) {
-        w3mButton.click();
+      try {
+        if (ethereumClient && typeof ethereumClient.openModal === 'function') {
+          await ethereumClient.openModal();
+        } else {
+          const w3mButton = document.querySelector('w3m-connect-button');
+          if (w3mButton) {
+            w3mButton.click();
+          }
+        }
+      } catch (modalError) {
+        console.error('Web3Modal error in connect all:', modalError);
+        // Continue even if EVM connection fails
       }
       
       toast.success('Connecting to all available wallets...');
@@ -70,7 +86,7 @@ const ConnectModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
@@ -78,7 +94,7 @@ const ConnectModal = ({ isOpen, onClose }) => {
       />
       
       {/* Modal */}
-      <div className="relative bg-gray-900 rounded-2xl border border-gray-700 p-6 max-w-md w-full mx-4 shadow-2xl">
+      <div className="relative bg-gray-900 rounded-2xl border border-gray-700 p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">Connect Wallet</h2>
