@@ -217,11 +217,6 @@ export const PhantomMultiChainProvider = ({ children }) => {
         const chainConfig = phantomChains[chainName];
         console.log('🔄 EVM chain config:', chainConfig);
         
-        // Fix chain ID mapping - use actual chain IDs
-        const chainId = `0x${chainConfig.id === 'ethereum' ? '1' : 
-                      chainConfig.id === 'polygon' ? '89' : 
-                      chainConfig.id === 'base' ? '2105' : '1'}`;
-        
         // Convert decimal to hex properly
         const chainIdDecimal = chainConfig.id === 'ethereum' ? 1 : 
                               chainConfig.id === 'polygon' ? 137 : 
