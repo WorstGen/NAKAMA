@@ -13,17 +13,58 @@ const ProfileImage = ({
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const [timeoutId, setTimeoutId] = useState(null);
   const maxRetries = 2;
+  const loadingTimeout = 5000; // 5 seconds timeout
 
   // Reset error state when src changes
   useEffect(() => {
     setImageError(false);
     setIsLoading(true);
     setRetryCount(0);
-  }, [src]);
+    
+    // Clear any existing timeout
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    
+    // Set a timeout to stop loading if image takes too long
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn(`Profile image loading timeout for ${username}:`, src);
+        setImageError(true);
+        setIsLoading(false);
+        if (onError) onError();
+      }
+    }, loadingTimeout);
+    
+    setTimeoutId(timeout);
+    
+    return () => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+    };
+  }, [src, username, onError, loadingTimeout]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [timeoutId]);
 
   const handleImageError = () => {
     console.warn(`Failed to load profile image for ${username}:`, src);
+    
+    // Clear timeout since we're handling the error
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      setTimeoutId(null);
+    }
+    
     setIsLoading(false);
     
     if (retryCount < maxRetries) {
@@ -35,11 +76,21 @@ const ProfileImage = ({
       // Force reload by adding timestamp
       const retrySrc = `${src}?retry=${Date.now()}`;
       const img = new Image();
+      
+      // Set timeout for retry attempt
+      const retryTimeout = setTimeout(() => {
+        setImageError(true);
+        setIsLoading(false);
+        if (onError) onError();
+      }, loadingTimeout);
+      
       img.onload = () => {
+        clearTimeout(retryTimeout);
         setImageError(false);
         setIsLoading(false);
       };
       img.onerror = () => {
+        clearTimeout(retryTimeout);
         if (retryCount + 1 >= maxRetries) {
           setImageError(true);
           setIsLoading(false);
@@ -54,6 +105,11 @@ const ProfileImage = ({
   };
 
   const handleImageLoad = () => {
+    // Clear timeout since image loaded successfully
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      setTimeoutId(null);
+    }
     setImageError(false);
     setIsLoading(false);
   };
@@ -107,24 +163,31 @@ const ProfileImage = ({
   }
 
   return (
-    <div className={`${getSizeClasses()} bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-md ${className}`}>
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+    <div className={`${getSizeClasses()} bg-gradient-to-r from-orange-400 to-blue-400 rounded-full flex items-center justify-center overflow-hidden shadow-md relative ${className}`}>
+      {isLoading && !imageError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-orange-400 to-blue-400">
+          <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
         </div>
       )}
-      <img
-        src={src}
-        alt={alt || `${username}'s profile`}
-        className={`w-full h-full rounded-full object-cover ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}
-        style={{
-          ...getImageSettings(),
-          ...style
-        }}
-        onError={handleImageError}
-        onLoad={handleImageLoad}
-        loading="lazy"
-      />
+      {!isLoading && !imageError && (
+        <img
+          src={src}
+          alt={alt || `${username}'s profile`}
+          className="w-full h-full rounded-full object-cover transition-opacity duration-200"
+          style={{
+            ...getImageSettings(),
+            ...style
+          }}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+          loading="lazy"
+        />
+      )}
+      {(imageError || (!src && !isLoading)) && showFallback && (
+        <span className={`text-white font-semibold ${getTextSize()}`}>
+          {fallbackInitial}
+        </span>
+      )}
     </div>
   );
 };
