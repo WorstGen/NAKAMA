@@ -8,7 +8,7 @@ import { api } from '../services/api';
 import { useAuth, useTheme } from '../contexts/AuthContext';
 import { chainConfig, getAllSupportedTokens, getTokensByChain } from '../config/web3Config';
 import toast from 'react-hot-toast';
-import { PaperAirplaneIcon, SwitchHorizontalIcon } from '@heroicons/react/24/outline';
+import { PaperAirplaneIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 
 export const Send = () => {
   const { isAuthenticated } = useAuth();
@@ -356,7 +356,7 @@ export const Send = () => {
           {formData.recipient && formData.amount && formData.token && (
             <div className="bg-gradient-to-r from-blue-500/10 to-orange-500/10 rounded-xl p-4 border border-blue-500/20">
               <h3 className="text-white font-medium mb-3 flex items-center">
-                <SwitchHorizontalIcon className="w-5 h-5 mr-2" />
+                <ArrowsRightLeftIcon className="w-5 h-5 mr-2" />
                 Transaction Summary
               </h3>
               <div className="space-y-2 text-sm">
