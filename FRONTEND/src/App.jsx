@@ -2,12 +2,13 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
-import { WagmiProvider } from 'wagmi';
+import { WagmiConfig } from 'wagmi';
+import { Web3Modal } from '@web3modal/react';
 import { WalletContextProvider } from './contexts/WalletContext';
 import { MultiWalletProvider } from './contexts/MultiWalletContext';
 import { AuthProvider, ThemeProvider, useTheme } from './contexts/AuthContext';
 import { CloudinaryProvider } from './contexts/CloudinaryContext';
-import { wagmiConfig } from './config/web3Config';
+import { wagmiConfig, ethereumClient, projectId } from './config/web3Config';
 import { Header } from './components/Header';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
@@ -25,7 +26,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <WagmiProvider config={wagmiConfig}>
+      <WagmiConfig config={wagmiConfig}>
         <CloudinaryProvider>
           <ThemeProvider>
             <WalletContextProvider>
@@ -39,7 +40,16 @@ function App() {
             </WalletContextProvider>
           </ThemeProvider>
         </CloudinaryProvider>
-      </WagmiProvider>
+        <Web3Modal 
+          projectId={projectId} 
+          ethereumClient={ethereumClient}
+          themeMode="dark"
+          themeVariables={{
+            '--w3m-accent-color': '#3b82f6',
+            '--w3m-background-color': '#1f2937'
+          }}
+        />
+      </WagmiConfig>
     </QueryClientProvider>
   );
 }
