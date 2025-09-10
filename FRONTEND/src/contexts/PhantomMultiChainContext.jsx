@@ -300,12 +300,14 @@ export const PhantomMultiChainProvider = ({ children }) => {
     if (!chain) return null;
     
     return {
+      publicKey: chain.address, // Use address as publicKey for compatibility
       address: chain.address,
       chainId: chain.chainId,
       chainName: chain.chainName,
-      isConnected: chain.isConnected
+      isConnected: chain.isConnected,
+      signMessage: phantomSignMessage // Include the signMessage function
     };
-  }, [activeChain, connectedChains]);
+  }, [activeChain, connectedChains, phantomSignMessage]);
 
   // Get tokens for active chain
   const getActiveChainTokens = useCallback(() => {
