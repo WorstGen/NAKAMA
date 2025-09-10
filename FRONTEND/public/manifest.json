@@ -1,1 +1,21 @@
-{"name":"SolConnect","short_name":"SolConnect","start_url":"/","display":"standalone"}
+{
+  "name": "NAKAMA",
+  "short_name": "NAKAMA",
+  "description": "A Solana-based social payment platform",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "icons": [
+    {
+      "src": "logo/nakama-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo/nakama-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
