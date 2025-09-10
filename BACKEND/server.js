@@ -164,6 +164,7 @@ const ContactSchema = new mongoose.Schema({
 const TransactionSchema = new mongoose.Schema({
   fromAddress: { type: String, required: true, index: true },
   toAddress: { type: String, required: true },
+  fromUsername: { type: String },
   toUsername: { type: String },
   amount: { type: Number, required: true },
   token: { type: String, required: true },
@@ -643,11 +644,15 @@ app.post('/api/transactions/submit',
         preflightCommitment: 'confirmed'
       });
 
+      // Get sender's username
+      const senderUser = await User.findOne({ walletAddress: req.walletAddress });
+      
       // Save transaction record with correct addresses
       const txRecord = new TransactionRecord({
         fromAddress: req.walletAddress,
         toAddress: recipientUser.walletAddress, // ✅ Actual wallet address
-        toUsername: recipientUsername,           // ✅ Username for display
+        fromUsername: senderUser?.username,     // ✅ Sender's username for display
+        toUsername: recipientUsername,          // ✅ Recipient's username for display
         amount,
         token,
         signature,
