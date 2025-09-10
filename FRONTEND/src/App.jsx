@@ -84,9 +84,9 @@ const AppContent = () => {
   };
 
   return (
-    <div style={bgStyle}>
+    <div style={bgStyle} className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 max-w-6xl">
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -97,7 +97,31 @@ const AppContent = () => {
           <Route path="/oauth/authorize" element={<OAuth />} />
         </Routes>
       </main>
-      <Toaster position="bottom-right" />
+      <Toaster 
+        position="bottom-right" 
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1f2937',
+            color: '#ffffff',
+            border: '1px solid #374151',
+            borderRadius: '8px',
+            fontSize: '14px'
+          },
+          success: {
+            iconTheme: {
+              primary: '#3b82f6',
+              secondary: '#ffffff'
+            }
+          },
+          error: {
+            iconTheme: {
+              primary: '#f97316',
+              secondary: '#ffffff'
+            }
+          }
+        }}
+      />
     </div>
   );
 };
