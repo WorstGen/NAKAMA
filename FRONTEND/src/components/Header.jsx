@@ -13,10 +13,8 @@ export const Header = () => {
   const { connected, publicKey, disconnect } = useWallet();
   const { 
     activeChain, 
-    connectedWallets, 
     isAnyWalletConnected, 
-    connectWallet, 
-    switchActiveChain,
+    connectWallet,
     getActiveWallet
   } = useMultiWallet();
   const { user } = useAuth();
