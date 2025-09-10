@@ -6,10 +6,74 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
-const sharp = require('sharp');
-const { body, validationResult } = require('express-validator');
+const cloudinary = require('cloudinary').v2;
+const { body, validationResult, sanitizeBody } = require('express-validator');
+const validator = require('validator');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Security utilities
+const sanitizeInput = (input) => {
+  if (typeof input !== 'string') return input;
+  return validator.escape(input.trim());
+};
+
+// Audit logging
+const auditLog = (action, userId, details = {}) => {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    action,
+    userId,
+    ip: details.ip || 'unknown',
+    userAgent: details.userAgent || 'unknown',
+    details: {
+      ...details,
+      ip: undefined,
+      userAgent: undefined
+    }
+  };
+  
+  console.log(`[AUDIT] ${JSON.stringify(logEntry)}`);
+  
+  // In production, you might want to send this to a logging service
+  // like Winston, Loggly, or CloudWatch
+};
+
+const validateWalletAddress = (address) => {
+  return validator.isLength(address, { min: 32, max: 44 }) && 
+         validator.matches(address, /^[A-Za-z0-9]+$/);
+};
+
+const validateUsername = (username) => {
+  return validator.isLength(username, { min: 3, max: 20 }) &&
+         validator.matches(username, /^[a-zA-Z0-9_]+$/);
+};
+
+const validateBio = (bio) => {
+  return validator.isLength(bio, { max: 500 });
+};
+
+// Enhanced rate limiting
+const createRateLimit = (windowMs, max, message) => {
+  return rateLimit({
+    windowMs,
+    max,
+    message: { error: message },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+      console.warn(`Rate limit exceeded for IP: ${req.ip}`);
+      res.status(429).json({ error: message });
+    }
+  });
+};
 
 // Solana imports
 const { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = require('@solana/web3.js');
@@ -55,14 +119,44 @@ const limiter = rateLimit({
   message: 'Too Many Requests'
 });
 
-// Middleware
-app.use(helmet());
+// Enhanced security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// Additional security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    // Allow specific origins
+    // Allow specific origins with enhanced security
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001',
@@ -164,8 +258,18 @@ app.use('/uploads', express.static('public/uploads', {
 // Serve other static files
 app.use(express.static('public'));
 
-// Apply rate limiting to all API routes
+// Apply different rate limits for different endpoints
 app.use('/api/', limiter);
+
+// Stricter rate limiting for sensitive endpoints
+const strictLimiter = createRateLimit(15 * 60 * 1000, 10, 'Too many requests from this IP, please try again later');
+const authLimiter = createRateLimit(15 * 60 * 1000, 5, 'Too many authentication attempts, please try again later');
+const uploadLimiter = createRateLimit(60 * 60 * 1000, 10, 'Too many uploads, please try again later');
+
+// Apply specific rate limits
+app.use('/api/profile', strictLimiter);
+app.use('/api/profile/picture', uploadLimiter);
+app.use('/api/transactions', strictLimiter);
 
 // MongoDB Models
 const UserSchema = new mongoose.Schema({
@@ -211,30 +315,22 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Image optimization function
-const optimizeImage = async (inputPath, outputPath) => {
+// Cloudinary upload function
+const uploadToCloudinary = async (filePath, userId) => {
   try {
-    await sharp(inputPath)
-      .resize(400, 400, {
-        fit: 'cover',
-        position: 'center'
-      })
-      .jpeg({
-        quality: 85,
-        progressive: true,
-        mozjpeg: true
-      })
-      .toFile(outputPath);
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder: 'nakama-profiles',
+      public_id: `profile-${userId}`,
+      transformation: [
+        { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+        { quality: 'auto', fetch_format: 'auto' }
+      ],
+      overwrite: true
+    });
     
-    // Verify the optimized image is valid
-    const metadata = await sharp(outputPath).metadata();
-    if (!metadata.width || !metadata.height) {
-      throw new Error('Invalid image after optimization');
-    }
-    
-    return true;
+    return result.secure_url;
   } catch (error) {
-    console.error('Image optimization error:', error);
+    console.error('Cloudinary upload error:', error);
     throw error;
   }
 };
@@ -352,9 +448,18 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
 app.post('/api/profile', 
   verifyWallet,
   [
-    body('username').isLength({ min: 3, max: 20 }).matches(/^[a-zA-Z0-9_]+$/),
-    body('bio').optional().isLength({ max: 500 }),
-    body('ethAddress').optional().matches(/^0x[a-fA-F0-9]{40}$/)
+    body('username')
+      .isLength({ min: 3, max: 20 })
+      .matches(/^[a-zA-Z0-9_]+$/)
+      .customSanitizer(sanitizeInput),
+    body('bio')
+      .optional()
+      .isLength({ max: 500 })
+      .customSanitizer(sanitizeInput),
+    body('ethAddress')
+      .optional()
+      .matches(/^0x[a-fA-F0-9]{40}$/)
+      .customSanitizer(sanitizeInput)
   ],
   async (req, res) => {
     try {
@@ -385,6 +490,13 @@ app.post('/api/profile',
         },
         { upsert: true, new: true }
       );
+
+      // Audit log profile update
+      auditLog('PROFILE_UPDATE', user._id, {
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        changes: { username, bio: bio ? 'updated' : 'not provided', ethAddress: ethAddress ? 'updated' : 'not provided' }
+      });
 
       res.json({
         success: true,
@@ -441,49 +553,51 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
       size: req.file.size
     });
 
-    const originalPath = req.file.path;
-    const optimizedFilename = `optimized-${req.file.filename}`;
-    const optimizedPath = path.join(uploadsDir, optimizedFilename);
-
-    try {
-      // Optimize the image
-      await optimizeImage(originalPath, optimizedPath);
-      
-      // Remove the original file
-      fs.unlinkSync(originalPath);
-      
-      console.log('Image optimized successfully:', optimizedFilename);
-    } catch (optimizationError) {
-      console.error('Image optimization failed:', optimizationError);
-      // If optimization fails, use the original file
-      const fallbackFilename = req.file.filename;
-      const fallbackPath = path.join(uploadsDir, fallbackFilename);
-      
-      // Move original to final location
-      if (originalPath !== fallbackPath) {
-        fs.renameSync(originalPath, fallbackPath);
-      }
-    }
-
-    const finalFilename = fs.existsSync(optimizedPath) ? optimizedFilename : req.file.filename;
-    const profilePictureUrl = `/uploads/${finalFilename}`;
-
-    const result = await User.findOneAndUpdate(
-      { walletAddress: req.walletAddress },
-      { profilePicture: profilePictureUrl, updatedAt: new Date() },
-      { new: true } // Return the updated document
-    );
-
-    if (!result) {
+    // Get user info for unique ID
+    const user = await User.findOne({ walletAddress: req.walletAddress });
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log('Profile picture updated for user:', req.walletAddress);
-    res.json({
-      success: true,
-      profilePicture: profilePictureUrl,
-      message: 'Profile picture uploaded successfully'
-    });
+    try {
+      // Upload to Cloudinary
+      const cloudinaryUrl = await uploadToCloudinary(req.file.path, user._id.toString());
+      
+      // Remove local file after successful upload
+      fs.unlinkSync(req.file.path);
+      
+      console.log('Image uploaded to Cloudinary successfully:', cloudinaryUrl);
+
+      // Update user with Cloudinary URL
+      const result = await User.findOneAndUpdate(
+        { walletAddress: req.walletAddress },
+        { profilePicture: cloudinaryUrl, updatedAt: new Date() },
+        { new: true }
+      );
+
+      res.json({
+        success: true,
+        profilePicture: cloudinaryUrl,
+        message: 'Profile picture uploaded successfully'
+      });
+    } catch (cloudinaryError) {
+      console.error('Cloudinary upload failed:', cloudinaryError);
+      
+      // Fallback: use local file if Cloudinary fails
+      const profilePictureUrl = `/uploads/${req.file.filename}`;
+      
+      const result = await User.findOneAndUpdate(
+        { walletAddress: req.walletAddress },
+        { profilePicture: profilePictureUrl, updatedAt: new Date() },
+        { new: true }
+      );
+
+      res.json({
+        success: true,
+        profilePicture: profilePictureUrl,
+        message: 'Profile picture uploaded successfully (local fallback)'
+      });
+    }
   } catch (error) {
     console.error('Profile picture upload error:', error);
     res.status(500).json({ error: 'Failed to save profile picture. Please try again.' });
