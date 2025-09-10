@@ -23,11 +23,6 @@ const ProfileImage = ({
     setIsLoading(true);
     setRetryCount(0);
     
-    // Clear any existing timeout
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    
     // Set a timeout to stop loading if image takes too long
     const timeout = setTimeout(() => {
       console.warn(`Profile image loading timeout for ${username}:`, src);
@@ -39,20 +34,10 @@ const ProfileImage = ({
     setTimeoutId(timeout);
     
     return () => {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
+      clearTimeout(timeout);
     };
   }, [src, username, onError, loadingTimeout]);
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [timeoutId]);
 
   const handleImageError = () => {
     console.warn(`Failed to load profile image for ${username}:`, src);
