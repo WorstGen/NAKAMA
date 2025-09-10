@@ -252,6 +252,11 @@ app.use('/uploads', express.static('public/uploads', {
     // Set cache control headers
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.setHeader('Expires', new Date(Date.now() + 31536000000).toUTCString());
+    
+    // Add CORS headers for images
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   }
 }));
 
@@ -350,7 +355,8 @@ const uploadToCloudinary = async (filePath, userId) => {
       error_code: error.error?.code,
       error_name: error.error?.name
     });
-    throw error;
+    // Don't throw error, let it fall back to local storage
+    return null;
   }
 };
 
@@ -578,29 +584,48 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Try Cloudinary first, fallback to local storage
-    const cloudinaryUrl = await uploadToCloudinary(req.file.path, user._id.toString());
-    
-    if (cloudinaryUrl) {
-      // Remove local file after successful Cloudinary upload
-      fs.unlinkSync(req.file.path);
+    try {
+      // Try Cloudinary first
+      const cloudinaryUrl = await uploadToCloudinary(req.file.path, user._id.toString());
       
-      console.log('Image uploaded to Cloudinary successfully:', cloudinaryUrl);
+      if (cloudinaryUrl) {
+        // Remove local file after successful Cloudinary upload
+        fs.unlinkSync(req.file.path);
+        
+        console.log('Image uploaded to Cloudinary successfully:', cloudinaryUrl);
 
-      // Update user with Cloudinary URL
-      const result = await User.findOneAndUpdate(
-        { walletAddress: req.walletAddress },
-        { profilePicture: cloudinaryUrl, updatedAt: new Date() },
-        { new: true }
-      );
+        // Update user with Cloudinary URL
+        const result = await User.findOneAndUpdate(
+          { walletAddress: req.walletAddress },
+          { profilePicture: cloudinaryUrl, updatedAt: new Date() },
+          { new: true }
+        );
 
-      res.json({
-        success: true,
-        profilePicture: cloudinaryUrl,
-        message: 'Profile picture uploaded successfully to Cloudinary'
-      });
-    } else {
-      // Use local file storage
+        res.json({
+          success: true,
+          profilePicture: cloudinaryUrl,
+          message: 'Profile picture uploaded successfully to Cloudinary'
+        });
+      } else {
+        // Use local file storage
+        const profilePictureUrl = `/uploads/${req.file.filename}`;
+        
+        const result = await User.findOneAndUpdate(
+          { walletAddress: req.walletAddress },
+          { profilePicture: profilePictureUrl, updatedAt: new Date() },
+          { new: true }
+        );
+
+        res.json({
+          success: true,
+          profilePicture: profilePictureUrl,
+          message: 'Profile picture uploaded successfully (local storage)'
+        });
+      }
+    } catch (cloudinaryError) {
+      console.error('Cloudinary upload failed, using local storage:', cloudinaryError);
+      
+      // Fallback to local storage
       const profilePictureUrl = `/uploads/${req.file.filename}`;
       
       const result = await User.findOneAndUpdate(
@@ -612,7 +637,7 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
       res.json({
         success: true,
         profilePicture: profilePictureUrl,
-        message: 'Profile picture uploaded successfully (local storage)'
+        message: 'Profile picture uploaded successfully (local storage fallback)'
       });
     }
   } catch (error) {
