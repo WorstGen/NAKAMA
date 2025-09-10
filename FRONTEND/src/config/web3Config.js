@@ -1,6 +1,5 @@
 // Web3Modal and Wagmi Configuration for Multi-Chain Support
 import { EthereumClient, w3mConnectors, w3mProvider } from '@web3modal/ethereum';
-import { Web3Modal } from '@web3modal/react';
 import { configureChains, createConfig } from 'wagmi';
 import { mainnet, polygon, arbitrum, optimism, base } from 'wagmi/chains';
 
