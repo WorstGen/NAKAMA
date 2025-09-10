@@ -32,6 +32,22 @@ const ProfileImage = ({
   const maxRetries = 2;
   const loadingTimeout = 5000; // 5 seconds timeout
 
+  // Sanitize URL to fix double URL issues
+  const sanitizeUrl = (url) => {
+    if (!url || typeof url !== 'string') return url;
+    
+    // Fix double URL issue
+    if (url.includes('nakama-production-1850.up.railway.apphttps://')) {
+      const fixedUrl = url.replace('https://nakama-production-1850.up.railway.apphttps://', 'https://');
+      console.warn(`Fixed double URL: ${url} -> ${fixedUrl}`);
+      return fixedUrl;
+    }
+    
+    return url;
+  };
+
+  const sanitizedSrc = sanitizeUrl(src);
+
   // Reset error state when src changes
   useEffect(() => {
     setImageError(false);
@@ -39,11 +55,11 @@ const ProfileImage = ({
     setRetryCount(0);
     
     // Debug: Log the src URL
-    console.log(`ProfileImage src for ${username}:`, src);
+    console.log(`ProfileImage src for ${username}:`, sanitizedSrc);
     
     // Set a timeout to stop loading if image takes too long
     const timeout = setTimeout(() => {
-      console.warn(`Profile image loading timeout for ${username}:`, src);
+      console.warn(`Profile image loading timeout for ${username}:`, sanitizedSrc);
       setImageError(true);
       setIsLoading(false);
       if (onError) onError();
@@ -54,11 +70,11 @@ const ProfileImage = ({
     return () => {
       clearTimeout(timeout);
     };
-  }, [src, username, onError, loadingTimeout]);
+  }, [sanitizedSrc, username, onError, loadingTimeout]);
 
 
   const handleImageError = () => {
-    console.warn(`Failed to load profile image for ${username}:`, src);
+    console.warn(`Failed to load profile image for ${username}:`, sanitizedSrc);
     
     // Clear timeout since we're handling the error
     if (timeoutId) {
@@ -75,7 +91,7 @@ const ProfileImage = ({
       setIsLoading(true);
       
       // Force reload by adding timestamp
-      const retrySrc = `${src}?retry=${Date.now()}`;
+      const retrySrc = `${sanitizedSrc}?retry=${Date.now()}`;
       const img = new Image();
       
       // Set timeout for retry attempt
@@ -163,7 +179,7 @@ const ProfileImage = ({
     );
   }
 
-  const publicId = extractPublicId(src);
+  const publicId = extractPublicId(sanitizedSrc);
   const isCloudinaryImage = publicId !== null;
 
   return (
@@ -195,7 +211,7 @@ const ProfileImage = ({
           />
         ) : (
           <img
-            src={src}
+            src={sanitizedSrc}
             alt={alt || `${username}'s profile`}
             className="w-full h-full rounded-full object-cover transition-opacity duration-200"
             style={{
