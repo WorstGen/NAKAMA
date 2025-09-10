@@ -6,7 +6,7 @@ import { useMultiWallet } from '../contexts/MultiWalletContext';
 import { Transaction } from '@solana/web3.js';
 import { api } from '../services/api';
 import { useAuth, useTheme } from '../contexts/AuthContext';
-import { chainConfig, getAllSupportedTokens, getTokensByChain } from '../config/web3Config';
+import { chainConfig, getTokensByChain } from '../config/web3Config';
 import toast from 'react-hot-toast';
 import { PaperAirplaneIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 
@@ -16,10 +16,7 @@ export const Send = () => {
   const { 
     activeChain, 
     connectedWallets, 
-    switchActiveChain, 
-    getActiveWallet,
-    getActiveChainTokens,
-    signMessage: multiSignMessage 
+    switchActiveChain
   } = useMultiWallet();
   const [searchParams] = useSearchParams();
   const { classes } = useTheme();
@@ -48,7 +45,7 @@ export const Send = () => {
         chain: selectedChain
       }));
     }
-  }, [selectedChain, getTokensByChain]);
+  }, [selectedChain]);
 
   // Initialize with active chain
   useEffect(() => {
