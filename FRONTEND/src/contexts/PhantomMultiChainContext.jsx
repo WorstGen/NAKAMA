@@ -305,9 +305,10 @@ export const PhantomMultiChainProvider = ({ children }) => {
         // Solana message signing
         const messageBytes = new TextEncoder().encode(message);
         const { signature } = await window.solana.signMessage(messageBytes);
+        const solanaPublicKey = window.solana.publicKey?.toString() || connectedChains.solana?.address;
         return {
           signature: Array.from(signature),
-          publicKey: publicKey.toString()
+          publicKey: solanaPublicKey
         };
       } else {
         // EVM message signing
@@ -330,7 +331,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
       console.error('Sign message failed:', error);
       throw error;
     }
-  }, [activeChain, publicKey, isPhantomAvailable]);
+  }, [activeChain, connectedChains, isPhantomAvailable]);
 
   // Get active wallet info
   const getActiveWallet = useCallback(() => {
