@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ProfileImage from './ProfileImage';
 import Logo from './Logo';
 import ConnectModal from './ConnectModal';
+import { ChainSelector } from './ChainSelector';
 
 export const Header = () => {
   const location = useLocation();
@@ -72,18 +73,8 @@ export const Header = () => {
 
           {/* Profile/Connect Button */}
           <div className="flex items-center space-x-2">
-            {/* Simplified Chain Indicator */}
-            {isAnyChainConnected && activeChain && (
-              <div className="flex items-center space-x-1 px-2 py-1 bg-gray-800/50 rounded-md">
-                <div 
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: phantomChains[activeChain]?.color || '#3b82f6' }}
-                />
-                <span className="text-white text-xs font-medium hidden sm:block">
-                  {phantomChains[activeChain]?.symbol}
-                </span>
-              </div>
-            )}
+            {/* Chain Selector */}
+            {isAnyChainConnected && <ChainSelector />}
 
 
             {(connected || isAnyChainConnected) && user ? (
