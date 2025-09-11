@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useAuth } from '../contexts/AuthContext';
-import ProfileImage from './ProfileImage';
 import GradientProfileImage from './GradientProfileImage';
 import Logo from './Logo';
 import toast from 'react-hot-toast';
