@@ -93,21 +93,40 @@ export const AuthProvider = ({ children }) => {
     
     setLastAuthAttempt(now);
     
-    // Check for direct Solana connection first (from ConnectModal)
+    // Check for wallet connections - prioritize based on active chain
     let activePublicKey, activeSignMessage;
     
     console.log('🔐 Checking wallet connections...');
     console.log('window.solana exists:', !!window.solana);
     console.log('window.solana.isConnected:', window.solana?.isConnected);
     console.log('window.solana.publicKey:', !!window.solana?.publicKey);
+    console.log('window.ethereum exists:', !!window.ethereum);
     
-    if (window.solana && window.solana.isConnected && window.solana.publicKey) {
-      console.log('Using direct Solana connection from ConnectModal');
+    // Check if we're on an EVM chain and have EVM connection
+    const activeWallet = getActiveWallet();
+    const isEVMChain = activeWallet?.address?.startsWith('0x');
+    
+    if (isEVMChain && window.ethereum) {
+      console.log('Using EVM connection for authentication');
+      // For EVM, we need to get the address and use personal_sign
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts && accounts.length > 0) {
+        activePublicKey = accounts[0];
+        activeSignMessage = async (message) => {
+          // Convert message to hex string for EVM signing
+          const messageHex = '0x' + Buffer.from(message).toString('hex');
+          return await window.ethereum.request({
+            method: 'personal_sign',
+            params: [messageHex, accounts[0]]
+          });
+        };
+      }
+    } else if (window.solana && window.solana.isConnected && window.solana.publicKey) {
+      console.log('Using direct Solana connection');
       activePublicKey = window.solana.publicKey;
       activeSignMessage = window.solana.signMessage;
     } else {
       // Fall back to PhantomMultiChain context
-      const activeWallet = getActiveWallet();
       activePublicKey = activeWallet?.publicKey;
       activeSignMessage = activeWallet?.signMessage;
       console.log('Using PhantomMultiChain context');
