@@ -296,7 +296,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [getActiveWallet, phantomSignMessage, lastAuthAttempt]);
+  }, [getActiveWallet, lastAuthAttempt]);
 
   const logout = () => {
     setUser(null);
