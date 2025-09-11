@@ -62,7 +62,10 @@ class ApiService {
   }
 
   getAuthHeaders() {
-    return this.authHeaders;
+    // Return a Map-like object that has a .get() method
+    return {
+      get: (key) => this.authHeaders[key]
+    };
   }
 
   async request(method, endpoint, data = null) {
