@@ -400,7 +400,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [getActiveWallet, lastAuthAttempt]);
+  }, [getActiveWallet, lastAuthAttempt, publicKey]);
 
   const logout = () => {
     setUser(null);
