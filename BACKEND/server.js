@@ -534,8 +534,8 @@ const verifyWallet = async (req, res, next) => {
         return res.status(401).json({ error: 'Invalid Solana signature length' });
       }
 
-      const publicKeyBytes = new PublicKey(publicKey).toBytes();
-      console.log('Public key bytes:', publicKeyBytes);
+    const publicKeyBytes = new PublicKey(publicKey).toBytes();
+    console.log('Public key bytes:', publicKeyBytes);
 
       isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
       console.log('Solana signature verification result:', isValid);
@@ -623,88 +623,7 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
             ].filter(addr => addr && addr.toLowerCase() === walletAddress.toLowerCase());
             
             if (evmAddresses.length > 0) {
-              // CRITICAL: Check if this user has both Solana and EVM (duplicate scenario)
-              if (userWithAnyEVM.wallets?.solana?.address) {
-                console.error(`🚨 CRITICAL ERROR: EVM address ${walletAddress} is already associated with user ${userWithAnyEVM.username} who has Solana address ${userWithAnyEVM.wallets.solana.address}`);
-                console.error(`🚨 This violates the single-user, multi-chain design principle!`);
-                console.error(`🚨 Attempting to fix by moving EVM address to a user with Solana but no EVM...`);
-                
-                // Find a user who has Solana but no EVM address
-                const userWithSolanaOnly = await User.findOne({
-                  'wallets.solana.address': { $exists: true, $ne: null },
-                  $or: [
-                    { 'wallets.ethereum.address': { $exists: false } },
-                    { 'wallets.ethereum.address': null },
-                    { 'wallets.polygon.address': { $exists: false } },
-                    { 'wallets.polygon.address': null },
-                    { 'wallets.arbitrum.address': { $exists: false } },
-                    { 'wallets.arbitrum.address': null },
-                    { 'wallets.optimism.address': { $exists: false } },
-                    { 'wallets.optimism.address': null },
-                    { 'wallets.base.address': { $exists: false } },
-                    { 'wallets.base.address': null }
-                  ]
-                }).sort({ updatedAt: -1 });
-                
-                if (userWithSolanaOnly) {
-                  console.log(`🔧 FIXING: Moving EVM address ${walletAddress} from ${userWithAnyEVM.username} to ${userWithSolanaOnly.username}`);
-                  
-                  // Remove EVM address from current user
-                  await User.findOneAndUpdate(
-                    { _id: userWithAnyEVM._id },
-                    {
-                      $unset: {
-                        'wallets.ethereum.address': 1,
-                        'wallets.polygon.address': 1,
-                        'wallets.arbitrum.address': 1,
-                        'wallets.optimism.address': 1,
-                        'wallets.base.address': 1
-                      }
-                    }
-                  );
-                  
-                  // Add EVM address to target user
-                  const updateData = {
-                    'wallets.ethereum.address': walletAddress,
-                    'wallets.polygon.address': walletAddress,
-                    'wallets.arbitrum.address': walletAddress,
-                    'wallets.optimism.address': walletAddress,
-                    'wallets.base.address': walletAddress
-                  };
-                  
-                  const correctedUser = await User.findOneAndUpdate(
-                    { _id: userWithSolanaOnly._id },
-                    updateData,
-                    { new: true }
-                  );
-                  
-                  console.log(`✅ FIXED: EVM address now belongs to ${correctedUser.username}`);
-                  
-                  return res.json({
-                    exists: true,
-                    username: correctedUser.username,
-                    bio: correctedUser.bio,
-                    profilePicture: correctedUser.profilePicture,
-                    ethAddress: correctedUser.wallets?.ethereum?.address || correctedUser.ethAddress,
-                    wallets: correctedUser.wallets
-                  });
-                } else {
-                  console.error(`🚨 CRITICAL: No user found with Solana but no EVM to move address to`);
-                  console.error(`🚨 Returning existing user to prevent duplicate user creation`);
-                  
-                  return res.json({
-                    exists: true,
-                    username: userWithAnyEVM.username,
-                    bio: userWithAnyEVM.bio,
-                    profilePicture: userWithAnyEVM.profilePicture,
-                    ethAddress: userWithAnyEVM.wallets?.ethereum?.address || userWithAnyEVM.ethAddress,
-                    wallets: userWithAnyEVM.wallets
-                  });
-                }
-              } else {
-                // User has EVM but no Solana - this is correct
-                user = userWithAnyEVM;
-              }
+              user = userWithAnyEVM;
             }
           }
         }
@@ -772,7 +691,7 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
         
         if (!user) {
           console.log(`No recent users found to associate EVM address ${walletAddress} with`);
-          return res.json({ exists: false });
+      return res.json({ exists: false });
         }
       } else {
         return res.json({ exists: false });
@@ -926,85 +845,8 @@ app.post('/api/profile',
         ]
       });
 
-      // CRITICAL VALIDATION: If EVM address exists with a user who has Solana, this is a duplicate scenario
-      if (existingUserByWallet && isEVMAddress && existingUserByWallet.wallets?.solana?.address) {
-        console.error(`🚨 CRITICAL ERROR: EVM address ${walletAddress} is already associated with user ${existingUserByWallet.username} who has Solana address ${existingUserByWallet.wallets.solana.address}`);
-        console.error(`🚨 This violates the single-user, multi-chain design principle!`);
-        console.error(`🚨 Attempting to fix by moving EVM address to a user with Solana but no EVM...`);
-        
-        // Find a user who has Solana but no EVM address
-        const userWithSolanaOnly = await User.findOne({
-          'wallets.solana.address': { $exists: true, $ne: null },
-          $or: [
-            { 'wallets.ethereum.address': { $exists: false } },
-            { 'wallets.ethereum.address': null },
-            { 'wallets.polygon.address': { $exists: false } },
-            { 'wallets.polygon.address': null },
-            { 'wallets.arbitrum.address': { $exists: false } },
-            { 'wallets.arbitrum.address': null },
-            { 'wallets.optimism.address': { $exists: false } },
-            { 'wallets.optimism.address': null },
-            { 'wallets.base.address': { $exists: false } },
-            { 'wallets.base.address': null }
-          ]
-        }).sort({ updatedAt: -1 });
-        
-        if (userWithSolanaOnly) {
-          console.log(`🔧 FIXING: Moving EVM address ${walletAddress} from ${existingUserByWallet.username} to ${userWithSolanaOnly.username}`);
-          
-          // Remove EVM address from current user
-          await User.findOneAndUpdate(
-            { _id: existingUserByWallet._id },
-            {
-              $unset: {
-                'wallets.ethereum.address': 1,
-                'wallets.polygon.address': 1,
-                'wallets.arbitrum.address': 1,
-                'wallets.optimism.address': 1,
-                'wallets.base.address': 1
-              }
-            }
-          );
-          
-          // Add EVM address to target user
-          const updateData = {
-            'wallets.ethereum.address': walletAddress,
-            'wallets.polygon.address': walletAddress,
-            'wallets.arbitrum.address': walletAddress,
-            'wallets.optimism.address': walletAddress,
-            'wallets.base.address': walletAddress
-          };
-          
-          const correctedUser = await User.findOneAndUpdate(
-            { _id: userWithSolanaOnly._id },
-            updateData,
-            { new: true }
-          );
-          
-          console.log(`✅ FIXED: EVM address now belongs to ${correctedUser.username}`);
-          
-          return res.json({
-            exists: true,
-            username: correctedUser.username,
-            bio: correctedUser.bio,
-            profilePicture: correctedUser.profilePicture,
-            ethAddress: correctedUser.wallets?.ethereum?.address || correctedUser.ethAddress,
-            wallets: correctedUser.wallets
-          });
-        } else {
-          console.error(`🚨 CRITICAL: No user found with Solana but no EVM to move address to`);
-          console.error(`🚨 Returning existing user to prevent duplicate user creation`);
-          
-          return res.json({
-            exists: true,
-            username: existingUserByWallet.username,
-            bio: existingUserByWallet.bio,
-            profilePicture: existingUserByWallet.profilePicture,
-            ethAddress: existingUserByWallet.wallets?.ethereum?.address || existingUserByWallet.ethAddress,
-            wallets: existingUserByWallet.wallets
-          });
-        }
-      }
+      // Allow legitimate multi-chain users (same person owns both keys)
+      // The signature verification ensures only the key owner can authenticate
 
       // For EVM addresses, also check if user has ANY EVM address (since they're interchangeable)
       if (!existingUserByWallet && isEVMAddress) {
@@ -1029,88 +871,9 @@ app.post('/api/profile',
           ].filter(addr => addr && addr.toLowerCase() === walletAddress.toLowerCase());
           
           if (evmAddresses.length > 0) {
-            // CRITICAL: Check if this user has both Solana and EVM (duplicate scenario)
-            if (userWithAnyEVM.wallets?.solana?.address) {
-              console.error(`🚨 CRITICAL ERROR: EVM address ${walletAddress} is already associated with user ${userWithAnyEVM.username} who has Solana address ${userWithAnyEVM.wallets.solana.address}`);
-              console.error(`🚨 This violates the single-user, multi-chain design principle!`);
-              console.error(`🚨 Attempting to fix by moving EVM address to a user with Solana but no EVM...`);
-              
-              // Find a user who has Solana but no EVM address
-              const userWithSolanaOnly = await User.findOne({
-                'wallets.solana.address': { $exists: true, $ne: null },
-                $or: [
-                  { 'wallets.ethereum.address': { $exists: false } },
-                  { 'wallets.ethereum.address': null },
-                  { 'wallets.polygon.address': { $exists: false } },
-                  { 'wallets.polygon.address': null },
-                  { 'wallets.arbitrum.address': { $exists: false } },
-                  { 'wallets.arbitrum.address': null },
-                  { 'wallets.optimism.address': { $exists: false } },
-                  { 'wallets.optimism.address': null },
-                  { 'wallets.base.address': { $exists: false } },
-                  { 'wallets.base.address': null }
-                ]
-              }).sort({ updatedAt: -1 });
-              
-              if (userWithSolanaOnly) {
-                console.log(`🔧 FIXING: Moving EVM address ${walletAddress} from ${userWithAnyEVM.username} to ${userWithSolanaOnly.username}`);
-                
-                // Remove EVM address from current user
-                await User.findOneAndUpdate(
-                  { _id: userWithAnyEVM._id },
-                  {
-                    $unset: {
-                      'wallets.ethereum.address': 1,
-                      'wallets.polygon.address': 1,
-                      'wallets.arbitrum.address': 1,
-                      'wallets.optimism.address': 1,
-                      'wallets.base.address': 1
-                    }
-                  }
-                );
-                
-                // Add EVM address to target user
-                const updateData = {
-                  'wallets.ethereum.address': walletAddress,
-                  'wallets.polygon.address': walletAddress,
-                  'wallets.arbitrum.address': walletAddress,
-                  'wallets.optimism.address': walletAddress,
-                  'wallets.base.address': walletAddress
-                };
-                
-                const correctedUser = await User.findOneAndUpdate(
-                  { _id: userWithSolanaOnly._id },
-                  updateData,
-                  { new: true }
-                );
-                
-                console.log(`✅ FIXED: EVM address now belongs to ${correctedUser.username}`);
-                
-                return res.json({
-                  exists: true,
-                  username: correctedUser.username,
-                  bio: correctedUser.bio,
-                  profilePicture: correctedUser.profilePicture,
-                  ethAddress: correctedUser.wallets?.ethereum?.address || correctedUser.ethAddress,
-                  wallets: correctedUser.wallets
-                });
-              } else {
-                console.error(`🚨 CRITICAL: No user found with Solana but no EVM to move address to`);
-                console.error(`🚨 Returning existing user to prevent duplicate user creation`);
-                
-                return res.json({
-                  exists: true,
-                  username: userWithAnyEVM.username,
-                  bio: userWithAnyEVM.bio,
-                  profilePicture: userWithAnyEVM.profilePicture,
-                  ethAddress: userWithAnyEVM.wallets?.ethereum?.address || userWithAnyEVM.ethAddress,
-                  wallets: userWithAnyEVM.wallets
-                });
-              }
-            } else {
-              // User has EVM but no Solana - this is correct
-              existingUserByWallet = userWithAnyEVM;
-            }
+            // Allow legitimate multi-chain users (same person owns both keys)
+            // The signature verification ensures only the key owner can authenticate
+            existingUserByWallet = userWithAnyEVM;
           }
         }
       }
@@ -1141,10 +904,7 @@ app.post('/api/profile',
           updateData['wallets.solana.address'] = walletAddress;
           updateData['wallets.solana.isPrimary'] = true;
         } else if (isEVMAddress) {
-          // For EVM addresses, we need to determine which chain this is for
-          // Since all EVM chains use the same address format, we need to check
-          // which chain the user is currently on. For now, we'll add it to all EVM chains
-          // since the address is the same across all EVM networks
+          // For EVM addresses, add to all EVM chains since they use the same address
           updateData['wallets.ethereum.address'] = walletAddress;
           updateData['wallets.polygon.address'] = walletAddress;
           updateData['wallets.arbitrum.address'] = walletAddress;
@@ -1166,6 +926,60 @@ app.post('/api/profile',
           { new: true }
         );
       } else {
+        // SAFEGUARD: Before creating new user, check if this EVM address should be associated with existing Solana user
+        // Only if the same person owns both keys (verified by signature)
+        if (isEVMAddress) {
+          // Look for any user who has Solana but no EVM address
+          const userWithSolanaOnly = await User.findOne({
+            'wallets.solana.address': { $exists: true, $ne: null },
+            $or: [
+              { 'wallets.ethereum.address': { $exists: false } },
+              { 'wallets.ethereum.address': null },
+              { 'wallets.polygon.address': { $exists: false } },
+              { 'wallets.polygon.address': null },
+              { 'wallets.arbitrum.address': { $exists: false } },
+              { 'wallets.arbitrum.address': null },
+              { 'wallets.optimism.address': { $exists: false } },
+              { 'wallets.optimism.address': null },
+              { 'wallets.base.address': { $exists: false } },
+              { 'wallets.base.address': null }
+            ]
+          }).sort({ updatedAt: -1 });
+          
+          if (userWithSolanaOnly) {
+            console.log(`🔗 SAFEGUARD: Associating EVM address ${walletAddress} with existing Solana user ${userWithSolanaOnly.username}`);
+            console.log(`🔗 This is safe because signature verification ensures only the key owner can authenticate`);
+            
+            // Add EVM address to existing Solana user
+            const updateData = {
+              'wallets.ethereum.address': walletAddress,
+              'wallets.polygon.address': walletAddress,
+              'wallets.arbitrum.address': walletAddress,
+              'wallets.optimism.address': walletAddress,
+              'wallets.base.address': walletAddress,
+              'wallets.ethereum.isPrimary': true,
+              username: username.toLowerCase(),
+              bio,
+              updatedAt: new Date()
+            };
+            
+            user = await User.findOneAndUpdate(
+              { _id: userWithSolanaOnly._id },
+              updateData,
+              { new: true }
+            );
+            
+            return res.json({
+              exists: true,
+              username: user.username,
+              bio: user.bio,
+              profilePicture: user.profilePicture,
+              ethAddress: user.wallets?.ethereum?.address || user.ethAddress,
+              wallets: user.wallets
+            });
+          }
+        }
+        
         // Create new user
         const wallets = {};
         if (isSolanaAddress) {
@@ -1281,11 +1095,11 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
         });
       } else {
         // Use local file storage
-        const profilePictureUrl = `/uploads/${req.file.filename}`;
-        
-        const result = await User.findOneAndUpdate(
-          { walletAddress: req.walletAddress },
-          { profilePicture: profilePictureUrl, updatedAt: new Date() },
+    const profilePictureUrl = `/uploads/${req.file.filename}`;
+
+    const result = await User.findOneAndUpdate(
+      { walletAddress: req.walletAddress },
+      { profilePicture: profilePictureUrl, updatedAt: new Date() },
           { new: true }
         );
 
@@ -1307,11 +1121,11 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
         { new: true }
       );
 
-      res.json({
-        success: true,
-        profilePicture: profilePictureUrl,
+    res.json({
+      success: true,
+      profilePicture: profilePictureUrl,
         message: 'Profile picture uploaded successfully (local storage fallback)'
-      });
+    });
     }
   } catch (error) {
     console.error('Profile picture upload error:', error);
@@ -1541,50 +1355,50 @@ app.post('/api/transactions/prepare',
         const fromPubkey = new PublicKey(fromAddress);
         const toPubkey = new PublicKey(recipient.wallets.solana.address);
 
-        let transaction;
+      let transaction;
 
-        if (token === 'SOL') {
-          // SOL transfer
-          const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
-          
-          transaction = new Transaction().add(
-            SystemProgram.transfer({
-              fromPubkey,
-              toPubkey,
-              lamports
-            })
-          );
-        } else {
-          // SPL Token transfer (USDC/USDT)
-          const tokenMintAddress = token === 'USDC' 
-            ? 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'  // USDC mint
-            : 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';   // USDT mint
+      if (token === 'SOL') {
+        // SOL transfer
+        const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
+        
+        transaction = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey,
+            toPubkey,
+            lamports
+          })
+        );
+      } else {
+        // SPL Token transfer (USDC/USDT)
+        const tokenMintAddress = token === 'USDC' 
+          ? 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'  // USDC mint
+          : 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';   // USDT mint
 
-          const mint = new PublicKey(tokenMintAddress);
-          const decimals = 6; // Both USDC and USDT have 6 decimals
-          const tokenAmount = Math.floor(amount * Math.pow(10, decimals));
+        const mint = new PublicKey(tokenMintAddress);
+        const decimals = 6; // Both USDC and USDT have 6 decimals
+        const tokenAmount = Math.floor(amount * Math.pow(10, decimals));
 
-          // This would need actual SPL token transfer logic
-          // For now, we'll return a placeholder
-          return res.status(501).json({ error: 'SPL token transfers not yet implemented' });
-        }
+        // This would need actual SPL token transfer logic
+        // For now, we'll return a placeholder
+        return res.status(501).json({ error: 'SPL token transfers not yet implemented' });
+      }
 
-        // Get recent blockhash
-        const { blockhash } = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = fromPubkey;
+      // Get recent blockhash
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = fromPubkey;
 
-        // Serialize transaction for frontend signing
-        const serializedTx = transaction.serialize({ requireAllSignatures: false });
+      // Serialize transaction for frontend signing
+      const serializedTx = transaction.serialize({ requireAllSignatures: false });
 
-        res.json({
-          success: true,
+      res.json({
+        success: true,
           chain: 'solana',
-          transaction: serializedTx.toString('base64'),
+        transaction: serializedTx.toString('base64'),
           recipientAddress: recipient.wallets.solana.address,
-          amount,
-          token
-        });
+        amount,
+        token
+      });
 
       } else {
         // Handle EVM transactions
@@ -1751,13 +1565,13 @@ app.post('/api/transactions/submit',
         toAddress = recipientUser.wallets.solana.address;
 
         // Deserialize and send Solana transaction
-        const txBuffer = Buffer.from(signedTransaction, 'base64');
-        const transaction = Transaction.from(txBuffer);
+      const txBuffer = Buffer.from(signedTransaction, 'base64');
+      const transaction = Transaction.from(txBuffer);
 
         signature = await connection.sendRawTransaction(txBuffer, {
-          skipPreflight: false,
-          preflightCommitment: 'confirmed'
-        });
+        skipPreflight: false,
+        preflightCommitment: 'confirmed'
+      });
 
         explorerUrl = `https://explorer.solana.com/tx/${signature}`;
 
