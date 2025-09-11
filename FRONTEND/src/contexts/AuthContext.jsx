@@ -267,10 +267,22 @@ export const AuthProvider = ({ children }) => {
         if (isEVMAddress) {
           console.log('EVM address has no profile - checking if user has profile with any EVM address');
           
-          // For EVM addresses, we should check if the user has a profile with ANY EVM address
-          // since all EVM chains use the same address format
-          // This will be handled by the backend logic that links EVM addresses
-          // For now, we'll treat this as a normal case and let the user continue
+          // For EVM addresses, try to find a profile with any EVM address
+          // The backend should have auto-registered this address, so try fetching profile again
+          try {
+            console.log('Retrying profile fetch for EVM address after auto-registration...');
+            const retryProfile = await api.getProfile();
+            if (retryProfile.exists) {
+              console.log('Found profile after auto-registration:', retryProfile);
+              setUser(retryProfile);
+              toast.success(`Welcome back, @${retryProfile.username}!`);
+              return;
+            }
+          } catch (retryError) {
+            console.log('Retry profile fetch failed:', retryError);
+          }
+          
+          // If still no profile found, this is a new EVM address
           setUser(null);
           return; // Exit early, don't clear auth headers
         } else {
