@@ -78,8 +78,21 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [authToken, setAuthToken] = useState(null);
+  const [lastAuthAttempt, setLastAuthAttempt] = useState(0);
 
   const authenticate = useCallback(async () => {
+    // Check cooldown period to prevent rate limiting
+    const now = Date.now();
+    const timeSinceLastAttempt = now - lastAuthAttempt;
+    const cooldownPeriod = 5000; // 5 seconds
+    
+    if (timeSinceLastAttempt < cooldownPeriod) {
+      console.log('Authentication skipped: cooldown period active');
+      return;
+    }
+    
+    setLastAuthAttempt(now);
+    
     // Get the active wallet from PhantomMultiChain context
     const activeWallet = getActiveWallet();
     const activePublicKey = activeWallet?.publicKey;
@@ -217,8 +230,9 @@ export const AuthProvider = ({ children }) => {
             throw profileError;
           }
 
-          // Wait before retry (use retryCount + 1 to avoid 0ms delay)
-          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+          // Wait before retry with exponential backoff to avoid rate limiting
+          const delay = Math.min(2000 * Math.pow(2, retryCount), 10000); // Max 10 seconds
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
 
@@ -249,6 +263,8 @@ export const AuthProvider = ({ children }) => {
         errorMessage = 'Wallet returned invalid signature. Please try reconnecting your wallet.';
       } else if (error.message?.includes('Invalid Solana public key')) {
         errorMessage = 'Invalid wallet address. Please ensure you have a valid Solana wallet connected.';
+      } else if (error.message?.includes('Too many requests')) {
+        errorMessage = 'Too many requests. Please wait a moment and try again.';
       }
 
       // Check if it's a profile-not-found error vs auth error

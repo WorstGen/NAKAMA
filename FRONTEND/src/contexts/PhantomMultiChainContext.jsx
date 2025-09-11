@@ -362,6 +362,27 @@ export const PhantomMultiChainProvider = ({ children }) => {
     }
   }, [connected, getConnectedChains]);
 
+  // Disconnect from all chains
+  const disconnectAllChains = useCallback(async () => {
+    try {
+      console.log('🔌 Disconnecting from all chains...');
+      
+      // Disconnect from Solana
+      if (window.solana && window.solana.disconnect) {
+        await window.solana.disconnect();
+      }
+      
+      // Clear connected chains
+      setConnectedChains({});
+      setActiveChain('solana');
+      
+      console.log('✅ Disconnected from all chains');
+    } catch (error) {
+      console.error('❌ Disconnect failed:', error);
+      throw error;
+    }
+  }, []);
+
   const value = {
     // State
     connectedChains,
@@ -373,6 +394,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
     connectAllChains,
     switchToChain,
     signMessage,
+    disconnectAllChains,
     
     // Utilities
     getActiveWallet,
