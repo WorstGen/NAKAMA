@@ -358,8 +358,8 @@ export const AuthProvider = ({ children }) => {
       } else {
         console.log('🔐 Skipping authentication - too soon since last attempt');
       }
-    } else if (!isConnected || !hasPublicKey) {
-      console.log('🔐 Logging out - no connection or public key');
+    } else if (!isConnected && !isAnyChainConnected) {
+      console.log('🔐 Logging out - no connection to any chain');
       logout();
     }
   }, [connected, isAnyChainConnected, publicKey, getActiveWallet, user, loading, authenticate, lastAuthAttempt]);
