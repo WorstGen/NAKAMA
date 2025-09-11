@@ -8,7 +8,7 @@ import ProfileImage from '../components/ProfileImage';
 import { CameraIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
-  const { user, setUser, isAuthenticated, authenticate } = useAuth();
+  const { user, setUser, isAuthenticated, authenticate, addEVM } = useAuth();
   const { connectedChains, phantomChains, switchToChain } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
@@ -180,79 +180,17 @@ export const Profile = () => {
     setRegisteringEVM(true);
     
     try {
-      toast.loading('Connecting to EVM wallet...');
+      toast.loading('Adding EVM address to your profile...');
       
-      // First, ensure EVM wallet is connected
-      if (window.ethereum) {
-        try {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          console.log('EVM wallet connected successfully');
-        } catch (error) {
-          console.error('EVM connection failed:', error);
-          throw new Error('Failed to connect EVM wallet. Please approve the connection in your wallet.');
-        }
-      } else {
-        throw new Error('EVM wallet not found. Please install MetaMask or another EVM wallet.');
-      }
+      // Use the new addEVM function from AuthContext
+      await addEVM();
       
-      // Wait a moment for the connection to establish
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Now switch to an EVM chain (Ethereum by default)
-      await switchToChain('ethereum');
-      
-      // Wait a moment for the chain switch to complete
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Now trigger authentication directly with the EVM address
-      toast.loading('Authenticating with EVM wallet...');
-      
-      // Get the current EVM address
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No EVM accounts found');
-      }
-      
-      const evmAddress = accounts[0];
-      console.log('EVM address for authentication:', evmAddress);
-      
-      // Trigger authentication by calling the authenticate function directly
-      // This will show the signature popup
-      await authenticate();
-      
-      // Wait for authentication to complete
-      let attempts = 0;
-      const maxAttempts = 5; // Wait up to 10 seconds
-      
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between attempts
-        
-        // Check if user now has EVM address registered by checking the current user state
-        if (user?.wallets) {
-          const hasEVMAddress = user.wallets.ethereum?.address || 
-                               user.wallets.polygon?.address || 
-                               user.wallets.arbitrum?.address || 
-                               user.wallets.optimism?.address || 
-                               user.wallets.base?.address;
-          
-          if (hasEVMAddress) {
-            toast.dismiss();
-            toast.success('EVM wallet registered successfully!');
-            return;
-          }
-        }
-        
-        attempts++;
-      }
-      
-      // If we get here, registration didn't complete
-      toast.dismiss();
-      toast.error('EVM wallet registration timed out. Please try again.');
+      console.log('EVM address successfully added!');
+      toast.success('EVM address added successfully!');
       
     } catch (error) {
-      toast.dismiss();
       console.error('EVM registration error:', error);
-      toast.error(error.message || 'Failed to register EVM wallet. Please make sure you have an EVM wallet connected.');
+      toast.error(error.message || 'Failed to add EVM address');
     } finally {
       setRegisteringEVM(false);
     }
@@ -475,10 +413,10 @@ export const Profile = () => {
                           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
                         >
                           <PlusIcon className="w-4 h-4" />
-                          {registeringEVM ? 'Connecting & Registering...' : 'Connect & Register EVM Wallet'}
+                          {registeringEVM ? 'Adding EVM Address...' : 'Add EVM Address'}
                         </button>
                         <p className="text-white/40 text-xs mt-2">
-                          This will connect your EVM wallet and register it across all EVM chains
+                          This will add your EVM address to your existing profile
                         </p>
                       </div>
                     </div>
