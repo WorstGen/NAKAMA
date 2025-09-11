@@ -112,6 +112,11 @@ export const Send = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Prevent multiple rapid submissions
+    if (prepareTransactionMutation.isLoading || submitTransactionMutation.isLoading) {
+      return;
+    }
+    
     const activeWallet = getActiveWallet();
     if (!activeWallet || !activeWallet.signMessage) {
       toast.error('Wallet not connected properly');
@@ -210,7 +215,15 @@ export const Send = () => {
     } catch (error) {
       toast.dismiss();
       console.error('Transaction error:', error);
-      toast.error(error.error || 'Transaction failed');
+      
+      // Handle specific error types
+      if (error.error === 'Too many requests from this IP, please try again later') {
+        toast.error('Too many requests. Please wait a moment before trying again.');
+      } else if (error.error?.includes('does not have a') || error.error?.includes('No') && error.error?.includes('address found')) {
+        toast.error('Recipient does not have the required wallet address for this chain.');
+      } else {
+        toast.error(error.error || 'Transaction failed');
+      }
     }
   };
 
