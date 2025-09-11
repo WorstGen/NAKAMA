@@ -636,7 +636,54 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
     }
     
     if (!user) {
-      return res.json({ exists: false });
+      // For EVM addresses, check if there's a user with a Solana address who recently authenticated
+      // This helps associate the EVM address with the currently active user
+      if (isEVMAddress) {
+        // Look for users who have Solana addresses and have been active recently
+        const usersWithSolana = await User.find({
+          'wallets.solana.address': { $exists: true, $ne: null },
+          updatedAt: { $gte: new Date(Date.now() - 10 * 60 * 1000) } // Last 10 minutes
+        }).sort({ updatedAt: -1 }).limit(5);
+        
+        if (usersWithSolana.length > 0) {
+          // Find the most recently updated user who doesn't have this EVM address
+          for (const existingUser of usersWithSolana) {
+            const hasThisEVMAddress = existingUser.wallets?.ethereum?.address === walletAddress ||
+                                    existingUser.wallets?.polygon?.address === walletAddress ||
+                                    existingUser.wallets?.arbitrum?.address === walletAddress ||
+                                    existingUser.wallets?.optimism?.address === walletAddress ||
+                                    existingUser.wallets?.base?.address === walletAddress;
+            
+            if (!hasThisEVMAddress) {
+              // Add this EVM address to the existing user
+              console.log(`Adding EVM address ${walletAddress} to existing user ${existingUser.username}`);
+              
+              const updateData = {
+                'wallets.ethereum.address': walletAddress,
+                'wallets.polygon.address': walletAddress,
+                'wallets.arbitrum.address': walletAddress,
+                'wallets.optimism.address': walletAddress,
+                'wallets.base.address': walletAddress
+              };
+              
+              user = await User.findOneAndUpdate(
+                { _id: existingUser._id },
+                updateData,
+                { new: true }
+              );
+              
+              console.log(`Successfully added EVM address to user ${user.username}`);
+              break;
+            }
+          }
+        }
+        
+        if (!user) {
+          return res.json({ exists: false });
+        }
+      } else {
+        return res.json({ exists: false });
+      }
     }
 
     // Auto-register wallet address if user is signing in with one
