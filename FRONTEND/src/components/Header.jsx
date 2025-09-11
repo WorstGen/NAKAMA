@@ -15,7 +15,8 @@ export const Header = () => {
     activeChain, 
     isAnyChainConnected, 
     getActiveWallet,
-    phantomChains
+    phantomChains,
+    disconnectAllChains
   } = usePhantomMultiChain();
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -246,8 +247,8 @@ export const Header = () => {
                       onClick={async () => {
                         try {
                           setMobileMenuOpen(false);
-                          console.log('🔌 Disconnecting from Phantom...');
-                          await disconnect();
+                          console.log('🔌 Disconnecting from all chains...');
+                          await disconnectAllChains();
                           console.log('✅ Disconnection completed');
                         } catch (error) {
                           console.error('❌ Disconnection failed:', error);
