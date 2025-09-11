@@ -1086,11 +1086,17 @@ app.post('/api/transactions/prepare',
         return res.status(404).json({ error: 'Recipient not found' });
       }
 
+      // Debug: Log recipient wallet data
+      console.log(`Recipient ${recipientUsername} wallets:`, JSON.stringify(recipient.wallets, null, 2));
+
       // Determine the chain to use
       const isSolanaAddress = req.walletAddress.length === 44 && !req.walletAddress.startsWith('0x');
       const isEVMAddress = req.walletAddress.length === 42 && req.walletAddress.startsWith('0x');
       
       let targetChain = chain;
+      console.log(`Target chain from request: ${targetChain}`);
+      console.log(`Sender address: ${req.walletAddress}, isSolana: ${isSolanaAddress}, isEVM: ${isEVMAddress}`);
+      
       if (!targetChain) {
         // Auto-detect chain based on wallet address
         if (isSolanaAddress) {
@@ -1214,7 +1220,9 @@ app.post('/api/transactions/prepare',
         }
 
         // Get recipient's EVM address for this chain
+        console.log(`Checking recipient ${recipientUsername} for ${targetChain} address:`, recipient.wallets?.[targetChain]?.address);
         if (!recipient.wallets?.[targetChain]?.address) {
+          console.log(`Recipient ${recipientUsername} missing ${targetChain} address. Available wallets:`, Object.keys(recipient.wallets || {}));
           return res.status(400).json({ error: `Recipient does not have a ${chainConfig.name} address` });
         }
 
