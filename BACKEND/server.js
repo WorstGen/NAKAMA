@@ -10,6 +10,7 @@ const cloudinary = require('cloudinary').v2;
 const { body, validationResult, sanitizeBody } = require('express-validator');
 const validator = require('validator');
 const rateLimit = require('express-rate-limit');
+const Web3 = require('web3');
 require('dotenv').config();
 
 // Configure Cloudinary
@@ -111,6 +112,46 @@ const PORT = process.env.PORT || 3001;
 
 // Solana connection
 const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com');
+
+// EVM chain configurations
+const EVM_CHAINS = {
+  ethereum: {
+    rpcUrl: 'https://eth.llamarpc.com',
+    chainId: 1,
+    name: 'Ethereum',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }
+  },
+  polygon: {
+    rpcUrl: 'https://polygon.llamarpc.com',
+    chainId: 137,
+    name: 'Polygon',
+    nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 }
+  },
+  base: {
+    rpcUrl: 'https://base.llamarpc.com',
+    chainId: 8453,
+    name: 'Base',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }
+  },
+  arbitrum: {
+    rpcUrl: 'https://arbitrum.llamarpc.com',
+    chainId: 42161,
+    name: 'Arbitrum',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }
+  },
+  optimism: {
+    rpcUrl: 'https://optimism.llamarpc.com',
+    chainId: 10,
+    name: 'Optimism',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }
+  }
+};
+
+// Create Web3 instances for each chain
+const web3Instances = {};
+Object.entries(EVM_CHAINS).forEach(([chainName, config]) => {
+  web3Instances[chainName] = new Web3(config.rpcUrl);
+});
 
 // Rate limiting
 const limiter = rateLimit({
@@ -1017,8 +1058,9 @@ app.post('/api/transactions/prepare',
   [
     body('recipientUsername').isLength({ min: 3, max: 20 }).matches(/^[a-zA-Z0-9_]+$/),
     body('amount').isNumeric().isFloat({ min: 0.000000001 }),
-    body('token').isIn(['SOL', 'USDC', 'USDT']),
-    body('memo').optional().isLength({ max: 280 })
+    body('token').isIn(['SOL', 'USDC', 'USDT', 'ETH', 'MATIC']),
+    body('memo').optional().isLength({ max: 280 }),
+    body('chain').optional().isIn(['solana', 'ethereum', 'polygon', 'base', 'arbitrum', 'optimism'])
   ],
   async (req, res) => {
     try {
@@ -1027,7 +1069,7 @@ app.post('/api/transactions/prepare',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { recipientUsername, amount, token, memo } = req.body;
+      const { recipientUsername, amount, token, memo, chain } = req.body;
 
       // Find recipient
       const recipient = await User.findOne({ username: recipientUsername.toLowerCase() });
@@ -1036,52 +1078,171 @@ app.post('/api/transactions/prepare',
         return res.status(404).json({ error: 'Recipient not found' });
       }
 
-      const fromPubkey = new PublicKey(req.walletAddress);
-      const toPubkey = new PublicKey(recipient.walletAddress);
-
-      let transaction;
-
-      if (token === 'SOL') {
-        // SOL transfer
-        const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
-        
-        transaction = new Transaction().add(
-          SystemProgram.transfer({
-            fromPubkey,
-            toPubkey,
-            lamports
-          })
-        );
-      } else {
-        // SPL Token transfer (USDC/USDT)
-        const tokenMintAddress = token === 'USDC' 
-          ? 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'  // USDC mint
-          : 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';   // USDT mint
-
-        const mint = new PublicKey(tokenMintAddress);
-        const decimals = 6; // Both USDC and USDT have 6 decimals
-        const tokenAmount = Math.floor(amount * Math.pow(10, decimals));
-
-        // This would need actual SPL token transfer logic
-        // For now, we'll return a placeholder
-        return res.status(501).json({ error: 'SPL token transfers not yet implemented' });
+      // Determine the chain to use
+      const isSolanaAddress = req.walletAddress.length === 44 && !req.walletAddress.startsWith('0x');
+      const isEVMAddress = req.walletAddress.length === 42 && req.walletAddress.startsWith('0x');
+      
+      let targetChain = chain;
+      if (!targetChain) {
+        // Auto-detect chain based on wallet address
+        if (isSolanaAddress) {
+          targetChain = 'solana';
+        } else if (isEVMAddress) {
+          // Find which EVM chain this address belongs to
+          const user = await User.findOne({
+            $or: [
+              { 'wallets.ethereum.address': req.walletAddress },
+              { 'wallets.polygon.address': req.walletAddress },
+              { 'wallets.arbitrum.address': req.walletAddress },
+              { 'wallets.optimism.address': req.walletAddress },
+              { 'wallets.base.address': req.walletAddress }
+            ]
+          });
+          
+          if (user) {
+            if (user.wallets?.ethereum?.address === req.walletAddress) targetChain = 'ethereum';
+            else if (user.wallets?.polygon?.address === req.walletAddress) targetChain = 'polygon';
+            else if (user.wallets?.base?.address === req.walletAddress) targetChain = 'base';
+            else if (user.wallets?.arbitrum?.address === req.walletAddress) targetChain = 'arbitrum';
+            else if (user.wallets?.optimism?.address === req.walletAddress) targetChain = 'optimism';
+          }
+        }
       }
 
-      // Get recent blockhash
-      const { blockhash } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = fromPubkey;
+      if (!targetChain) {
+        return res.status(400).json({ error: 'Could not determine target chain' });
+      }
 
-      // Serialize transaction for frontend signing
-      const serializedTx = transaction.serialize({ requireAllSignatures: false });
+      // Handle Solana transactions
+      if (targetChain === 'solana') {
+        // Get sender's Solana address
+        let fromAddress = req.walletAddress;
+        if (isEVMAddress) {
+          const user = await User.findOne({
+            $or: [
+              { 'wallets.ethereum.address': req.walletAddress },
+              { 'wallets.polygon.address': req.walletAddress },
+              { 'wallets.arbitrum.address': req.walletAddress },
+              { 'wallets.optimism.address': req.walletAddress },
+              { 'wallets.base.address': req.walletAddress }
+            ]
+          });
+          
+          if (!user || !user.wallets?.solana?.address) {
+            return res.status(400).json({ error: 'No Solana address found for this EVM address' });
+          }
+          fromAddress = user.wallets.solana.address;
+        }
 
-      res.json({
-        success: true,
-        transaction: serializedTx.toString('base64'),
-        recipientAddress: recipient.walletAddress,
-        amount,
-        token
-      });
+        // Get recipient's Solana address
+        if (!recipient.wallets?.solana?.address) {
+          return res.status(400).json({ error: 'Recipient does not have a Solana address' });
+        }
+
+        const fromPubkey = new PublicKey(fromAddress);
+        const toPubkey = new PublicKey(recipient.wallets.solana.address);
+
+        let transaction;
+
+        if (token === 'SOL') {
+          // SOL transfer
+          const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
+          
+          transaction = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey,
+              toPubkey,
+              lamports
+            })
+          );
+        } else {
+          // SPL Token transfer (USDC/USDT)
+          const tokenMintAddress = token === 'USDC' 
+            ? 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'  // USDC mint
+            : 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';   // USDT mint
+
+          const mint = new PublicKey(tokenMintAddress);
+          const decimals = 6; // Both USDC and USDT have 6 decimals
+          const tokenAmount = Math.floor(amount * Math.pow(10, decimals));
+
+          // This would need actual SPL token transfer logic
+          // For now, we'll return a placeholder
+          return res.status(501).json({ error: 'SPL token transfers not yet implemented' });
+        }
+
+        // Get recent blockhash
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = fromPubkey;
+
+        // Serialize transaction for frontend signing
+        const serializedTx = transaction.serialize({ requireAllSignatures: false });
+
+        res.json({
+          success: true,
+          chain: 'solana',
+          transaction: serializedTx.toString('base64'),
+          recipientAddress: recipient.wallets.solana.address,
+          amount,
+          token
+        });
+
+      } else {
+        // Handle EVM transactions
+        const chainConfig = EVM_CHAINS[targetChain];
+        if (!chainConfig) {
+          return res.status(400).json({ error: 'Unsupported EVM chain' });
+        }
+
+        // Get sender's EVM address for this chain
+        let fromAddress = req.walletAddress;
+        if (isSolanaAddress) {
+          const user = await User.findOne({ walletAddress: req.walletAddress });
+          if (!user || !user.wallets?.[targetChain]?.address) {
+            return res.status(400).json({ error: `No ${chainConfig.name} address found for this Solana address` });
+          }
+          fromAddress = user.wallets[targetChain].address;
+        }
+
+        // Get recipient's EVM address for this chain
+        if (!recipient.wallets?.[targetChain]?.address) {
+          return res.status(400).json({ error: `Recipient does not have a ${chainConfig.name} address` });
+        }
+
+        const toAddress = recipient.wallets[targetChain].address;
+        const web3 = web3Instances[targetChain];
+
+        // Prepare EVM transaction
+        let transactionData;
+
+        if (token === chainConfig.nativeCurrency.symbol) {
+          // Native token transfer (ETH, MATIC, etc.)
+          const value = web3.utils.toWei(amount.toString(), 'ether');
+          
+          transactionData = {
+            from: fromAddress,
+            to: toAddress,
+            value: value,
+            gas: '21000', // Standard gas limit for simple transfers
+            gasPrice: await web3.eth.getGasPrice(),
+            nonce: await web3.eth.getTransactionCount(fromAddress, 'pending')
+          };
+        } else {
+          // ERC-20 token transfer (USDC, USDT, etc.)
+          // For now, return error as ERC-20 transfers need more complex logic
+          return res.status(501).json({ error: 'ERC-20 token transfers not yet implemented' });
+        }
+
+        res.json({
+          success: true,
+          chain: targetChain,
+          transaction: transactionData,
+          recipientAddress: toAddress,
+          amount,
+          token
+        });
+      }
+
     } catch (error) {
       console.error('Transaction preparation error:', error);
       res.status(500).json({ error: 'Failed to prepare transaction' });
@@ -1092,7 +1253,10 @@ app.post('/api/transactions/prepare',
 // Submit signed transaction
 app.post('/api/transactions/submit', 
   verifyWallet,
-  [body('signedTransaction').isString()],
+  [
+    body('signedTransaction').isString(),
+    body('chain').optional().isIn(['solana', 'ethereum', 'polygon', 'base', 'arbitrum', 'optimism'])
+  ],
   async (req, res) => {
     try {
       const errors = validationResult(req);
@@ -1100,7 +1264,7 @@ app.post('/api/transactions/submit',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { signedTransaction, recipientUsername, amount, token, memo } = req.body;
+      const { signedTransaction, recipientUsername, amount, token, memo, chain } = req.body;
 
       // Look up recipient's wallet address
       const recipientUser = await User.findOne({ username: recipientUsername.toLowerCase() });
@@ -1108,29 +1272,151 @@ app.post('/api/transactions/submit',
         return res.status(404).json({ error: 'Recipient not found' });
       }
 
-      // Deserialize and send transaction
-      const txBuffer = Buffer.from(signedTransaction, 'base64');
-      const transaction = Transaction.from(txBuffer);
+      // Determine the chain to use
+      const isSolanaAddress = req.walletAddress.length === 44 && !req.walletAddress.startsWith('0x');
+      const isEVMAddress = req.walletAddress.length === 42 && req.walletAddress.startsWith('0x');
+      
+      let targetChain = chain;
+      if (!targetChain) {
+        // Auto-detect chain based on wallet address
+        if (isSolanaAddress) {
+          targetChain = 'solana';
+        } else if (isEVMAddress) {
+          // Find which EVM chain this address belongs to
+          const user = await User.findOne({
+            $or: [
+              { 'wallets.ethereum.address': req.walletAddress },
+              { 'wallets.polygon.address': req.walletAddress },
+              { 'wallets.arbitrum.address': req.walletAddress },
+              { 'wallets.optimism.address': req.walletAddress },
+              { 'wallets.base.address': req.walletAddress }
+            ]
+          });
+          
+          if (user) {
+            if (user.wallets?.ethereum?.address === req.walletAddress) targetChain = 'ethereum';
+            else if (user.wallets?.polygon?.address === req.walletAddress) targetChain = 'polygon';
+            else if (user.wallets?.base?.address === req.walletAddress) targetChain = 'base';
+            else if (user.wallets?.arbitrum?.address === req.walletAddress) targetChain = 'arbitrum';
+            else if (user.wallets?.optimism?.address === req.walletAddress) targetChain = 'optimism';
+          }
+        }
+      }
 
-      const signature = await connection.sendRawTransaction(txBuffer, {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed'
-      });
+      if (!targetChain) {
+        return res.status(400).json({ error: 'Could not determine target chain' });
+      }
+
+      let signature;
+      let fromAddress;
+      let toAddress;
+      let explorerUrl;
+
+      // Handle Solana transactions
+      if (targetChain === 'solana') {
+        // Get sender's Solana address
+        fromAddress = req.walletAddress;
+        if (isEVMAddress) {
+          const user = await User.findOne({
+            $or: [
+              { 'wallets.ethereum.address': req.walletAddress },
+              { 'wallets.polygon.address': req.walletAddress },
+              { 'wallets.arbitrum.address': req.walletAddress },
+              { 'wallets.optimism.address': req.walletAddress },
+              { 'wallets.base.address': req.walletAddress }
+            ]
+          });
+          
+          if (!user || !user.wallets?.solana?.address) {
+            return res.status(400).json({ error: 'No Solana address found for this EVM address' });
+          }
+          fromAddress = user.wallets.solana.address;
+        }
+
+        // Get recipient's Solana address
+        if (!recipientUser.wallets?.solana?.address) {
+          return res.status(400).json({ error: 'Recipient does not have a Solana address' });
+        }
+
+        toAddress = recipientUser.wallets.solana.address;
+
+        // Deserialize and send Solana transaction
+        const txBuffer = Buffer.from(signedTransaction, 'base64');
+        const transaction = Transaction.from(txBuffer);
+
+        signature = await connection.sendRawTransaction(txBuffer, {
+          skipPreflight: false,
+          preflightCommitment: 'confirmed'
+        });
+
+        explorerUrl = `https://explorer.solana.com/tx/${signature}`;
+
+      } else {
+        // Handle EVM transactions
+        const chainConfig = EVM_CHAINS[targetChain];
+        if (!chainConfig) {
+          return res.status(400).json({ error: 'Unsupported EVM chain' });
+        }
+
+        // Get sender's EVM address for this chain
+        fromAddress = req.walletAddress;
+        if (isSolanaAddress) {
+          const user = await User.findOne({ walletAddress: req.walletAddress });
+          if (!user || !user.wallets?.[targetChain]?.address) {
+            return res.status(400).json({ error: `No ${chainConfig.name} address found for this Solana address` });
+          }
+          fromAddress = user.wallets[targetChain].address;
+        }
+
+        // Get recipient's EVM address for this chain
+        if (!recipientUser.wallets?.[targetChain]?.address) {
+          return res.status(400).json({ error: `Recipient does not have a ${chainConfig.name} address` });
+        }
+
+        toAddress = recipientUser.wallets[targetChain].address;
+        const web3 = web3Instances[targetChain];
+
+        // Send EVM transaction
+        const receipt = await web3.eth.sendSignedTransaction(signedTransaction);
+        signature = receipt.transactionHash;
+
+        // Generate explorer URL based on chain
+        const explorerUrls = {
+          ethereum: `https://etherscan.io/tx/${signature}`,
+          polygon: `https://polygonscan.com/tx/${signature}`,
+          base: `https://basescan.org/tx/${signature}`,
+          arbitrum: `https://arbiscan.io/tx/${signature}`,
+          optimism: `https://optimistic.etherscan.io/tx/${signature}`
+        };
+        explorerUrl = explorerUrls[targetChain] || `https://etherscan.io/tx/${signature}`;
+      }
 
       // Get sender's username
-      const senderUser = await User.findOne({ walletAddress: req.walletAddress });
+      let senderUser = await User.findOne({ walletAddress: req.walletAddress });
+      if (!senderUser && isEVMAddress) {
+        senderUser = await User.findOne({
+          $or: [
+            { 'wallets.ethereum.address': req.walletAddress },
+            { 'wallets.polygon.address': req.walletAddress },
+            { 'wallets.arbitrum.address': req.walletAddress },
+            { 'wallets.optimism.address': req.walletAddress },
+            { 'wallets.base.address': req.walletAddress }
+          ]
+        });
+      }
       
-      // Save transaction record with correct addresses
+      // Save transaction record
       const txRecord = new TransactionRecord({
-        fromAddress: req.walletAddress,
-        toAddress: recipientUser.walletAddress, // ✅ Actual wallet address
-        fromUsername: senderUser?.username,     // ✅ Sender's username for display
-        toUsername: recipientUsername,          // ✅ Recipient's username for display
+        fromAddress: fromAddress,
+        toAddress: toAddress,
+        fromUsername: senderUser?.username,
+        toUsername: recipientUsername,
         amount,
         token,
         signature,
         memo,
-        status: 'confirmed' // Changed to confirmed since transaction was successful
+        status: 'confirmed',
+        blockchain: targetChain
       });
 
       await txRecord.save();
@@ -1138,7 +1424,8 @@ app.post('/api/transactions/submit',
       res.json({
         success: true,
         signature,
-        explorerUrl: `https://explorer.solana.com/tx/${signature}`
+        explorerUrl,
+        chain: targetChain
       });
     } catch (error) {
       console.error('Transaction submission error:', error);
