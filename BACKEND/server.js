@@ -696,6 +696,33 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
       } else {
         return res.json({ exists: false });
       }
+    } else if (isEVMAddress) {
+      // EVM address already exists - CRITICAL: Check if this is a duplicate user scenario
+      console.log(`EVM address ${walletAddress} already exists for user ${user.username}`);
+      
+      const hasSolanaAddress = user.wallets?.solana?.address;
+      
+      if (hasSolanaAddress) {
+        // CRITICAL ERROR: This EVM address is already associated with a user who has Solana
+        // This should NEVER happen in our intended design
+        console.error(`🚨 CRITICAL ERROR: EVM address ${walletAddress} is already associated with user ${user.username} who has Solana address ${hasSolanaAddress}`);
+        console.error(`🚨 This violates the single-user, multi-chain design principle!`);
+        
+        // Return the existing user - don't create duplicates
+        console.log(`Returning existing user ${user.username} to prevent duplicate user creation`);
+        return res.json({
+          exists: true,
+          username: user.username,
+          bio: user.bio,
+          profilePicture: user.profilePicture,
+          ethAddress: user.wallets?.ethereum?.address || user.ethAddress,
+          wallets: user.wallets
+        });
+      } else {
+        // EVM address exists but user has no Solana - this is the intended case
+        console.log(`User ${user.username} has EVM address but no Solana - this is correct`);
+        // Continue with normal flow
+      }
     }
 
     // Auto-register wallet address if user is signing in with one
@@ -817,6 +844,22 @@ app.post('/api/profile',
           { 'wallets.base.address': walletAddress }
         ]
       });
+
+      // CRITICAL VALIDATION: If EVM address exists with a user who has Solana, this is a duplicate scenario
+      if (existingUserByWallet && isEVMAddress && existingUserByWallet.wallets?.solana?.address) {
+        console.error(`🚨 CRITICAL ERROR: EVM address ${walletAddress} is already associated with user ${existingUserByWallet.username} who has Solana address ${existingUserByWallet.wallets.solana.address}`);
+        console.error(`🚨 This violates the single-user, multi-chain design principle!`);
+        console.error(`🚨 Returning existing user to prevent duplicate user creation`);
+        
+        return res.json({
+          exists: true,
+          username: existingUserByWallet.username,
+          bio: existingUserByWallet.bio,
+          profilePicture: existingUserByWallet.profilePicture,
+          ethAddress: existingUserByWallet.wallets?.ethereum?.address || existingUserByWallet.ethAddress,
+          wallets: existingUserByWallet.wallets
+        });
+      }
 
       // For EVM addresses, also check if user has ANY EVM address (since they're interchangeable)
       if (!existingUserByWallet && isEVMAddress) {
