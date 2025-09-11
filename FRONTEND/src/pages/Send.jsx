@@ -148,9 +148,14 @@ export const Send = () => {
           throw new Error('Phantom wallet not connected');
         }
       } else {
-        // EVM transaction signing - not implemented yet
+        // EVM transaction signing
         toast.dismiss();
-        toast.error('EVM transaction signing not yet implemented');
+        toast.loading('Preparing EVM transaction...');
+        
+        // For EVM chains, we need to implement transaction preparation
+        // For now, show a message that EVM transactions are coming soon
+        toast.dismiss();
+        toast.error('EVM transactions coming soon - currently only Solana is supported');
         return;
       }
 
@@ -185,19 +190,17 @@ export const Send = () => {
               onChange={(e) => handleChainChange(e.target.value)}
               className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
             >
-              {Object.entries(phantomChains).map(([chainName, chainInfo]) => {
-                const isConnected = connectedChains[chainName]?.isConnected;
-                return (
+              {Object.entries(phantomChains)
+                .filter(([chainName, _]) => connectedChains[chainName]?.isConnected)
+                .map(([chainName, chainInfo]) => (
                   <option 
                     key={chainName} 
                     value={chainName} 
-                    disabled={!isConnected}
                     className="bg-gray-800"
                   >
-                    {chainInfo.name} {isConnected ? '' : '(Not Connected)'}
+                    {chainInfo.name}
                   </option>
-                );
-              })}
+                ))}
             </select>
             
             {/* Current network indicator */}

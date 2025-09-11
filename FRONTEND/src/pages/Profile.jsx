@@ -352,29 +352,55 @@ export const Profile = () => {
 
           {/* Wallet Addresses Display */}
           <div className="space-y-4">
-            <h3 className="text-white dark:text-white font-medium">Connected Addresses</h3>
+            <h3 className="text-white dark:text-white font-medium">Registered Wallet Addresses</h3>
             <div className="space-y-3">
-              {Object.entries(connectedChains).map(([chainId, chain]) => {
-                const chainConfig = phantomChains[chainId];
-                if (!chainConfig || !chain.address) return null;
-                
-                return (
-                  <div key={chainId} className="bg-white/5 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: chainConfig.color }}
-                      ></div>
-                      <p className="text-white dark:text-white/60 text-sm font-medium">
-                        {chainConfig.name}
-                      </p>
-                    </div>
-                    <p className="text-white dark:text-white font-mono text-sm break-all">
-                      {chain.address}
+              {/* Solana Address */}
+              {connectedChains.solana?.address && (
+                <div className="bg-white/5 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: '#9945FF' }}
+                    ></div>
+                    <p className="text-white dark:text-white/60 text-sm font-medium">
+                      Solana (SOL)
                     </p>
                   </div>
-                );
-              })}
+                  <p className="text-white dark:text-white font-mono text-sm break-all">
+                    {connectedChains.solana.address}
+                  </p>
+                </div>
+              )}
+
+              {/* EVM Address (if any EVM chain is connected) */}
+              {(() => {
+                const evmChains = ['ethereum', 'polygon', 'arbitrum', 'optimism', 'base'];
+                const connectedEVMChain = evmChains.find(chainId => connectedChains[chainId]?.address);
+                
+                if (connectedEVMChain) {
+                  const chainConfig = phantomChains[connectedEVMChain];
+                  return (
+                    <div className="bg-white/5 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: chainConfig?.color || '#627EEA' }}
+                        ></div>
+                        <p className="text-white dark:text-white/60 text-sm font-medium">
+                          EVM Multi-Chain (ETH, Base, Polygon, etc.)
+                        </p>
+                      </div>
+                      <p className="text-white dark:text-white font-mono text-sm break-all">
+                        {connectedChains[connectedEVMChain].address}
+                      </p>
+                      <p className="text-white/60 text-xs mt-1">
+                        This address works across all EVM chains (Ethereum, Base, Polygon, Arbitrum, Optimism)
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
 
