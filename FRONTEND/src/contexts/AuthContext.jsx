@@ -93,14 +93,22 @@ export const AuthProvider = ({ children }) => {
     
     setLastAuthAttempt(now);
     
-    // Get the active wallet from PhantomMultiChain context
-    const activeWallet = getActiveWallet();
-    const activePublicKey = activeWallet?.publicKey;
-    const activeSignMessage = activeWallet?.signMessage;
+    // Check for direct Solana connection first (from ConnectModal)
+    let activePublicKey, activeSignMessage;
+    
+    if (window.solana && window.solana.isConnected && window.solana.publicKey) {
+      console.log('Using direct Solana connection from ConnectModal');
+      activePublicKey = window.solana.publicKey;
+      activeSignMessage = window.solana.signMessage;
+    } else {
+      // Fall back to PhantomMultiChain context
+      const activeWallet = getActiveWallet();
+      activePublicKey = activeWallet?.publicKey;
+      activeSignMessage = activeWallet?.signMessage;
+    }
     
     if (!activePublicKey || !activeSignMessage) {
       console.log('Authentication skipped: missing publicKey or signMessage function');
-      console.log('Active wallet:', activeWallet);
       console.log('Active public key:', activePublicKey);
       console.log('Active sign message function:', !!activeSignMessage);
       return;
@@ -354,19 +362,36 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Use both old and new context for compatibility
+    // Check for direct Solana connection (from ConnectModal)
+    const checkDirectSolanaConnection = () => {
+      if (window.solana && window.solana.isConnected && window.solana.publicKey) {
+        return {
+          isConnected: true,
+          publicKey: window.solana.publicKey.toString(),
+          signMessage: window.solana.signMessage
+        };
+      }
+      return null;
+    };
+
+    // Use both old and new context for compatibility, plus direct Solana check
     const isConnected = connected || isAnyChainConnected;
     const activeWallet = getActiveWallet();
     const hasPublicKey = publicKey || activeWallet?.address;
     
-    console.log('🔐 Auth useEffect - connected:', connected, 'isAnyChainConnected:', isAnyChainConnected, 'hasPublicKey:', hasPublicKey);
+    // Check for direct Solana connection
+    const directSolana = checkDirectSolanaConnection();
+    const isDirectSolanaConnected = directSolana?.isConnected;
+    const directSolanaPublicKey = directSolana?.publicKey;
+    
+    console.log('🔐 Auth useEffect - connected:', connected, 'isAnyChainConnected:', isAnyChainConnected, 'isDirectSolanaConnected:', isDirectSolanaConnected, 'hasPublicKey:', hasPublicKey);
     
     // Check if we need to authenticate with a different wallet address
     const currentAuthAddress = api.getAuthHeaders()?.get('X-Public-Key');
-    const needsReauth = currentAuthAddress && hasPublicKey && currentAuthAddress !== hasPublicKey;
+    const needsReauth = currentAuthAddress && (hasPublicKey || directSolanaPublicKey) && currentAuthAddress !== (hasPublicKey || directSolanaPublicKey);
     
     // Only authenticate if we have a connection and haven't tried recently
-    if (isConnected && hasPublicKey && (!user || needsReauth) && !loading && !api.hasAuthHeaders()) {
+    if ((isConnected || isDirectSolanaConnected) && (hasPublicKey || directSolanaPublicKey) && (!user || needsReauth) && !loading && !api.hasAuthHeaders()) {
       const now = Date.now();
       if (now - lastAuthAttempt > 2000) { // Wait at least 2 seconds between attempts
         console.log('🔐 Triggering authentication...');
@@ -374,14 +399,14 @@ export const AuthProvider = ({ children }) => {
       } else {
         console.log('🔐 Skipping authentication - too soon since last attempt');
       }
-    } else if (isConnected && hasPublicKey && needsReauth && !loading) {
+    } else if ((isConnected || isDirectSolanaConnected) && (hasPublicKey || directSolanaPublicKey) && needsReauth && !loading) {
       // Special case: different wallet address, need to re-authenticate
       const now = Date.now();
       if (now - lastAuthAttempt > 2000) {
         console.log('🔐 Triggering re-authentication for different wallet address...');
         authenticate();
       }
-    } else if (!isConnected && !isAnyChainConnected) {
+    } else if (!isConnected && !isAnyChainConnected && !isDirectSolanaConnected) {
       console.log('🔐 Logging out - no connection to any chain');
       logout();
     }
