@@ -7,7 +7,6 @@ import { useAuth } from '../contexts/AuthContext';
 import ProfileImage from './ProfileImage';
 import Logo from './Logo';
 import ConnectModal from './ConnectModal';
-import { ChainSelector } from './ChainSelector';
 
 export const Header = () => {
   const location = useLocation();
@@ -15,7 +14,11 @@ export const Header = () => {
   const { 
     isAnyChainConnected, 
     getActiveWallet,
-    disconnectAllChains
+    disconnectAllChains,
+    activeChain,
+    connectedChains,
+    phantomChains,
+    switchToChain
   } = usePhantomMultiChain();
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -71,10 +74,6 @@ export const Header = () => {
 
           {/* Profile/Connect Button */}
           <div className="flex items-center space-x-2">
-            {/* Chain Selector */}
-            {isAnyChainConnected && <ChainSelector />}
-
-
             {(connected || isAnyChainConnected) && user ? (
               // User profile button when connected
               <button
@@ -86,26 +85,36 @@ export const Header = () => {
                 }}
                 aria-label="Toggle navigation menu"
               >
-                {/* Profile Picture */}
-                <ProfileImage
-                  src={user?.profilePicture || null}
-                  username={user?.username || 'User'}
-                  size="sm"
-                  className="border-2"
-                  style={{ borderColor: '#fb923c' }}
-                />
+                {/* Profile Picture with Chain Color Ring */}
+                <div className="relative">
+                  <ProfileImage
+                    src={user?.profilePicture || null}
+                    username={user?.username || 'User'}
+                    size="sm"
+                    className="border-2"
+                    style={{ 
+                      borderColor: phantomChains[activeChain]?.color || '#fb923c',
+                      boxShadow: `0 0 0 2px ${phantomChains[activeChain]?.color || '#fb923c'}20`
+                    }}
+                  />
+                  {/* Chain indicator dot */}
+                  <div 
+                    className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-gray-900"
+                    style={{ backgroundColor: phantomChains[activeChain]?.color || '#fb923c' }}
+                  ></div>
+                </div>
 
                 {/* User Info */}
                 <div className="text-sm hidden sm:block">
                   <div className="font-medium text-white truncate max-w-24">
                     @{user?.username || 'User'}
                   </div>
-                  <div className="text-xs text-gray-400 truncate max-w-24">
-                    {(() => {
-                      const activeWallet = getActiveWallet();
-                      const address = activeWallet?.address || publicKey?.toString();
-                      return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'No wallet';
-                    })()}
+                  <div className="text-xs text-gray-400 truncate max-w-24 flex items-center gap-1">
+                    <div 
+                      className="w-2 h-2 rounded-full" 
+                      style={{ backgroundColor: phantomChains[activeChain]?.color || '#fb923c' }}
+                    ></div>
+                    {phantomChains[activeChain]?.name || 'Unknown'}
                   </div>
                 </div>
 
@@ -228,6 +237,48 @@ export const Header = () => {
                     >
                       📋 History
                     </Link>
+                  </div>
+
+                  {/* Chain Selection */}
+                  <div className="mt-6 pt-3 border-t border-gray-700/50">
+                    <div className="px-4 py-2">
+                      <div className="text-xs font-medium text-gray-400 mb-3">Active Chain</div>
+                      <div className="space-y-2">
+                        {Object.entries(connectedChains).map(([chainId, chain]) => {
+                          const chainConfig = phantomChains[chainId];
+                          const isActive = activeChain === chainId;
+                          
+                          return (
+                            <button
+                              key={chainId}
+                              onClick={() => {
+                                switchToChain(chainId);
+                                setMobileMenuOpen(false);
+                              }}
+                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                                isActive ? 'bg-gray-800/70' : 'hover:bg-gray-800/50'
+                              }`}
+                            >
+                              <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: chainConfig?.color || '#666' }}
+                              ></div>
+                              <div className="flex-1 text-left">
+                                <div className="text-sm font-medium text-white">
+                                  {chainConfig?.name || 'Unknown'}
+                                </div>
+                                <div className="text-xs text-gray-400 font-mono">
+                                  {chain.address?.slice(0, 6)}...{chain.address?.slice(-4)}
+                                </div>
+                              </div>
+                              {isActive && (
+                                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Disconnect Button */}
