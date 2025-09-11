@@ -10,9 +10,7 @@ import toast from 'react-hot-toast';
 
 export const Header = () => {
   const location = useLocation();
-  const { connected } = useWallet();
   const { 
-    isAnyChainConnected, 
     disconnectAllChains,
     activeChain,
     connectedChains,
