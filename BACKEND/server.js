@@ -848,34 +848,12 @@ app.post('/api/profile',
       // Allow legitimate multi-chain users (same person owns both keys)
       // The signature verification ensures only the key owner can authenticate
 
-      // For EVM addresses, also check if user has ANY EVM address (since they're interchangeable)
+      // CATASTROPHIC BUG FIX: Never allow EVM addresses to be stolen from existing users
+      // This was allowing one user to steal another user's EVM address by authenticating with it
       if (!existingUserByWallet && isEVMAddress) {
-        const userWithAnyEVM = await User.findOne({
-          $or: [
-            { 'wallets.ethereum.address': { $exists: true, $ne: null } },
-            { 'wallets.polygon.address': { $exists: true, $ne: null } },
-            { 'wallets.arbitrum.address': { $exists: true, $ne: null } },
-            { 'wallets.optimism.address': { $exists: true, $ne: null } },
-            { 'wallets.base.address': { $exists: true, $ne: null } }
-          ]
-        });
-        
-        if (userWithAnyEVM) {
-          // Check if any of their EVM addresses match this one
-          const evmAddresses = [
-            userWithAnyEVM.wallets?.ethereum?.address,
-            userWithAnyEVM.wallets?.polygon?.address,
-            userWithAnyEVM.wallets?.arbitrum?.address,
-            userWithAnyEVM.wallets?.optimism?.address,
-            userWithAnyEVM.wallets?.base?.address
-          ].filter(addr => addr && addr.toLowerCase() === walletAddress.toLowerCase());
-          
-          if (evmAddresses.length > 0) {
-            // Allow legitimate multi-chain users (same person owns both keys)
-            // The signature verification ensures only the key owner can authenticate
-            existingUserByWallet = userWithAnyEVM;
-          }
-        }
+        console.error(`🚨 CATASTROPHIC BUG PREVENTION: EVM address ${walletAddress} not found for authenticating user`);
+        console.error(`🚨 This prevents identity theft where users steal each other's EVM addresses`);
+        console.error(`🚨 Creating new user instead of stealing from existing user`);
       }
 
       // Check if username is already taken by a different user (not the current user)
@@ -926,58 +904,12 @@ app.post('/api/profile',
           { new: true }
         );
       } else {
-        // SAFEGUARD: Before creating new user, check if this EVM address should be associated with existing Solana user
-        // Only if the same person owns both keys (verified by signature)
+        // CRITICAL FIX: Only create new users when no existing user is found
+        // Never automatically associate EVM addresses with random existing users
+        // This prevents catastrophic bugs where wrong users get access to EVM addresses
         if (isEVMAddress) {
-          // Look for any user who has Solana but no EVM address
-          const userWithSolanaOnly = await User.findOne({
-            'wallets.solana.address': { $exists: true, $ne: null },
-            $or: [
-              { 'wallets.ethereum.address': { $exists: false } },
-              { 'wallets.ethereum.address': null },
-              { 'wallets.polygon.address': { $exists: false } },
-              { 'wallets.polygon.address': null },
-              { 'wallets.arbitrum.address': { $exists: false } },
-              { 'wallets.arbitrum.address': null },
-              { 'wallets.optimism.address': { $exists: false } },
-              { 'wallets.optimism.address': null },
-              { 'wallets.base.address': { $exists: false } },
-              { 'wallets.base.address': null }
-            ]
-          }).sort({ updatedAt: -1 });
-          
-          if (userWithSolanaOnly) {
-            console.log(`🔗 SAFEGUARD: Associating EVM address ${walletAddress} with existing Solana user ${userWithSolanaOnly.username}`);
-            console.log(`🔗 This is safe because signature verification ensures only the key owner can authenticate`);
-            
-            // Add EVM address to existing Solana user
-            const updateData = {
-              'wallets.ethereum.address': walletAddress,
-              'wallets.polygon.address': walletAddress,
-              'wallets.arbitrum.address': walletAddress,
-              'wallets.optimism.address': walletAddress,
-              'wallets.base.address': walletAddress,
-              'wallets.ethereum.isPrimary': true,
-              username: username.toLowerCase(),
-              bio,
-              updatedAt: new Date()
-            };
-            
-            user = await User.findOneAndUpdate(
-              { _id: userWithSolanaOnly._id },
-              updateData,
-              { new: true }
-            );
-            
-            return res.json({
-              exists: true,
-              username: user.username,
-              bio: user.bio,
-              profilePicture: user.profilePicture,
-              ethAddress: user.wallets?.ethereum?.address || user.ethAddress,
-              wallets: user.wallets
-            });
-          }
+          console.log(`Creating new EVM-only user for address ${walletAddress}`);
+          console.log(`This prevents catastrophic association with wrong existing users`);
         }
         
         // Create new user
