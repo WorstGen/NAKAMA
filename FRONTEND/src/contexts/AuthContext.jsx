@@ -361,14 +361,25 @@ export const AuthProvider = ({ children }) => {
     
     console.log('🔐 Auth useEffect - connected:', connected, 'isAnyChainConnected:', isAnyChainConnected, 'hasPublicKey:', hasPublicKey);
     
+    // Check if we need to authenticate with a different wallet address
+    const currentAuthAddress = api.getAuthHeaders()?.get('X-Public-Key');
+    const needsReauth = currentAuthAddress && hasPublicKey && currentAuthAddress !== hasPublicKey;
+    
     // Only authenticate if we have a connection and haven't tried recently
-    if (isConnected && hasPublicKey && !user && !loading && !api.hasAuthHeaders()) {
+    if (isConnected && hasPublicKey && (!user || needsReauth) && !loading && !api.hasAuthHeaders()) {
       const now = Date.now();
       if (now - lastAuthAttempt > 2000) { // Wait at least 2 seconds between attempts
         console.log('🔐 Triggering authentication...');
         authenticate();
       } else {
         console.log('🔐 Skipping authentication - too soon since last attempt');
+      }
+    } else if (isConnected && hasPublicKey && needsReauth && !loading) {
+      // Special case: different wallet address, need to re-authenticate
+      const now = Date.now();
+      if (now - lastAuthAttempt > 2000) {
+        console.log('🔐 Triggering re-authentication for different wallet address...');
+        authenticate();
       }
     } else if (!isConnected && !isAnyChainConnected) {
       console.log('🔐 Logging out - no connection to any chain');
