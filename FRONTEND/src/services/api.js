@@ -159,6 +159,11 @@ class ApiService {
   authorizeOAuth = async (oauthData) => {
     return this.request('POST', '/api/oauth/authorize', oauthData);
   }
+
+  // Add EVM address to current user
+  addEVM = async () => {
+    return this.request('POST', '/api/profile/add-evm');
+  }
 }
 
 export const api = new ApiService();
