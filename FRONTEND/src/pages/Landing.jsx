@@ -14,9 +14,10 @@ export const Landing = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Redirect to profile setup if authenticated but no profile
+  // If authenticated but no profile, stay on landing page
+  // This handles EVM addresses that don't have profiles yet
   if (isAuthenticated && !user) {
-    return <Navigate to="/profile" replace />;
+    // Don't redirect, let user stay on landing page
   }
 
   const containerStyle = {
@@ -53,7 +54,7 @@ export const Landing = () => {
                 Make sure you are using Phantom wallet on mobile or have the Phantom wallet extension installed on your browser.
               </p>
             </div>
-          ) : (
+          ) : isAuthenticated && user ? (
             <div>
               <p className="text-gray-200 mb-4">
                 🎉 Great! Your wallet is connected. Ready to explore NAKAMA?
@@ -63,6 +64,21 @@ export const Landing = () => {
                 className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
               >
                 Go to Dashboard
+              </Link>
+            </div>
+          ) : (
+            <div>
+              <p className="text-gray-200 mb-4">
+                🎉 Great! Your wallet is connected. You can now use NAKAMA!
+              </p>
+              <p className="text-gray-400 text-sm mb-4">
+                Switch between chains using the dropdown in the header to access different networks.
+              </p>
+              <Link
+                to="/send"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
+              >
+                Go to Send
               </Link>
             </div>
           )}

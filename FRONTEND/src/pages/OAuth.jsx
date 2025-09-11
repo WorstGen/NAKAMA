@@ -15,8 +15,13 @@ export const OAuth = () => {
   const state = searchParams.get('state');
 
   const handleAuthorize = async () => {
-    if (!isAuthenticated || !user) {
-      toast.error('Please connect your wallet and create a profile first');
+    if (!isAuthenticated) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+    
+    if (!user) {
+      toast.error('Please create a profile first');
       return;
     }
 
@@ -101,10 +106,16 @@ export const OAuth = () => {
           </div>
         )}
 
-        {!isAuthenticated || !user ? (
+        {!isAuthenticated ? (
           <div>
             <p className="text-white/60 mb-4">
-              Please connect your wallet and create a profile to continue.
+              Please connect your wallet to continue.
+            </p>
+          </div>
+        ) : !user ? (
+          <div>
+            <p className="text-white/60 mb-4">
+              Please create a profile to continue.
             </p>
             <button
               onClick={() => window.location.href = '/profile'}

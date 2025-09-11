@@ -356,7 +356,7 @@ export const Profile = () => {
                         {connectedChains[connectedEVMChain].address}
                       </p>
                       <p className="text-white/60 text-xs mt-1">
-                        This address works across all EVM chains (Ethereum, Base, Polygon, Arbitrum, Optimism)
+                        This address works across all EVM chains (Ethereum, Base, Polygon, Arbitrum, Optimism) - they are interchangeable
                       </p>
                     </div>
                   );

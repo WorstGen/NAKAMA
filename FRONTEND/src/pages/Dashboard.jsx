@@ -37,10 +37,18 @@ export const Dashboard = () => {
     return isFromMe ? 'sent' : 'received';
   };
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-white text-lg">Please connect your wallet and set up your profile.</p>
+        <p className="text-white text-lg">Please connect your wallet first.</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-white text-lg">Please set up your profile.</p>
         <Link to="/profile" className="text-orange-400 hover:text-orange-300">
           Set up profile →
         </Link>
