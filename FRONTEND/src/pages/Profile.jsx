@@ -203,23 +203,22 @@ export const Profile = () => {
       
       // Wait for the authentication to complete
       // The AuthContext will automatically authenticate when the wallet address changes
+      // We'll wait for the user state to update instead of polling the API
       let attempts = 0;
-      const maxAttempts = 10; // Wait up to 10 seconds
+      const maxAttempts = 5; // Wait up to 10 seconds
       
       while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between attempts
         
-        // Check if user now has EVM address registered
-        const profile = await api.getProfile();
-        if (profile.exists && profile.wallets) {
-          const hasEVMAddress = profile.wallets.ethereum?.address || 
-                               profile.wallets.polygon?.address || 
-                               profile.wallets.arbitrum?.address || 
-                               profile.wallets.optimism?.address || 
-                               profile.wallets.base?.address;
+        // Check if user now has EVM address registered by checking the current user state
+        if (user?.wallets) {
+          const hasEVMAddress = user.wallets.ethereum?.address || 
+                               user.wallets.polygon?.address || 
+                               user.wallets.arbitrum?.address || 
+                               user.wallets.optimism?.address || 
+                               user.wallets.base?.address;
           
           if (hasEVMAddress) {
-            setUser(profile);
             toast.dismiss();
             toast.success('EVM wallet registered successfully!');
             return;
