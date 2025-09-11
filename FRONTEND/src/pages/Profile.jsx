@@ -9,7 +9,7 @@ import { CameraIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
-  const { connectedChains, phantomChains } = usePhantomMultiChain();
+  const { connectedChains, phantomChains, switchToChain } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
@@ -180,20 +180,43 @@ export const Profile = () => {
     setRegisteringEVM(true);
     
     try {
-      toast.loading('Registering EVM wallet...');
+      toast.loading('Connecting to EVM wallet...');
       
-      // Trigger authentication with EVM wallet
-      // This will automatically register the EVM address
-      const profile = await api.getProfile();
+      // First, switch to an EVM chain (Ethereum by default)
+      await switchToChain('ethereum');
       
-      if (profile.exists) {
-        setUser(profile);
-        toast.dismiss();
-        toast.success('EVM wallet registered successfully!');
-      } else {
-        toast.dismiss();
-        toast.error('Failed to register EVM wallet. Please try again.');
+      // Wait for the authentication to complete
+      // The AuthContext will automatically authenticate when the wallet address changes
+      let attempts = 0;
+      const maxAttempts = 10; // Wait up to 10 seconds
+      
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Check if user now has EVM address registered
+        const profile = await api.getProfile();
+        if (profile.exists && profile.wallets) {
+          const hasEVMAddress = profile.wallets.ethereum?.address || 
+                               profile.wallets.polygon?.address || 
+                               profile.wallets.arbitrum?.address || 
+                               profile.wallets.optimism?.address || 
+                               profile.wallets.base?.address;
+          
+          if (hasEVMAddress) {
+            setUser(profile);
+            toast.dismiss();
+            toast.success('EVM wallet registered successfully!');
+            return;
+          }
+        }
+        
+        attempts++;
       }
+      
+      // If we get here, registration didn't complete
+      toast.dismiss();
+      toast.error('EVM wallet registration timed out. Please try again.');
+      
     } catch (error) {
       toast.dismiss();
       console.error('EVM registration error:', error);
