@@ -2,12 +2,12 @@ import React from 'react';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
 import { useAuth, useTheme } from '../contexts/AuthContext';
-import { useWallet } from '../contexts/WalletContext';
+import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { ClockIcon, CheckCircleIcon, XCircleIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
 
 export const Transactions = () => {
-  const { isAuthenticated } = useAuth();
-  const { publicKey } = useWallet();
+  const { isAuthenticated, user } = useAuth();
+  const { connectedChains } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   
@@ -42,8 +42,14 @@ export const Transactions = () => {
   };
 
   const getTransactionType = (tx) => {
-    const myAddress = publicKey?.toString();
-    return tx.fromAddress === myAddress ? 'sent' : 'received';
+    // Get all connected addresses from all chains
+    const myAddresses = Object.values(connectedChains)
+      .filter(chain => chain?.address)
+      .map(chain => chain.address);
+    
+    // Check if the transaction's fromAddress matches any of our connected addresses
+    const isFromMe = myAddresses.includes(tx.fromAddress);
+    return isFromMe ? 'sent' : 'received';
   };
 
   if (!isAuthenticated) {

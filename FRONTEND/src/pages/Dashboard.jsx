@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth, useTheme } from '../contexts/AuthContext';
-import { useWallet } from '../contexts/WalletContext';
+import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
 import { Link } from 'react-router-dom';
@@ -14,7 +14,7 @@ import {
 
 export const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
-  const { publicKey } = useWallet();
+  const { connectedChains } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
 
@@ -27,8 +27,14 @@ export const Dashboard = () => {
   });
 
   const getTransactionType = (tx) => {
-    const myAddress = publicKey?.toString();
-    return tx.fromAddress === myAddress ? 'sent' : 'received';
+    // Get all connected addresses from all chains
+    const myAddresses = Object.values(connectedChains)
+      .filter(chain => chain?.address)
+      .map(chain => chain.address);
+    
+    // Check if the transaction's fromAddress matches any of our connected addresses
+    const isFromMe = myAddresses.includes(tx.fromAddress);
+    return isFromMe ? 'sent' : 'received';
   };
 
   if (!isAuthenticated || !user) {
