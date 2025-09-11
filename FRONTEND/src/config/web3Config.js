@@ -110,66 +110,6 @@ export const chainConfig = {
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
       { symbol: 'USDT', name: 'Tether USD', decimals: 6, mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' }
     ]
-  },
-  ethereum: {
-    id: 'ethereum',
-    name: 'Ethereum',
-    symbol: 'ETH',
-    decimals: 18,
-    blockExplorer: 'https://etherscan.io',
-    rpcUrl: 'https://eth.llamarpc.com',
-    color: '#627EEA',
-    tokens: [
-      { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true }
-    ]
-  },
-  polygon: {
-    id: 'polygon',
-    name: 'Polygon',
-    symbol: 'MATIC',
-    decimals: 18,
-    blockExplorer: 'https://polygonscan.com',
-    rpcUrl: 'https://polygon.llamarpc.com',
-    color: '#8247E5',
-    tokens: [
-      { symbol: 'MATIC', name: 'Polygon', decimals: 18, isNative: true }
-    ]
-  },
-  base: {
-    id: 'base',
-    name: 'Base',
-    symbol: 'ETH',
-    decimals: 18,
-    blockExplorer: 'https://basescan.org',
-    rpcUrl: 'https://base.llamarpc.com',
-    color: '#0052FF',
-    tokens: [
-      { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true }
-    ]
-  },
-  arbitrum: {
-    id: 'arbitrum',
-    name: 'Arbitrum',
-    symbol: 'ETH',
-    decimals: 18,
-    blockExplorer: 'https://arbiscan.io',
-    rpcUrl: 'https://arbitrum.llamarpc.com',
-    color: '#28A0F0',
-    tokens: [
-      { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true }
-    ]
-  },
-  optimism: {
-    id: 'optimism',
-    name: 'Optimism',
-    symbol: 'ETH',
-    decimals: 18,
-    blockExplorer: 'https://optimistic.etherscan.io',
-    rpcUrl: 'https://optimism.llamarpc.com',
-    color: '#FF0420',
-    tokens: [
-      { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true }
-    ]
   }
 };
 
