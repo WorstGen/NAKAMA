@@ -417,7 +417,6 @@ export const AuthProvider = ({ children }) => {
     const restoreAuth = async () => {
       // Only attempt restoration if we haven't tried authentication before
       // and user is connected but has no authentication state
-      const hasAuthHeaders = api.hasAuthHeaders();
       const isConnected = connected || isAnyChainConnected;
       const activeWallet = getActiveWallet();
       const hasPublicKey = publicKey || activeWallet?.address;
