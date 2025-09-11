@@ -16,7 +16,6 @@ export const Send = () => {
     activeChain, 
     connectedChains, 
     switchToChain,
-    connectAllChains,
     getActiveWallet
   } = usePhantomMultiChain();
   const [searchParams] = useSearchParams();
