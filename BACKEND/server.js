@@ -10,7 +10,8 @@ const cloudinary = require('cloudinary').v2;
 const { body, validationResult, sanitizeBody } = require('express-validator');
 const validator = require('validator');
 const rateLimit = require('express-rate-limit');
-const Web3 = require('web3');
+// Use ethers instead of web3 for better compatibility
+const { ethers } = require('ethers');
 require('dotenv').config();
 
 // Configure Cloudinary
@@ -147,10 +148,17 @@ const EVM_CHAINS = {
   }
 };
 
-// Create Web3 instances for each chain
-const web3Instances = {};
+// Create ethers providers for each chain
+const ethersProviders = {};
 Object.entries(EVM_CHAINS).forEach(([chainName, config]) => {
-  web3Instances[chainName] = new Web3(config.rpcUrl);
+  try {
+    ethersProviders[chainName] = new ethers.JsonRpcProvider(config.rpcUrl);
+    console.log(`Ethers provider created for ${chainName}`);
+  } catch (error) {
+    console.error(`Failed to create ethers provider for ${chainName}:`, error);
+    // Fallback: create a basic provider
+    ethersProviders[chainName] = null;
+  }
 });
 
 // Rate limiting
@@ -1210,22 +1218,30 @@ app.post('/api/transactions/prepare',
         }
 
         const toAddress = recipient.wallets[targetChain].address;
-        const web3 = web3Instances[targetChain];
+        const provider = ethersProviders[targetChain];
+
+        if (!provider) {
+          return res.status(500).json({ error: `Ethers provider not available for ${chainConfig.name}` });
+        }
 
         // Prepare EVM transaction
         let transactionData;
 
         if (token === chainConfig.nativeCurrency.symbol) {
           // Native token transfer (ETH, MATIC, etc.)
-          const value = web3.utils.toWei(amount.toString(), 'ether');
+          const value = ethers.parseEther(amount.toString());
+          
+          // Get gas price and nonce
+          const gasPrice = await provider.getFeeData();
+          const nonce = await provider.getTransactionCount(fromAddress, 'pending');
           
           transactionData = {
             from: fromAddress,
             to: toAddress,
-            value: value,
-            gas: '21000', // Standard gas limit for simple transfers
-            gasPrice: await web3.eth.getGasPrice(),
-            nonce: await web3.eth.getTransactionCount(fromAddress, 'pending')
+            value: value.toString(),
+            gasLimit: '21000', // Standard gas limit for simple transfers
+            gasPrice: gasPrice.gasPrice?.toString() || '20000000000', // 20 gwei fallback
+            nonce: nonce
           };
         } else {
           // ERC-20 token transfer (USDC, USDT, etc.)
@@ -1374,11 +1390,15 @@ app.post('/api/transactions/submit',
         }
 
         toAddress = recipientUser.wallets[targetChain].address;
-        const web3 = web3Instances[targetChain];
+        const provider = ethersProviders[targetChain];
+
+        if (!provider) {
+          return res.status(500).json({ error: `Ethers provider not available for ${chainConfig.name}` });
+        }
 
         // Send EVM transaction
-        const receipt = await web3.eth.sendSignedTransaction(signedTransaction);
-        signature = receipt.transactionHash;
+        const txResponse = await provider.broadcastTransaction(signedTransaction);
+        signature = txResponse.hash;
 
         // Generate explorer URL based on chain
         const explorerUrls = {

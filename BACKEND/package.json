@@ -21,6 +21,7 @@
     "@solana/web3.js": "^1.78.4",
     "@solana/spl-token": "^0.3.8",
     "web3": "^4.1.1",
+    "ethers": "^6.8.0",
     "bs58": "^5.0.0",
     "tweetnacl": "^1.0.3",
     "uuid": "^9.0.0",
