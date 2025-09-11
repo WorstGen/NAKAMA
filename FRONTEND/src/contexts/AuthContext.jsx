@@ -256,13 +256,31 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Profile fetch result:', profile);
 
-      setUser(profile.exists ? profile : null);
-
-      if (profile.exists) {
-        toast.success(`Welcome back, @${profile.username}!`);
+      // Handle profile not found for EVM addresses
+      if (!profile.exists) {
+        console.log('No existing profile found for this address');
+        
+        // Check if this is an EVM address
+        const activeWallet = getActiveWallet();
+        const isEVMAddress = activeWallet?.address?.startsWith('0x');
+        
+        if (isEVMAddress) {
+          console.log('EVM address has no profile - checking if user has profile with any EVM address');
+          
+          // For EVM addresses, we should check if the user has a profile with ANY EVM address
+          // since all EVM chains use the same address format
+          // This will be handled by the backend logic that links EVM addresses
+          // For now, we'll treat this as a normal case and let the user continue
+          setUser(null);
+          return; // Exit early, don't clear auth headers
+        } else {
+          // This is a Solana address without a profile
+          setUser(null);
+          toast.success('Welcome! Please create your profile to get started.');
+        }
       } else {
-        console.log('No existing profile found - user can create one');
-        toast.success('Welcome! Please create your profile to get started.');
+        setUser(profile);
+        toast.success(`Welcome back, @${profile.username}!`);
       }
 
     } catch (error) {
@@ -288,19 +306,29 @@ export const AuthProvider = ({ children }) => {
       // Check if it's a profile-not-found error vs auth error
       if (error?.error === 'Profile not found' || error?.message?.includes('Profile not found')) {
         console.log('Profile not found - this is normal for new users');
-        setUser(null);
-        toast.success('Welcome! Please create your profile to get started.');
+        
+        // Check if this is an EVM address
+        const activeWallet = getActiveWallet();
+        const isEVMAddress = activeWallet?.address?.startsWith('0x');
+        
+        if (isEVMAddress) {
+          console.log('EVM address has no profile - this is normal, keeping auth headers');
+          setUser(null);
+          // Don't clear auth headers for EVM addresses without profiles
+        } else {
+          setUser(null);
+          toast.success('Welcome! Please create your profile to get started.');
+        }
       } else if (error?.status === 401) {
         console.error('Authentication unauthorized - possible signature verification failure');
         toast.error('Authentication failed. Please try reconnecting your wallet.');
         api.clearAuthHeaders();
       } else {
         toast.error(errorMessage);
+        setUser(null);
+        setAuthToken(null);
+        api.clearAuthHeaders();
       }
-
-      setUser(null);
-      setAuthToken(null);
-      api.clearAuthHeaders();
     } finally {
       setLoading(false);
     }
@@ -368,7 +396,7 @@ export const AuthProvider = ({ children }) => {
     authToken,
     authenticate,
     logout,
-    isAuthenticated: !!authToken || (!!user && !loading) // Consider authenticated if we have user profile
+    isAuthenticated: !!authToken || (!!user && !loading) || api.hasAuthHeaders() // Consider authenticated if we have user profile or auth headers
   };
 
   return (
