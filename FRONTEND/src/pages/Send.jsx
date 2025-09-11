@@ -125,16 +125,16 @@ export const Send = () => {
         recipientUsername: formData.recipient,
         amount: parseFloat(formData.amount),
         token: formData.token,
-        memo: formData.memo
+        memo: formData.memo,
+        chain: selectedChain
       });
 
-      // Step 2: Sign transaction
-      if (activeChain === 'solana') {
+      // Step 2: Sign transaction based on chain
+      if (prepared.chain === 'solana') {
         // Solana transaction signing
         const transactionBuffer = Buffer.from(prepared.transaction, 'base64');
         const transaction = Transaction.from(transactionBuffer);
         
-        // Use Phantom's signTransaction for Solana
         if (window.solana && window.solana.signTransaction) {
           const signedTransaction = await window.solana.signTransaction(transaction);
           const signedTransactionBase64 = signedTransaction.serialize().toString('base64');
@@ -148,7 +148,8 @@ export const Send = () => {
             recipientUsername: formData.recipient,
             amount: parseFloat(formData.amount),
             token: formData.token,
-            memo: formData.memo
+            memo: formData.memo,
+            chain: 'solana'
           });
           
           toast.dismiss();
@@ -166,14 +167,44 @@ export const Send = () => {
         }
       } else {
         // EVM transaction signing
-        toast.dismiss();
-        toast.loading('Preparing EVM transaction...');
-        
-        // For EVM chains, we need to implement transaction preparation
-        // For now, show a message that EVM transactions are coming soon
-        toast.dismiss();
-        toast.error('EVM transactions coming soon - currently only Solana is supported');
-        return;
+        if (window.ethereum) {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length === 0) {
+            throw new Error('No EVM accounts connected');
+          }
+
+          // Sign the transaction
+          const signedTransaction = await window.ethereum.request({
+            method: 'eth_signTransaction',
+            params: [prepared.transaction]
+          });
+
+          // Step 3: Submit signed transaction
+          toast.dismiss();
+          toast.loading('Submitting transaction...');
+          
+          const result = await submitTransactionMutation.mutateAsync({
+            signedTransaction: signedTransaction,
+            recipientUsername: formData.recipient,
+            amount: parseFloat(formData.amount),
+            token: formData.token,
+            memo: formData.memo,
+            chain: prepared.chain
+          });
+          
+          toast.dismiss();
+          toast.success('Transaction sent successfully!');
+          console.log('Transaction result:', result);
+          
+          // Reset form
+          setFormData({
+            recipient: '',
+            amount: '',
+            message: ''
+          });
+        } else {
+          throw new Error('Ethereum wallet not connected');
+        }
       }
 
     } catch (error) {
@@ -233,6 +264,14 @@ export const Send = () => {
                 </span>
               </div>
             )}
+            
+            {/* Transaction note */}
+            <div className="mt-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <p className="text-green-300 text-sm">
+                💡 <strong>Note:</strong> Transactions are processed on the selected network. 
+                Choose your preferred chain to send tokens on that specific network.
+              </p>
+            </div>
           </div>
 
           {/* Recipient */}
