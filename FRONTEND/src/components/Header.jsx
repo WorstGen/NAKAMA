@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useAuth } from '../contexts/AuthContext';
 import ProfileImage from './ProfileImage';
+import GradientProfileImage from './GradientProfileImage';
 import Logo from './Logo';
 import toast from 'react-hot-toast';
 
@@ -109,35 +110,20 @@ export const Header = () => {
                 }}
                 aria-label="Toggle navigation menu"
               >
-                {/* Profile Picture with Chain Color Ring */}
-                <div className="relative">
-                  <ProfileImage
-                    src={user?.profilePicture || null}
-                    username={user?.username || 'User'}
-                    size="sm"
-                    className="border-2"
-                    style={{ 
-                      borderColor: phantomChains[activeChain]?.color || '#fb923c',
-                      boxShadow: `0 0 0 2px ${phantomChains[activeChain]?.color || '#fb923c'}20`
-                    }}
-                  />
-                  {/* Chain indicator dot */}
-                  <div 
-                    className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-gray-900"
-                    style={{ backgroundColor: phantomChains[activeChain]?.color || '#fb923c' }}
-                  ></div>
-                </div>
+                {/* Profile Picture with Gradient Chain Outline */}
+                <GradientProfileImage
+                  src={user?.profilePicture || null}
+                  username={user?.username || 'User'}
+                  size="sm"
+                  activeChain={activeChain}
+                />
 
                 {/* User Info */}
                 <div className="text-sm hidden sm:block">
                   <div className="font-medium text-white truncate max-w-24">
                     @{user?.username || 'User'}
                   </div>
-                  <div className="text-xs text-gray-400 truncate max-w-24 flex items-center gap-1">
-                    <div 
-                      className="w-2 h-2 rounded-full" 
-                      style={{ backgroundColor: phantomChains[activeChain]?.color || '#fb923c' }}
-                    ></div>
+                  <div className="text-xs text-gray-400 truncate max-w-24">
                     {phantomChains[activeChain]?.name || 'Unknown'}
                   </div>
                 </div>
