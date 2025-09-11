@@ -110,12 +110,13 @@ export const AuthProvider = ({ children }) => {
     console.log('Starting authentication process...');
 
     try {
-      // Validate wallet is properly configured for Solana
+      // Validate wallet is properly configured
       console.log('Validating wallet configuration...');
 
-      // Check if wallet is connected and has the expected properties
-      if (!activePublicKey.toString() || activePublicKey.toString().length !== 44) {
-        throw new Error('Invalid Solana public key format');
+      // Check if wallet is connected and has a valid address format
+      const address = activePublicKey.toString();
+      if (!address || (address.length !== 44 && address.length !== 42)) {
+        throw new Error('Invalid wallet address format');
       }
 
       console.log('Setting up wallet authentication...');
