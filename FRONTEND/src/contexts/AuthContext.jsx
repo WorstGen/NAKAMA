@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
     // Check cooldown period to prevent rate limiting (reduced to 1 second)
     const now = Date.now();
     const timeSinceLastAttempt = now - lastAuthAttempt;
-    const cooldownPeriod = 1000; // 1 second
+    const cooldownPeriod = 500; // 0.5 seconds
     
     if (timeSinceLastAttempt < cooldownPeriod) {
       console.log('Authentication skipped: cooldown period active');
@@ -241,9 +241,16 @@ export const AuthProvider = ({ children }) => {
             throw profileError;
           }
 
-          // Wait before retry with exponential backoff to avoid rate limiting
-          const delay = Math.min(2000 * Math.pow(2, retryCount), 10000); // Max 10 seconds
-          await new Promise(resolve => setTimeout(resolve, delay));
+          // Check if we got rate limited and wait longer
+          if (profileError.message?.includes('Too many requests') || profileError.message?.includes('429')) {
+            const delay = Math.min(5000 * Math.pow(2, retryCount), 30000); // 10s, 20s, 30s for rate limiting
+            console.log(`Rate limited, waiting ${delay}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          } else {
+            // Normal exponential backoff
+            const delay = Math.min(2000 * Math.pow(2, retryCount), 10000); // Max 10 seconds
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
         }
       }
 
@@ -314,14 +321,20 @@ export const AuthProvider = ({ children }) => {
     
     console.log('🔐 Auth useEffect - connected:', connected, 'isAnyChainConnected:', isAnyChainConnected, 'hasPublicKey:', hasPublicKey);
     
+    // Only authenticate if we have a connection and haven't tried recently
     if (isConnected && hasPublicKey && !user && !loading && !api.hasAuthHeaders()) {
-      console.log('🔐 Triggering authentication...');
-      authenticate();
+      const now = Date.now();
+      if (now - lastAuthAttempt > 2000) { // Wait at least 2 seconds between attempts
+        console.log('🔐 Triggering authentication...');
+        authenticate();
+      } else {
+        console.log('🔐 Skipping authentication - too soon since last attempt');
+      }
     } else if (!isConnected || !hasPublicKey) {
       console.log('🔐 Logging out - no connection or public key');
       logout();
     }
-  }, [connected, isAnyChainConnected, publicKey, getActiveWallet, user, loading, authenticate]);
+  }, [connected, isAnyChainConnected, publicKey, getActiveWallet, user, loading, authenticate, lastAuthAttempt]);
 
   // Try to restore authentication on page load if wallet is connected
   useEffect(() => {
