@@ -16,6 +16,7 @@ export const Send = () => {
     activeChain, 
     connectedChains, 
     switchToChain,
+    connectAllChains,
     getActiveWallet
   } = usePhantomMultiChain();
   const [searchParams] = useSearchParams();
@@ -74,8 +75,15 @@ export const Send = () => {
       
       // Check if wallet is connected for this chain
       if (!connectedChains[chainName]?.isConnected) {
-        toast.error(`Please connect your ${phantomChains[chainName]?.name} wallet first`);
-        return;
+        // Try to connect to all chains first
+        toast.loading(`Connecting to ${phantomChains[chainName]?.name}...`);
+        await connectAllChains();
+        
+        // Check again after connection attempt
+        if (!connectedChains[chainName]?.isConnected) {
+          toast.error(`Please connect your ${phantomChains[chainName]?.name} wallet first`);
+          return;
+        }
       }
       
       // Switch to the selected chain
@@ -194,17 +202,19 @@ export const Send = () => {
               onChange={(e) => handleChainChange(e.target.value)}
               className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
             >
-              {Object.entries(phantomChains)
-                .filter(([chainName, _]) => connectedChains[chainName]?.isConnected)
-                .map(([chainName, chainInfo]) => (
+              {Object.entries(phantomChains).map(([chainName, chainInfo]) => {
+                const isConnected = connectedChains[chainName]?.isConnected;
+                return (
                   <option 
                     key={chainName} 
                     value={chainName} 
                     className="bg-gray-800"
+                    disabled={!isConnected}
                   >
-                    {chainInfo.name}
+                    {chainInfo.name} {isConnected ? '✓' : '(Connect to enable)'}
                   </option>
-                ))}
+                );
+              })}
             </select>
             
             {/* Current network indicator */}
