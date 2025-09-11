@@ -429,6 +429,75 @@ export const AuthProvider = ({ children }) => {
 
 
 
+  const addEVM = useCallback(async () => {
+    if (!user) {
+      throw new Error('No user authenticated. Please connect with Solana first.');
+    }
+
+    if (!window.ethereum) {
+      throw new Error('Ethereum wallet not found');
+    }
+
+    try {
+      // Connect to EVM wallet
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      
+      // Switch to Ethereum mainnet
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x1' }]
+      });
+
+      // Get the EVM address
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No EVM account connected');
+      }
+
+      const evmAddress = accounts[0];
+      console.log('EVM address for registration:', evmAddress);
+
+      // Sign a message with the EVM address
+      const message = `Add EVM address to NAKAMA profile: ${Date.now()}`;
+      const messageHex = '0x' + Buffer.from(message).toString('hex');
+      
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [messageHex, evmAddress]
+      });
+
+      // Convert signature to base58 for backend compatibility
+      const hexString = signature.slice(2);
+      const signatureArray = new Uint8Array(
+        hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+      );
+      const encodedSignature = bs58.encode(signatureArray);
+
+      // Set auth headers for EVM registration
+      api.setAuthHeaders({
+        'X-Signature': encodedSignature,
+        'X-Message': message,
+        'X-Public-Key': evmAddress
+      });
+
+      // Call the add EVM endpoint
+      const response = await api.addEVM();
+      
+      if (response.success) {
+        // Update user state with new EVM address
+        setUser(response.user);
+        toast.success('EVM address added successfully!');
+        return response.user;
+      } else {
+        throw new Error(response.error || 'Failed to add EVM address');
+      }
+    } catch (error) {
+      console.error('Add EVM address error:', error);
+      toast.error(error.message || 'Failed to add EVM address');
+      throw error;
+    }
+  }, [user, setUser]);
+
   const value = {
     user,
     setUser,
@@ -436,6 +505,7 @@ export const AuthProvider = ({ children }) => {
     authToken,
     authenticate,
     logout,
+    addEVM,
     isAuthenticated: !!authToken || (!!user && !loading) || api.hasAuthHeaders() // Consider authenticated if we have user profile or auth headers
   };
 
