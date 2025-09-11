@@ -9,7 +9,7 @@ import { CameraIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
-  const { connectedChains, phantomChains, switchToChain, activeChain } = usePhantomMultiChain();
+  const { connectedChains, phantomChains } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
@@ -311,44 +311,6 @@ export const Profile = () => {
           <div>
           </div>
 
-          {/* Chain Switching */}
-          <div className="space-y-4">
-            <h3 className="text-white dark:text-white font-medium">Switch Active Chain</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {Object.entries(phantomChains).map(([chainId, chainConfig]) => {
-                const isConnected = connectedChains[chainId]?.isConnected;
-                const isActive = activeChain === chainId;
-                
-                return (
-                  <button
-                    key={chainId}
-                    onClick={() => switchToChain(chainId)}
-                    disabled={!isConnected}
-                    className={`p-3 rounded-lg border transition-all ${
-                      isActive 
-                        ? 'border-orange-400 bg-orange-400/10' 
-                        : isConnected 
-                          ? 'border-gray-600 hover:border-orange-400/50 bg-white/5' 
-                          : 'border-gray-700 bg-gray-800/50 opacity-50 cursor-not-allowed'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: chainConfig.color }}
-                      ></div>
-                      <span className="text-white text-sm font-medium">
-                        {chainConfig.name}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {isConnected ? 'Connected' : 'Not Connected'}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
           {/* Wallet Addresses Display */}
           <div className="space-y-4">

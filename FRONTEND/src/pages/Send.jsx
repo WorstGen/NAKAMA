@@ -131,7 +131,11 @@ export const Send = () => {
           toast.loading('Submitting transaction...');
           
           const result = await submitTransactionMutation.mutateAsync({
-            transaction: signedTransactionBase64
+            signedTransaction: signedTransactionBase64,
+            recipientUsername: formData.recipient,
+            amount: parseFloat(formData.amount),
+            token: formData.token,
+            memo: formData.memo
           });
           
           toast.dismiss();
