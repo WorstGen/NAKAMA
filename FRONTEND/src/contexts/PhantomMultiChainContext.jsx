@@ -307,7 +307,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
         const { signature } = await window.solana.signMessage(messageBytes);
         const solanaPublicKey = window.solana.publicKey?.toString() || connectedChains.solana?.address;
         return {
-          signature: Array.from(signature),
+          signature: new Uint8Array(signature),
           publicKey: solanaPublicKey
         };
       } else {
