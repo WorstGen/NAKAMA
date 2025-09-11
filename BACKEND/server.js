@@ -570,26 +570,8 @@ app.post('/api/profile',
         return res.status(400).json({ error: 'Invalid wallet address format' });
       }
 
-      // Check if username is already taken by a different user
-      const existingUser = await User.findOne({ 
-        username: username.toLowerCase(),
-        $or: [
-          { walletAddress: { $ne: walletAddress } },
-          { 'wallets.solana.address': { $ne: walletAddress } },
-          { 'wallets.ethereum.address': { $ne: walletAddress } },
-          { 'wallets.polygon.address': { $ne: walletAddress } },
-          { 'wallets.arbitrum.address': { $ne: walletAddress } },
-          { 'wallets.optimism.address': { $ne: walletAddress } },
-          { 'wallets.base.address': { $ne: walletAddress } }
-        ]
-      });
-
-      if (existingUser) {
-        return res.status(400).json({ error: 'Username already taken' });
-      }
-
-      // Find existing user by any wallet address
-      let user = await User.findOne({
+      // First, find if there's an existing user with this wallet address
+      let existingUserByWallet = await User.findOne({
         $or: [
           { walletAddress: walletAddress },
           { 'wallets.solana.address': walletAddress },
@@ -600,6 +582,19 @@ app.post('/api/profile',
           { 'wallets.base.address': walletAddress }
         ]
       });
+
+      // Check if username is already taken by a different user (not the current user)
+      const existingUserByUsername = await User.findOne({ 
+        username: username.toLowerCase(),
+        _id: { $ne: existingUserByWallet?._id }
+      });
+
+      if (existingUserByUsername) {
+        return res.status(400).json({ error: 'Username already taken' });
+      }
+
+      // Use the existing user if found, otherwise create new
+      let user = existingUserByWallet;
 
       if (user) {
         // Update existing user - add new wallet if not already present
