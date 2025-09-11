@@ -6,7 +6,8 @@ import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { Transaction } from '@solana/web3.js';
 import { api } from '../services/api';
 import { useAuth, useTheme } from '../contexts/AuthContext';
-import { phantomChains, getTokensByChain } from '../contexts/PhantomMultiChainContext';
+import { phantomChains } from '../contexts/PhantomMultiChainContext';
+import { getTokensByChain } from '../config/web3Config';
 import toast from 'react-hot-toast';
 import { PaperAirplaneIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 
