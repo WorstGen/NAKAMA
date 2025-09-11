@@ -1205,7 +1205,8 @@ app.post('/api/transactions/prepare',
         // Get sender's EVM address for this chain
         let fromAddress = req.walletAddress;
         if (isSolanaAddress) {
-          const user = await User.findOne({ walletAddress: req.walletAddress });
+          // Find user by Solana address in wallets.solana.address
+          const user = await User.findOne({ 'wallets.solana.address': req.walletAddress });
           if (!user || !user.wallets?.[targetChain]?.address) {
             return res.status(400).json({ error: `No ${chainConfig.name} address found for this Solana address` });
           }
@@ -1377,7 +1378,8 @@ app.post('/api/transactions/submit',
         // Get sender's EVM address for this chain
         fromAddress = req.walletAddress;
         if (isSolanaAddress) {
-          const user = await User.findOne({ walletAddress: req.walletAddress });
+          // Find user by Solana address in wallets.solana.address
+          const user = await User.findOne({ 'wallets.solana.address': req.walletAddress });
           if (!user || !user.wallets?.[targetChain]?.address) {
             return res.status(400).json({ error: `No ${chainConfig.name} address found for this Solana address` });
           }
@@ -1413,9 +1415,11 @@ app.post('/api/transactions/submit',
 
       // Get sender's username
       let senderUser = await User.findOne({ walletAddress: req.walletAddress });
-      if (!senderUser && isEVMAddress) {
+      if (!senderUser) {
+        // Try to find by any wallet address
         senderUser = await User.findOne({
           $or: [
+            { 'wallets.solana.address': req.walletAddress },
             { 'wallets.ethereum.address': req.walletAddress },
             { 'wallets.polygon.address': req.walletAddress },
             { 'wallets.arbitrum.address': req.walletAddress },
