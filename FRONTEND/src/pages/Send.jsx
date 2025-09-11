@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { useSearchParams } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
-import { useMultiWallet } from '../contexts/MultiWalletContext';
+import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { Transaction } from '@solana/web3.js';
 import { api } from '../services/api';
 import { useAuth, useTheme } from '../contexts/AuthContext';
-import { chainConfig, getTokensByChain } from '../config/web3Config';
+import { phantomChains, getTokensByChain } from '../contexts/PhantomMultiChainContext';
 import toast from 'react-hot-toast';
 import { PaperAirplaneIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 
@@ -15,9 +15,9 @@ export const Send = () => {
   const { signTransaction } = useWallet();
   const { 
     activeChain, 
-    connectedWallets, 
-    switchActiveChain
-  } = useMultiWallet();
+    connectedChains, 
+    switchToChain
+  } = usePhantomMultiChain();
   const [searchParams] = useSearchParams();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
@@ -73,13 +73,13 @@ export const Send = () => {
       setSelectedChain(chainName);
       
       // Check if wallet is connected for this chain
-      if (!connectedWallets[chainName]?.isConnected) {
-        toast.error(`Please connect your ${chainConfig[chainName]?.name} wallet first`);
+      if (!connectedChains[chainName]?.isConnected) {
+        toast.error(`Please connect your ${phantomChains[chainName]?.name} wallet first`);
         return;
       }
       
       // Switch to the selected chain
-      await switchActiveChain(chainName);
+      await switchToChain(chainName);
       
       // Update form data
       const tokens = getTokensByChain(chainName);
@@ -89,7 +89,7 @@ export const Send = () => {
         token: tokens.length > 0 ? tokens[0].symbol : ''
       }));
       
-      toast.success(`Switched to ${chainConfig[chainName]?.name}`);
+      toast.success(`Switched to ${phantomChains[chainName]?.name}`);
     } catch (error) {
       console.error('Failed to switch chain:', error);
       toast.error('Failed to switch chain');
@@ -193,8 +193,8 @@ export const Send = () => {
               onChange={(e) => handleChainChange(e.target.value)}
               className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
             >
-              {Object.entries(chainConfig).map(([chainName, chainInfo]) => {
-                const isConnected = connectedWallets[chainName]?.isConnected;
+              {Object.entries(phantomChains).map(([chainName, chainInfo]) => {
+                const isConnected = connectedChains[chainName]?.isConnected;
                 return (
                   <option 
                     key={chainName} 
@@ -213,7 +213,7 @@ export const Send = () => {
               <div className="mt-2 flex items-center space-x-2 text-sm text-gray-400">
                 <div 
                   className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: chainConfig[selectedChain]?.color }}
+                  style={{ backgroundColor: phantomChains[selectedChain]?.color }}
                 />
                 <span>
                   Connected: {connectedWallets[selectedChain].address.slice(0, 6)}...{connectedWallets[selectedChain].address.slice(-4)}
@@ -303,7 +303,7 @@ export const Send = () => {
             {formData.token && (
               <div className="mt-2 text-xs text-gray-400">
                 Selected: {availableTokens.find(t => t.symbol === formData.token)?.name} 
-                {' '}on {chainConfig[selectedChain]?.name}
+                {' '}on {phantomChains[selectedChain]?.name}
               </div>
             )}
           </div>
@@ -335,10 +335,10 @@ export const Send = () => {
                 <div className="flex items-center space-x-2">
                   <div 
                     className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: chainConfig[selectedChain]?.color }}
+                    style={{ backgroundColor: phantomChains[selectedChain]?.color }}
                   />
                   <p className="text-white/80">
-                    Network: <span className="font-semibold text-white">{chainConfig[selectedChain]?.name}</span>
+                    Network: <span className="font-semibold text-white">{phantomChains[selectedChain]?.name}</span>
                   </p>
                 </div>
                 
