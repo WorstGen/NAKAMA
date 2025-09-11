@@ -106,6 +106,10 @@ export const AuthProvider = ({ children }) => {
     const activeWallet = getActiveWallet();
     const isEVMChain = activeWallet?.address?.startsWith('0x');
     
+    console.log('🔐 Active wallet:', activeWallet);
+    console.log('🔐 Is EVM chain:', isEVMChain);
+    console.log('🔐 Active chain address:', activeWallet?.address);
+    
     if (isEVMChain && window.ethereum) {
       console.log('Using EVM connection for authentication');
       // For EVM, we need to get the address and use personal_sign
