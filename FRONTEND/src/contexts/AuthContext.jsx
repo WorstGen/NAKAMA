@@ -81,10 +81,10 @@ export const AuthProvider = ({ children }) => {
   const [lastAuthAttempt, setLastAuthAttempt] = useState(0);
 
   const authenticate = useCallback(async () => {
-    // Check cooldown period to prevent rate limiting
+    // Check cooldown period to prevent rate limiting (reduced to 1 second)
     const now = Date.now();
     const timeSinceLastAttempt = now - lastAuthAttempt;
-    const cooldownPeriod = 5000; // 5 seconds
+    const cooldownPeriod = 1000; // 1 second
     
     if (timeSinceLastAttempt < cooldownPeriod) {
       console.log('Authentication skipped: cooldown period active');
@@ -204,9 +204,10 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Signature as array:', signatureArray);
 
-      // Validate signature length (Ed25519 signatures are 64 bytes)
-      if (signatureArray.length !== 64) {
-        throw new Error(`Invalid signature length. Expected 64 bytes for Ed25519 signature, got ${signatureArray.length} bytes.`);
+      // Validate signature length
+      // Solana signatures are 64 bytes (Ed25519), EVM signatures are 65 bytes (64 + recovery ID)
+      if (signatureArray.length !== 64 && signatureArray.length !== 65) {
+        throw new Error(`Invalid signature length. Expected 64 bytes (Solana) or 65 bytes (EVM), got ${signatureArray.length} bytes.`);
       }
 
       // We now always encode with bs58 for backend compatibility
@@ -320,7 +321,7 @@ export const AuthProvider = ({ children }) => {
       console.log('🔐 Logging out - no connection or public key');
       logout();
     }
-  }, [connected, isAnyChainConnected, publicKey, getActiveWallet, authenticate, user, loading]);
+  }, [connected, isAnyChainConnected, publicKey, user, loading, authenticate]);
 
   // Try to restore authentication on page load if wallet is connected
   useEffect(() => {
