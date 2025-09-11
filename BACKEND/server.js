@@ -530,21 +530,60 @@ app.get('/api/health', (req, res) => {
 // Get user profile
 app.get('/api/profile', verifyWallet, async (req, res) => {
   try {
+    const walletAddress = req.walletAddress;
+    const isEVMAddress = walletAddress.startsWith('0x') && walletAddress.length === 42;
+    
     // Support both legacy walletAddress and new multi-chain wallets
-    let user = await User.findOne({ walletAddress: req.walletAddress });
+    let user = await User.findOne({ walletAddress: walletAddress });
     
     // If not found with legacy field, try multi-chain wallets
     if (!user) {
-      user = await User.findOne({
-        $or: [
-          { 'wallets.solana.address': req.walletAddress },
-          { 'wallets.ethereum.address': req.walletAddress },
-          { 'wallets.polygon.address': req.walletAddress },
-          { 'wallets.arbitrum.address': req.walletAddress },
-          { 'wallets.optimism.address': req.walletAddress },
-          { 'wallets.base.address': req.walletAddress }
-        ]
-      });
+      if (isEVMAddress) {
+        // For EVM addresses, check if user has ANY EVM address registered
+        // since all EVM chains use the same address format
+        user = await User.findOne({
+          $or: [
+            { 'wallets.ethereum.address': walletAddress },
+            { 'wallets.polygon.address': walletAddress },
+            { 'wallets.arbitrum.address': walletAddress },
+            { 'wallets.optimism.address': walletAddress },
+            { 'wallets.base.address': walletAddress }
+          ]
+        });
+        
+        // If still not found, check if user has any EVM address and this is the same address
+        if (!user) {
+          const userWithAnyEVM = await User.findOne({
+            $or: [
+              { 'wallets.ethereum.address': { $exists: true, $ne: null } },
+              { 'wallets.polygon.address': { $exists: true, $ne: null } },
+              { 'wallets.arbitrum.address': { $exists: true, $ne: null } },
+              { 'wallets.optimism.address': { $exists: true, $ne: null } },
+              { 'wallets.base.address': { $exists: true, $ne: null } }
+            ]
+          });
+          
+          if (userWithAnyEVM) {
+            // Check if any of their EVM addresses match this one
+            const evmAddresses = [
+              userWithAnyEVM.wallets?.ethereum?.address,
+              userWithAnyEVM.wallets?.polygon?.address,
+              userWithAnyEVM.wallets?.arbitrum?.address,
+              userWithAnyEVM.wallets?.optimism?.address,
+              userWithAnyEVM.wallets?.base?.address
+            ].filter(addr => addr && addr.toLowerCase() === walletAddress.toLowerCase());
+            
+            if (evmAddresses.length > 0) {
+              user = userWithAnyEVM;
+            }
+          }
+        }
+      } else {
+        // For Solana addresses, check specific Solana wallet
+        user = await User.findOne({
+          'wallets.solana.address': walletAddress
+        });
+      }
     }
     
     if (!user) {
@@ -614,6 +653,34 @@ app.post('/api/profile',
         ]
       });
 
+      // For EVM addresses, also check if user has ANY EVM address (since they're interchangeable)
+      if (!existingUserByWallet && isEVMAddress) {
+        const userWithAnyEVM = await User.findOne({
+          $or: [
+            { 'wallets.ethereum.address': { $exists: true, $ne: null } },
+            { 'wallets.polygon.address': { $exists: true, $ne: null } },
+            { 'wallets.arbitrum.address': { $exists: true, $ne: null } },
+            { 'wallets.optimism.address': { $exists: true, $ne: null } },
+            { 'wallets.base.address': { $exists: true, $ne: null } }
+          ]
+        });
+        
+        if (userWithAnyEVM) {
+          // Check if any of their EVM addresses match this one
+          const evmAddresses = [
+            userWithAnyEVM.wallets?.ethereum?.address,
+            userWithAnyEVM.wallets?.polygon?.address,
+            userWithAnyEVM.wallets?.arbitrum?.address,
+            userWithAnyEVM.wallets?.optimism?.address,
+            userWithAnyEVM.wallets?.base?.address
+          ].filter(addr => addr && addr.toLowerCase() === walletAddress.toLowerCase());
+          
+          if (evmAddresses.length > 0) {
+            existingUserByWallet = userWithAnyEVM;
+          }
+        }
+      }
+
       // Check if username is already taken by a different user (not the current user)
       const existingUserByUsername = await User.findOne({ 
         username: username.toLowerCase(),
@@ -640,10 +707,23 @@ app.post('/api/profile',
           updateData['wallets.solana.address'] = walletAddress;
           updateData['wallets.solana.isPrimary'] = true;
         } else if (isEVMAddress) {
-          // Determine which EVM chain this address belongs to
-          // For now, we'll assume it's Ethereum, but this could be enhanced
+          // For EVM addresses, we need to determine which chain this is for
+          // Since all EVM chains use the same address format, we need to check
+          // which chain the user is currently on. For now, we'll add it to all EVM chains
+          // since the address is the same across all EVM networks
           updateData['wallets.ethereum.address'] = walletAddress;
-          updateData['wallets.ethereum.isPrimary'] = false;
+          updateData['wallets.polygon.address'] = walletAddress;
+          updateData['wallets.arbitrum.address'] = walletAddress;
+          updateData['wallets.optimism.address'] = walletAddress;
+          updateData['wallets.base.address'] = walletAddress;
+          // Mark the first EVM chain as primary if no other EVM chain is primary
+          if (!user.wallets?.ethereum?.isPrimary && 
+              !user.wallets?.polygon?.isPrimary && 
+              !user.wallets?.arbitrum?.isPrimary && 
+              !user.wallets?.optimism?.isPrimary && 
+              !user.wallets?.base?.isPrimary) {
+            updateData['wallets.ethereum.isPrimary'] = true;
+          }
         }
 
         user = await User.findOneAndUpdate(
@@ -657,7 +737,12 @@ app.post('/api/profile',
         if (isSolanaAddress) {
           wallets.solana = { address: walletAddress, isPrimary: true };
         } else if (isEVMAddress) {
+          // For EVM addresses, add to all EVM chains since they use the same address
           wallets.ethereum = { address: walletAddress, isPrimary: true };
+          wallets.polygon = { address: walletAddress, isPrimary: false };
+          wallets.arbitrum = { address: walletAddress, isPrimary: false };
+          wallets.optimism = { address: walletAddress, isPrimary: false };
+          wallets.base = { address: walletAddress, isPrimary: false };
         }
 
         user = await User.create({
