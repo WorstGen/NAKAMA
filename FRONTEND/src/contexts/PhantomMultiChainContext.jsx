@@ -68,6 +68,32 @@ export const phantomChains = {
       { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' }
     ]
+  },
+  arbitrum: {
+    id: 'arbitrum',
+    name: 'Arbitrum',
+    symbol: 'ETH',
+    decimals: 18,
+    color: '#28A0F0',
+    rpcUrl: 'https://arb1.arbitrum.io/rpc',
+    blockExplorer: 'https://arbiscan.io',
+    tokens: [
+      { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true },
+      { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' }
+    ]
+  },
+  optimism: {
+    id: 'optimism',
+    name: 'Optimism',
+    symbol: 'ETH',
+    decimals: 18,
+    color: '#FF0420',
+    rpcUrl: 'https://mainnet.optimism.io',
+    blockExplorer: 'https://optimistic.etherscan.io',
+    tokens: [
+      { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true },
+      { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' }
+    ]
   }
 };
 
@@ -131,6 +157,12 @@ export const PhantomMultiChainProvider = ({ children }) => {
                 break;
               case 8453:
                 chainName = 'base';
+                break;
+              case 42161:
+                chainName = 'arbitrum';
+                break;
+              case 10:
+                chainName = 'optimism';
                 break;
               default:
                 chainName = 'ethereum';
@@ -232,9 +264,11 @@ export const PhantomMultiChainProvider = ({ children }) => {
         console.log('🔄 EVM chain config:', chainConfig);
         
         // Convert decimal to hex properly
-        const chainIdDecimal = chainConfig.id === 'ethereum' ? 1 : 
-                              chainConfig.id === 'polygon' ? 137 : 
-                              chainConfig.id === 'base' ? 8453 : 1;
+        const chainIdDecimal = chainName === 'ethereum' ? 1 : 
+                              chainName === 'polygon' ? 137 : 
+                              chainName === 'base' ? 8453 :
+                              chainName === 'arbitrum' ? 42161 :
+                              chainName === 'optimism' ? 10 : 1;
         const chainIdHex = `0x${chainIdDecimal.toString(16)}`;
         
         console.log('🔄 Attempting to switch to chain ID:', chainIdHex);
