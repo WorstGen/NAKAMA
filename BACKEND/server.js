@@ -278,11 +278,50 @@ app.use('/api/transactions', strictLimiter);
 
 // MongoDB Models
 const UserSchema = new mongoose.Schema({
+  // Legacy field - keep for backward compatibility (Solana wallet)
   walletAddress: { type: String, required: true, unique: true, index: true },
   username: { type: String, required: true, unique: true, lowercase: true, index: true },
   bio: { type: String, maxLength: 500 },
   profilePicture: { type: String },
+  
+  // Multi-chain wallet support
+  wallets: {
+    solana: {
+      address: { type: String, required: true },
+      isPrimary: { type: Boolean, default: true }
+    },
+    ethereum: {
+      address: { type: String },
+      isPrimary: { type: Boolean, default: false }
+    },
+    // Support for additional EVM networks
+    polygon: {
+      address: { type: String },
+      isPrimary: { type: Boolean, default: false }
+    },
+    arbitrum: {
+      address: { type: String },
+      isPrimary: { type: Boolean, default: false }
+    },
+    optimism: {
+      address: { type: String },
+      isPrimary: { type: Boolean, default: false }
+    },
+    base: {
+      address: { type: String },
+      isPrimary: { type: Boolean, default: false }
+    }
+  },
+  
+  // Legacy field - keep for backward compatibility
   ethAddress: { type: String },
+  
+  // User preferences
+  preferences: {
+    defaultChain: { type: String, enum: ['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base'], default: 'solana' },
+    defaultToken: { type: String, default: 'SOL' }
+  },
+  
   isVerified: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
@@ -305,6 +344,20 @@ const TransactionSchema = new mongoose.Schema({
   signature: { type: String, required: true, unique: true },
   memo: { type: String },
   status: { type: String, enum: ['pending', 'confirmed', 'failed'], default: 'pending' },
+  
+  // Multi-chain support
+  blockchain: { 
+    type: String, 
+    enum: ['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base'], 
+    default: 'solana',
+    index: true 
+  },
+  txHash: { type: String, index: true }, // Transaction hash for blockchain explorer
+  blockNumber: { type: Number },
+  gasUsed: { type: Number },
+  gasPrice: { type: String }, // Store as string to handle big numbers
+  explorerUrl: { type: String },
+  
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -446,7 +499,22 @@ app.get('/api/health', (req, res) => {
 // Get user profile
 app.get('/api/profile', verifyWallet, async (req, res) => {
   try {
-    const user = await User.findOne({ walletAddress: req.walletAddress });
+    // Support both legacy walletAddress and new multi-chain wallets
+    let user = await User.findOne({ walletAddress: req.walletAddress });
+    
+    // If not found with legacy field, try multi-chain wallets
+    if (!user) {
+      user = await User.findOne({
+        $or: [
+          { 'wallets.solana.address': req.walletAddress },
+          { 'wallets.ethereum.address': req.walletAddress },
+          { 'wallets.polygon.address': req.walletAddress },
+          { 'wallets.arbitrum.address': req.walletAddress },
+          { 'wallets.optimism.address': req.walletAddress },
+          { 'wallets.base.address': req.walletAddress }
+        ]
+      });
+    }
     
     if (!user) {
       return res.json({ exists: false });
@@ -457,9 +525,10 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
       username: user.username,
       bio: user.bio,
       profilePicture: user.profilePicture,
-      ethAddress: user.ethAddress,
+      ethAddress: user.wallets?.ethereum?.address || user.ethAddress,
       isVerified: user.isVerified,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
+      wallets: user.wallets || {}
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -490,34 +559,95 @@ app.post('/api/profile',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { username, bio, ethAddress } = req.body;
+      const { username, bio } = req.body;
+      const walletAddress = req.walletAddress;
 
-      // Check if username is already taken
+      // Determine if this is a Solana or EVM address
+      const isSolanaAddress = walletAddress.length === 44;
+      const isEVMAddress = walletAddress.length === 42 && walletAddress.startsWith('0x');
+
+      if (!isSolanaAddress && !isEVMAddress) {
+        return res.status(400).json({ error: 'Invalid wallet address format' });
+      }
+
+      // Check if username is already taken by a different user
       const existingUser = await User.findOne({ 
         username: username.toLowerCase(),
-        walletAddress: { $ne: req.walletAddress }
+        $or: [
+          { walletAddress: { $ne: walletAddress } },
+          { 'wallets.solana.address': { $ne: walletAddress } },
+          { 'wallets.ethereum.address': { $ne: walletAddress } },
+          { 'wallets.polygon.address': { $ne: walletAddress } },
+          { 'wallets.arbitrum.address': { $ne: walletAddress } },
+          { 'wallets.optimism.address': { $ne: walletAddress } },
+          { 'wallets.base.address': { $ne: walletAddress } }
+        ]
       });
 
       if (existingUser) {
         return res.status(400).json({ error: 'Username already taken' });
       }
 
-      const user = await User.findOneAndUpdate(
-        { walletAddress: req.walletAddress },
-        {
+      // Find existing user by any wallet address
+      let user = await User.findOne({
+        $or: [
+          { walletAddress: walletAddress },
+          { 'wallets.solana.address': walletAddress },
+          { 'wallets.ethereum.address': walletAddress },
+          { 'wallets.polygon.address': walletAddress },
+          { 'wallets.arbitrum.address': walletAddress },
+          { 'wallets.optimism.address': walletAddress },
+          { 'wallets.base.address': walletAddress }
+        ]
+      });
+
+      if (user) {
+        // Update existing user - add new wallet if not already present
+        const updateData = {
           username: username.toLowerCase(),
           bio,
-          ethAddress,
           updatedAt: new Date()
-        },
-        { upsert: true, new: true }
-      );
+        };
+
+        // Add wallet to the appropriate chain
+        if (isSolanaAddress) {
+          updateData['wallets.solana.address'] = walletAddress;
+          updateData['wallets.solana.isPrimary'] = true;
+        } else if (isEVMAddress) {
+          // Determine which EVM chain this address belongs to
+          // For now, we'll assume it's Ethereum, but this could be enhanced
+          updateData['wallets.ethereum.address'] = walletAddress;
+          updateData['wallets.ethereum.isPrimary'] = false;
+        }
+
+        user = await User.findOneAndUpdate(
+          { _id: user._id },
+          updateData,
+          { new: true }
+        );
+      } else {
+        // Create new user
+        const wallets = {};
+        if (isSolanaAddress) {
+          wallets.solana = { address: walletAddress, isPrimary: true };
+        } else if (isEVMAddress) {
+          wallets.ethereum = { address: walletAddress, isPrimary: true };
+        }
+
+        user = await User.create({
+          walletAddress: isSolanaAddress ? walletAddress : null, // Keep legacy field for Solana
+          username: username.toLowerCase(),
+          bio,
+          wallets,
+          createdAt: new Date()
+        });
+      }
 
       // Audit log profile update
       auditLog('PROFILE_UPDATE', user._id, {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
-        changes: { username, bio: bio ? 'updated' : 'not provided', ethAddress: ethAddress ? 'updated' : 'not provided' }
+        changes: { username, bio: bio ? 'updated' : 'not provided', walletAddress }
       });
 
       res.json({
@@ -525,8 +655,9 @@ app.post('/api/profile',
         user: {
           username: user.username,
           bio: user.bio,
-          ethAddress: user.ethAddress,
-          profilePicture: user.profilePicture
+          ethAddress: user.wallets?.ethereum?.address || user.ethAddress,
+          profilePicture: user.profilePicture,
+          wallets: user.wallets || {}
         }
       });
     } catch (error) {
