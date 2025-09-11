@@ -110,7 +110,12 @@ export const AuthProvider = ({ children }) => {
     console.log('🔐 Is EVM chain:', isEVMChain);
     console.log('🔐 Active chain address:', activeWallet?.address);
     
-    if (isEVMChain && window.ethereum) {
+    // Also check if we have an EVM address in the publicKey (fallback detection)
+    const hasEVMAddress = publicKey && typeof publicKey === 'string' && publicKey.startsWith('0x');
+    console.log('🔐 Has EVM address in publicKey:', hasEVMAddress);
+    console.log('🔐 PublicKey value:', publicKey);
+    
+    if ((isEVMChain || hasEVMAddress) && window.ethereum) {
       console.log('Using EVM connection for authentication');
       // For EVM, we need to get the address and use personal_sign
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
