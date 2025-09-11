@@ -5,17 +5,17 @@ import { Navigate, Link } from 'react-router-dom';
 
 export const Landing = () => {
   const { connected } = useWallet();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
 
-  // Redirect to dashboard if already connected and has profile
-  if (connected && user) {
+  // Redirect to dashboard if already authenticated and has profile
+  if (isAuthenticated && user) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Redirect to profile setup if connected but no profile
-  if (connected && !user) {
+  // Redirect to profile setup if authenticated but no profile
+  if (isAuthenticated && !user) {
     return <Navigate to="/profile" replace />;
   }
 
