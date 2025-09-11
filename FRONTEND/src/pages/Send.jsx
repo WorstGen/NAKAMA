@@ -208,8 +208,7 @@ export const Send = () => {
                   <option 
                     key={chainName} 
                     value={chainName} 
-                    className="bg-gray-800"
-                    disabled={!isConnected}
+                    className={`bg-gray-800 ${!isConnected ? 'text-gray-500' : 'text-white'}`}
                   >
                     {chainInfo.name} {isConnected ? '✓' : '(Connect to enable)'}
                   </option>
