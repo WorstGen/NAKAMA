@@ -139,8 +139,12 @@ export const AuthProvider = ({ children }) => {
         console.log('Message bytes:', messageBytes);
         console.log('Message bytes length:', messageBytes.length);
 
+        // Convert Uint8Array to Buffer for Solana wallet
+        const messageBuffer = Buffer.from(messageBytes);
+        console.log('Message buffer:', messageBuffer);
+
         // Add timeout for signing operation
-        const signPromise = activeSignMessage(message); // Pass string, not bytes
+        const signPromise = activeSignMessage(messageBuffer); // Pass Buffer, not string
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Wallet signing timeout')), 30000)
         );
@@ -391,7 +395,7 @@ export const AuthProvider = ({ children }) => {
     const needsReauth = currentAuthAddress && (hasPublicKey || directSolanaPublicKey) && currentAuthAddress !== (hasPublicKey || directSolanaPublicKey);
     
     // Only authenticate if we have a connection and haven't tried recently
-    if ((isConnected || isDirectSolanaConnected) && (hasPublicKey || directSolanaPublicKey) && (!user || needsReauth) && !loading) {
+    if ((isConnected || isDirectSolanaConnected) && (hasPublicKey || directSolanaPublicKey) && (!user || needsReauth) && !loading && (!api.hasAuthHeaders() || needsReauth)) {
       const now = Date.now();
       if (now - lastAuthAttempt > 2000) { // Wait at least 2 seconds between attempts
         console.log('🔐 Triggering authentication...');
@@ -439,23 +443,6 @@ export const AuthProvider = ({ children }) => {
     return () => clearTimeout(timeoutId);
   }, [connected, isAnyChainConnected, publicKey, getActiveWallet, user, loading, authenticate]);
 
-  // Poll for direct Solana connections (for ConnectModal)
-  useEffect(() => {
-    const pollForDirectConnection = () => {
-      if (window.solana && window.solana.isConnected && window.solana.publicKey && !user && !loading) {
-        console.log('🔐 Direct Solana connection detected, triggering authentication...');
-        authenticate();
-      }
-    };
-
-    // Poll every 1 second for direct connections
-    const intervalId = setInterval(pollForDirectConnection, 1000);
-    
-    // Also check immediately
-    pollForDirectConnection();
-    
-    return () => clearInterval(intervalId);
-  }, [user, loading, authenticate]);
 
   const value = {
     user,
