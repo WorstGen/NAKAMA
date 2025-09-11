@@ -101,7 +101,7 @@ export const Header = () => {
 
           {/* Profile/Connect Button */}
           <div className="flex items-center space-x-2">
-            {(connected || isAnyChainConnected) && user ? (
+            {user ? (
               // User profile button when connected
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -172,7 +172,7 @@ export const Header = () => {
           </div>
 
           {/* Universal Navigation Menu - Portal Rendered */}
-          {portalRoot && (connected || isAnyChainConnected) && user && mobileMenuOpen && createPortal(
+          {portalRoot && user && mobileMenuOpen && createPortal(
             <div
               className="fixed inset-0"
               style={{
