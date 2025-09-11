@@ -636,18 +636,29 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
     }
     
     if (!user) {
-      // For EVM addresses, check if there's a user with a Solana address who recently authenticated
-      // This helps associate the EVM address with the currently active user
+      // For EVM addresses, try to find an existing user to associate with
       if (isEVMAddress) {
-        // Look for users who have Solana addresses and have been active recently
-        const usersWithSolana = await User.find({
-          'wallets.solana.address': { $exists: true, $ne: null },
-          updatedAt: { $gte: new Date(Date.now() - 10 * 60 * 1000) } // Last 10 minutes
-        }).sort({ updatedAt: -1 }).limit(5);
+        console.log(`EVM address ${walletAddress} not found, looking for existing user to associate with...`);
         
-        if (usersWithSolana.length > 0) {
+        // Look for any user who has been active recently (within last 2 hours)
+        // This helps associate the EVM address with the currently active user
+        const recentUsers = await User.find({
+          $or: [
+            { updatedAt: { $gte: new Date(Date.now() - 2 * 60 * 60 * 1000) } }, // Last 2 hours
+            { createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }  // Or created in last 24 hours
+          ]
+        }).sort({ updatedAt: -1, createdAt: -1 }).limit(20);
+        
+        console.log(`Found ${recentUsers.length} recent users`);
+        
+        // Debug: log the usernames of recent users
+        if (recentUsers.length > 0) {
+          console.log(`Recent users: ${recentUsers.map(u => u.username).join(', ')}`);
+        }
+        
+        if (recentUsers.length > 0) {
           // Find the most recently updated user who doesn't have this EVM address
-          for (const existingUser of usersWithSolana) {
+          for (const existingUser of recentUsers) {
             const hasThisEVMAddress = existingUser.wallets?.ethereum?.address === walletAddress ||
                                     existingUser.wallets?.polygon?.address === walletAddress ||
                                     existingUser.wallets?.arbitrum?.address === walletAddress ||
@@ -679,6 +690,7 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
         }
         
         if (!user) {
+          console.log(`No recent users found to associate EVM address ${walletAddress} with`);
           return res.json({ exists: false });
         }
       } else {
