@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useTheme } from '../contexts/AuthContext';
-import { useWallet } from '../contexts/WalletContext';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -10,7 +9,6 @@ import { CameraIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
-  const { publicKey } = useWallet();
   const { connectedChains, phantomChains, switchToChain, activeChain } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
