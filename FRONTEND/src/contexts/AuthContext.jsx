@@ -162,12 +162,12 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Signature type:', typeof signature);
 
-      // Handle new signature format from updated signMessage function
+      // Handle different signature formats
       let signatureArray;
       let encodedSignature;
 
       if (typeof signature === 'object' && signature.signature) {
-        // New format: {signature: Uint8Array, signatureHex: string, signatureBase64: string}
+        // New format: {signature: Uint8Array, publicKey: string}
         signatureArray = signature.signature;
         console.log('Using new signature format');
 
@@ -179,6 +179,15 @@ export const AuthProvider = ({ children }) => {
           base64: !!signature.signatureBase64,
           base58: !!encodedSignature
         });
+      } else if (typeof signature === 'string' && signature.startsWith('0x')) {
+        // EVM hex signature format
+        console.log('Using EVM hex signature format');
+        const hexString = signature.slice(2); // Remove '0x' prefix
+        signatureArray = new Uint8Array(
+          hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+        );
+        encodedSignature = bs58.encode(signatureArray);
+        console.log('Converted EVM hex signature to base58:', encodedSignature);
       } else {
         // Legacy format: direct Uint8Array
         signatureArray = signature instanceof Uint8Array ? signature : new Uint8Array(signature);

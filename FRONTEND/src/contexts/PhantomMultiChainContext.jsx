@@ -322,9 +322,14 @@ export const PhantomMultiChainProvider = ({ children }) => {
           params: [message, accounts[0]],
         });
         
+        // Convert hex signature to Uint8Array for consistency
+        const signatureBytes = new Uint8Array(
+          signature.slice(2).match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+        );
+        
         return {
-          signature,
-          address: accounts[0]
+          signature: signatureBytes,
+          publicKey: accounts[0]
         };
       }
     } catch (error) {
