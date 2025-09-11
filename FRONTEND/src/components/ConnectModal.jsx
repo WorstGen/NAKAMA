@@ -48,7 +48,7 @@ const ConnectModal = ({ isOpen, onClose }) => {
 
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-16">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4 py-8 overflow-y-auto">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
@@ -56,7 +56,7 @@ const ConnectModal = ({ isOpen, onClose }) => {
       />
       
       {/* Modal */}
-      <div className="relative bg-gray-900 rounded-2xl border border-gray-700 p-6 sm:p-8 max-w-sm w-full shadow-2xl">
+      <div className="relative bg-gray-900 rounded-2xl border border-gray-700 p-6 sm:p-8 max-w-sm w-full shadow-2xl my-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">Connect Wallet</h2>
