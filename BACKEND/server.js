@@ -849,16 +849,80 @@ app.post('/api/profile',
       if (existingUserByWallet && isEVMAddress && existingUserByWallet.wallets?.solana?.address) {
         console.error(`🚨 CRITICAL ERROR: EVM address ${walletAddress} is already associated with user ${existingUserByWallet.username} who has Solana address ${existingUserByWallet.wallets.solana.address}`);
         console.error(`🚨 This violates the single-user, multi-chain design principle!`);
-        console.error(`🚨 Returning existing user to prevent duplicate user creation`);
+        console.error(`🚨 Attempting to fix by moving EVM address to a user with Solana but no EVM...`);
         
-        return res.json({
-          exists: true,
-          username: existingUserByWallet.username,
-          bio: existingUserByWallet.bio,
-          profilePicture: existingUserByWallet.profilePicture,
-          ethAddress: existingUserByWallet.wallets?.ethereum?.address || existingUserByWallet.ethAddress,
-          wallets: existingUserByWallet.wallets
-        });
+        // Find a user who has Solana but no EVM address
+        const userWithSolanaOnly = await User.findOne({
+          'wallets.solana.address': { $exists: true, $ne: null },
+          $or: [
+            { 'wallets.ethereum.address': { $exists: false } },
+            { 'wallets.ethereum.address': null },
+            { 'wallets.polygon.address': { $exists: false } },
+            { 'wallets.polygon.address': null },
+            { 'wallets.arbitrum.address': { $exists: false } },
+            { 'wallets.arbitrum.address': null },
+            { 'wallets.optimism.address': { $exists: false } },
+            { 'wallets.optimism.address': null },
+            { 'wallets.base.address': { $exists: false } },
+            { 'wallets.base.address': null }
+          ]
+        }).sort({ updatedAt: -1 });
+        
+        if (userWithSolanaOnly) {
+          console.log(`🔧 FIXING: Moving EVM address ${walletAddress} from ${existingUserByWallet.username} to ${userWithSolanaOnly.username}`);
+          
+          // Remove EVM address from current user
+          await User.findOneAndUpdate(
+            { _id: existingUserByWallet._id },
+            {
+              $unset: {
+                'wallets.ethereum.address': 1,
+                'wallets.polygon.address': 1,
+                'wallets.arbitrum.address': 1,
+                'wallets.optimism.address': 1,
+                'wallets.base.address': 1
+              }
+            }
+          );
+          
+          // Add EVM address to target user
+          const updateData = {
+            'wallets.ethereum.address': walletAddress,
+            'wallets.polygon.address': walletAddress,
+            'wallets.arbitrum.address': walletAddress,
+            'wallets.optimism.address': walletAddress,
+            'wallets.base.address': walletAddress
+          };
+          
+          const correctedUser = await User.findOneAndUpdate(
+            { _id: userWithSolanaOnly._id },
+            updateData,
+            { new: true }
+          );
+          
+          console.log(`✅ FIXED: EVM address now belongs to ${correctedUser.username}`);
+          
+          return res.json({
+            exists: true,
+            username: correctedUser.username,
+            bio: correctedUser.bio,
+            profilePicture: correctedUser.profilePicture,
+            ethAddress: correctedUser.wallets?.ethereum?.address || correctedUser.ethAddress,
+            wallets: correctedUser.wallets
+          });
+        } else {
+          console.error(`🚨 CRITICAL: No user found with Solana but no EVM to move address to`);
+          console.error(`🚨 Returning existing user to prevent duplicate user creation`);
+          
+          return res.json({
+            exists: true,
+            username: existingUserByWallet.username,
+            bio: existingUserByWallet.bio,
+            profilePicture: existingUserByWallet.profilePicture,
+            ethAddress: existingUserByWallet.wallets?.ethereum?.address || existingUserByWallet.ethAddress,
+            wallets: existingUserByWallet.wallets
+          });
+        }
       }
 
       // For EVM addresses, also check if user has ANY EVM address (since they're interchangeable)
