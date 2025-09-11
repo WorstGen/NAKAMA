@@ -328,7 +328,7 @@ export const AuthProvider = ({ children }) => {
     authToken,
     authenticate,
     logout,
-    isAuthenticated: !!authToken || (!!publicKey && !loading) // Consider authenticated if we have publicKey
+    isAuthenticated: !!authToken || (!!user && !loading) // Consider authenticated if we have user profile
   };
 
   return (
