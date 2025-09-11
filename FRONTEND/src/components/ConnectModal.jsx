@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 const ConnectModal = ({ isOpen, onClose }) => {
   const [connecting, setConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const { authenticate } = useAuth();
 
   if (!isOpen) return null;
 
@@ -19,7 +21,16 @@ const ConnectModal = ({ isOpen, onClose }) => {
         setIsConnected(true);
         toast.success(`Connected to Solana!`);
         
-        // Close modal after successful connection
+        // Trigger authentication after connection
+        try {
+          await authenticate();
+          toast.success('Authentication successful!');
+        } catch (authError) {
+          console.error('Authentication failed:', authError);
+          toast.error('Authentication failed. Please try again.');
+        }
+        
+        // Close modal after successful connection and authentication
         setTimeout(() => {
           onClose();
         }, 1000);
@@ -37,7 +48,7 @@ const ConnectModal = ({ isOpen, onClose }) => {
 
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-16">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
