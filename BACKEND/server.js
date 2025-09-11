@@ -567,6 +567,7 @@ const verifyWallet = async (req, res, next) => {
   }
 };
 
+
 // ===================================
 // API Routes
 // ===================================
@@ -636,93 +637,7 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
     }
     
     if (!user) {
-      // For EVM addresses, try to find an existing user to associate with
-      if (isEVMAddress) {
-        console.log(`EVM address ${walletAddress} not found, looking for existing user to associate with...`);
-        
-        // Look for any user who has been active recently (within last 2 hours)
-        // This helps associate the EVM address with the currently active user
-        const recentUsers = await User.find({
-          $or: [
-            { updatedAt: { $gte: new Date(Date.now() - 2 * 60 * 60 * 1000) } }, // Last 2 hours
-            { createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }  // Or created in last 24 hours
-          ]
-        }).sort({ updatedAt: -1, createdAt: -1 }).limit(20);
-        
-        console.log(`Found ${recentUsers.length} recent users`);
-        
-        // Debug: log the usernames of recent users
-        if (recentUsers.length > 0) {
-          console.log(`Recent users: ${recentUsers.map(u => u.username).join(', ')}`);
-        }
-        
-        if (recentUsers.length > 0) {
-          // Find the most recently updated user who doesn't have this EVM address
-          for (const existingUser of recentUsers) {
-            const hasThisEVMAddress = existingUser.wallets?.ethereum?.address === walletAddress ||
-                                    existingUser.wallets?.polygon?.address === walletAddress ||
-                                    existingUser.wallets?.arbitrum?.address === walletAddress ||
-                                    existingUser.wallets?.optimism?.address === walletAddress ||
-                                    existingUser.wallets?.base?.address === walletAddress;
-            
-            if (!hasThisEVMAddress) {
-              // Add this EVM address to the existing user
-              console.log(`Adding EVM address ${walletAddress} to existing user ${existingUser.username}`);
-              
-              const updateData = {
-                'wallets.ethereum.address': walletAddress,
-                'wallets.polygon.address': walletAddress,
-                'wallets.arbitrum.address': walletAddress,
-                'wallets.optimism.address': walletAddress,
-                'wallets.base.address': walletAddress
-              };
-              
-              user = await User.findOneAndUpdate(
-                { _id: existingUser._id },
-                updateData,
-                { new: true }
-              );
-              
-              console.log(`Successfully added EVM address to user ${user.username}`);
-              break;
-            }
-          }
-        }
-        
-        if (!user) {
-          console.log(`No recent users found to associate EVM address ${walletAddress} with`);
       return res.json({ exists: false });
-        }
-      } else {
-        return res.json({ exists: false });
-      }
-    } else if (isEVMAddress) {
-      // EVM address already exists - CRITICAL: Check if this is a duplicate user scenario
-      console.log(`EVM address ${walletAddress} already exists for user ${user.username}`);
-      
-      const hasSolanaAddress = user.wallets?.solana?.address;
-      
-      if (hasSolanaAddress) {
-        // CRITICAL ERROR: This EVM address is already associated with a user who has Solana
-        // This should NEVER happen in our intended design
-        console.error(`🚨 CRITICAL ERROR: EVM address ${walletAddress} is already associated with user ${user.username} who has Solana address ${hasSolanaAddress}`);
-        console.error(`🚨 This violates the single-user, multi-chain design principle!`);
-        
-        // Return the existing user - don't create duplicates
-        console.log(`Returning existing user ${user.username} to prevent duplicate user creation`);
-        return res.json({
-          exists: true,
-          username: user.username,
-          bio: user.bio,
-          profilePicture: user.profilePicture,
-          ethAddress: user.wallets?.ethereum?.address || user.ethAddress,
-          wallets: user.wallets
-        });
-      } else {
-        // EVM address exists but user has no Solana - this is the intended case
-        console.log(`User ${user.username} has EVM address but no Solana - this is correct`);
-        // Continue with normal flow
-      }
     }
 
     // Auto-register wallet address if user is signing in with one
@@ -794,6 +709,86 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+// Add EVM address to current user's profile
+app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
+  try {
+    const walletAddress = req.walletAddress;
+    const isEVMAddress = walletAddress.startsWith('0x') && walletAddress.length === 42;
+
+    if (!isEVMAddress) {
+      return res.status(400).json({ error: 'This endpoint requires an EVM address' });
+    }
+
+    // Find the current user by their Solana address (they must be authenticated with Solana first)
+    const user = await User.findOne({
+      $or: [
+        { walletAddress: { $exists: true, $ne: null } }, // Legacy Solana address
+        { 'wallets.solana.address': { $exists: true, $ne: null } } // New multi-chain Solana address
+      ]
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'No Solana user found. Please authenticate with Solana first.' });
+    }
+
+    // Check if user already has this EVM address
+    const hasThisEVMAddress = user.wallets?.ethereum?.address === walletAddress ||
+                            user.wallets?.polygon?.address === walletAddress ||
+                            user.wallets?.arbitrum?.address === walletAddress ||
+                            user.wallets?.optimism?.address === walletAddress ||
+                            user.wallets?.base?.address === walletAddress;
+
+    if (hasThisEVMAddress) {
+      return res.status(400).json({ error: 'EVM address already registered to this user' });
+    }
+
+    // Check if user already has any EVM address
+    const hasAnyEVMAddress = user.wallets?.ethereum?.address ||
+                            user.wallets?.polygon?.address ||
+                            user.wallets?.arbitrum?.address ||
+                            user.wallets?.optimism?.address ||
+                            user.wallets?.base?.address;
+
+    if (hasAnyEVMAddress) {
+      return res.status(400).json({ error: 'User already has an EVM address registered' });
+    }
+
+    // Add EVM address to all EVM chains
+    const updateData = {
+      'wallets.ethereum.address': walletAddress,
+      'wallets.polygon.address': walletAddress,
+      'wallets.arbitrum.address': walletAddress,
+      'wallets.optimism.address': walletAddress,
+      'wallets.base.address': walletAddress,
+      'wallets.ethereum.isPrimary': true,
+      updatedAt: new Date()
+    };
+
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: user._id },
+      updateData,
+      { new: true }
+    );
+
+    console.log(`Successfully added EVM address ${walletAddress} to user ${updatedUser.username}`);
+
+    res.json({
+      success: true,
+      message: 'EVM address added successfully',
+      user: {
+        username: updatedUser.username,
+        bio: updatedUser.bio,
+        profilePicture: updatedUser.profilePicture,
+        ethAddress: updatedUser.wallets?.ethereum?.address || updatedUser.ethAddress,
+        wallets: updatedUser.wallets || {}
+      }
+    });
+  } catch (error) {
+    console.error('Add EVM address error:', error);
+    res.status(500).json({ error: 'Failed to add EVM address' });
   }
 });
 
