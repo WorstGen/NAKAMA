@@ -13,10 +13,8 @@ export const Header = () => {
   const location = useLocation();
   const { connected, publicKey } = useWallet();
   const { 
-    activeChain, 
     isAnyChainConnected, 
     getActiveWallet,
-    phantomChains,
     disconnectAllChains
   } = usePhantomMultiChain();
   const { user } = useAuth();
