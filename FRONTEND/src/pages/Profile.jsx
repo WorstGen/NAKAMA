@@ -433,8 +433,6 @@ export const Profile = () => {
 
               {/* EVM Registration Button (show only if no EVM address is registered) */}
               {(() => {
-                const evmChains = ['ethereum', 'polygon', 'arbitrum', 'optimism', 'base'];
-                const hasEVMAddress = evmChains.some(chainId => connectedChains[chainId]?.address);
                 const userHasEVMAddress = user?.wallets?.ethereum?.address || 
                                        user?.wallets?.polygon?.address || 
                                        user?.wallets?.arbitrum?.address || 
