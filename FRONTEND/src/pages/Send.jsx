@@ -73,21 +73,27 @@ export const Send = () => {
     try {
       setSelectedChain(chainName);
       
-      // Check if wallet is connected for this chain
-      if (!connectedChains[chainName]?.isConnected) {
-        // Try to connect to all chains first
-        toast.loading(`Connecting to ${phantomChains[chainName]?.name}...`);
-        await connectAllChains();
-        
-        // Check again after connection attempt
+      // For Solana, just switch directly
+      if (chainName === 'solana') {
+        await switchToChain(chainName);
+      } else {
+        // For EVM chains, ensure EVM access first, then switch
         if (!connectedChains[chainName]?.isConnected) {
-          toast.error(`Please connect your ${phantomChains[chainName]?.name} wallet first`);
-          return;
+          toast.loading(`Connecting to ${phantomChains[chainName]?.name}...`);
+          
+          // Ensure EVM access
+          if (window.ethereum) {
+            try {
+              await window.ethereum.request({ method: 'eth_requestAccounts' });
+            } catch (error) {
+              console.log('EVM connection failed:', error);
+            }
+          }
         }
+        
+        // Switch to the selected chain
+        await switchToChain(chainName);
       }
-      
-      // Switch to the selected chain
-      await switchToChain(chainName);
       
       // Update form data
       const tokens = getTokensByChain(chainName);
@@ -100,7 +106,7 @@ export const Send = () => {
       toast.success(`Switched to ${phantomChains[chainName]?.name}`);
     } catch (error) {
       console.error('Failed to switch chain:', error);
-      toast.error('Failed to switch chain');
+      toast.error(`Failed to switch to ${phantomChains[chainName]?.name}: ${error.message}`);
     }
   };
 
