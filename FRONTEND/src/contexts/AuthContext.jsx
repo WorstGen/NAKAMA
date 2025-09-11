@@ -321,7 +321,7 @@ export const AuthProvider = ({ children }) => {
       console.log('🔐 Logging out - no connection or public key');
       logout();
     }
-  }, [connected, isAnyChainConnected, publicKey, user, loading, authenticate]);
+  }, [connected, isAnyChainConnected, publicKey, getActiveWallet, user, loading, authenticate]);
 
   // Try to restore authentication on page load if wallet is connected
   useEffect(() => {
