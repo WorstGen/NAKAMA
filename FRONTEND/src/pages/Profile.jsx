@@ -8,7 +8,7 @@ import ProfileImage from '../components/ProfileImage';
 import { CameraIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
-  const { user, setUser, isAuthenticated } = useAuth();
+  const { user, setUser, isAuthenticated, authenticate } = useAuth();
   const { connectedChains, phantomChains, switchToChain } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
@@ -201,9 +201,26 @@ export const Profile = () => {
       // Now switch to an EVM chain (Ethereum by default)
       await switchToChain('ethereum');
       
-      // Wait for the authentication to complete
-      // The AuthContext will automatically authenticate when the wallet address changes
-      // We'll wait for the user state to update instead of polling the API
+      // Wait a moment for the chain switch to complete
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Now trigger authentication directly with the EVM address
+      toast.loading('Authenticating with EVM wallet...');
+      
+      // Get the current EVM address
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No EVM accounts found');
+      }
+      
+      const evmAddress = accounts[0];
+      console.log('EVM address for authentication:', evmAddress);
+      
+      // Trigger authentication by calling the authenticate function directly
+      // This will show the signature popup
+      await authenticate();
+      
+      // Wait for authentication to complete
       let attempts = 0;
       const maxAttempts = 5; // Wait up to 10 seconds
       
