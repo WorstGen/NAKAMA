@@ -6,7 +6,7 @@ import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useAuth } from '../contexts/AuthContext';
 import ProfileImage from './ProfileImage';
 import Logo from './Logo';
-import ConnectModal from './ConnectModal';
+import toast from 'react-hot-toast';
 
 export const Header = () => {
   const location = useLocation();
@@ -19,12 +19,40 @@ export const Header = () => {
     phantomChains,
     switchToChain
   } = usePhantomMultiChain();
-  const { user } = useAuth();
+  const { user, authenticate } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [portalRoot, setPortalRoot] = useState(null);
 
   const isActive = (path) => location.pathname === path;
+
+  const handleConnectWallet = async () => {
+    try {
+      setConnecting(true);
+      
+      if (window.solana && window.solana.isPhantom) {
+        const response = await window.solana.connect();
+        console.log('Connected to Solana:', response.publicKey.toString());
+        toast.success('Connected to Solana!');
+        
+        // Trigger authentication
+        try {
+          await authenticate();
+          toast.success('Authentication successful!');
+        } catch (authError) {
+          console.error('Authentication failed:', authError);
+          toast.error('Authentication failed. Please try again.');
+        }
+      } else {
+        throw new Error('Phantom wallet not found');
+      }
+    } catch (error) {
+      console.error('Connection failed:', error);
+      toast.error(`Failed to connect: ${error.message}`);
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   // Create portal root on mount
   useEffect(() => {
@@ -127,10 +155,18 @@ export const Header = () => {
             ) : (
               // Compact Connect Button
               <button
-                onClick={() => setConnectModalOpen(true)}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg font-medium text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+                onClick={handleConnectWallet}
+                disabled={connecting}
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg font-medium text-sm transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Connect Wallet
+                {connecting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    Connecting...
+                  </>
+                ) : (
+                  'Connect Wallet'
+                )}
               </button>
             )}
           </div>
@@ -308,12 +344,6 @@ export const Header = () => {
 
         </div>
       </div>
-      
-      {/* Connect Modal */}
-      <ConnectModal 
-        isOpen={connectModalOpen} 
-        onClose={() => setConnectModalOpen(false)} 
-      />
     </header>
   );
 };
