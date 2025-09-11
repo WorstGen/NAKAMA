@@ -219,7 +219,7 @@ export const Send = () => {
       // Handle specific error types
       if (error.error === 'Too many requests from this IP, please try again later') {
         toast.error('Too many requests. Please wait a moment before trying again.');
-      } else if (error.error?.includes('does not have a') || error.error?.includes('No') && error.error?.includes('address found')) {
+      } else if (error.error?.includes('does not have a') || (error.error?.includes('No') && error.error?.includes('address found'))) {
         toast.error('Recipient does not have the required wallet address for this chain.');
       } else {
         toast.error(error.error || 'Transaction failed');
