@@ -10,7 +10,7 @@ import ConnectModal from './ConnectModal';
 
 export const Header = () => {
   const location = useLocation();
-  const { connected, publicKey, disconnect } = useWallet();
+  const { connected, publicKey } = useWallet();
   const { 
     activeChain, 
     isAnyChainConnected, 
