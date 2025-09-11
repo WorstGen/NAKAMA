@@ -1,10 +1,10 @@
 import React from 'react';
 import ProfileImage from './ProfileImage';
 
-// Define gradient configurations for each chain with enhanced glow colors
+// Define gradient configurations for each chain with proper multi-color gradients
 const chainGradients = {
   solana: {
-    gradient: 'linear-gradient(135deg, #14F195 0%, #00D4AA 30%, #00B4DB 70%, #0EA5E9 100%)',
+    gradient: 'linear-gradient(135deg, #14F195 0%, #9945FF 30%, #14F195 70%, #9945FF 100%)',
     glowColor: '#14F195',
     name: 'Solana'
   },
@@ -57,33 +57,33 @@ const GradientProfileImage = ({
 
   return (
     <div className={`relative ${sizeClass}`}>
-      {/* Multiple glow layers for enhanced effect */}
+      {/* Subtle glow layers for enhanced effect */}
       <div 
-        className="absolute inset-0 rounded-full opacity-60 blur-md -z-20 animate-pulse"
+        className="absolute inset-0 rounded-lg opacity-40 blur-sm -z-20 animate-pulse"
         style={{
           background: gradientConfig.gradient,
-          transform: 'scale(1.3)',
-          animationDuration: '3s'
+          transform: 'scale(1.1)',
+          animationDuration: '4s'
         }}
       />
       <div 
-        className="absolute inset-0 rounded-full opacity-40 blur-lg -z-30"
+        className="absolute inset-0 rounded-lg opacity-20 blur-md -z-30"
         style={{
           background: gradientConfig.gradient,
-          transform: 'scale(1.5)'
+          transform: 'scale(1.2)'
         }}
       />
       
       {/* Main gradient outline container */}
       <div 
-        className={`${sizeClass} rounded-full p-0.5 relative z-10`}
+        className={`${sizeClass} rounded-lg p-0.5 relative z-10`}
         style={{
           background: gradientConfig.gradient,
-          boxShadow: `0 0 30px ${gradientConfig.glowColor}60, 0 0 60px ${gradientConfig.glowColor}30, 0 0 90px ${gradientConfig.glowColor}20`
+          boxShadow: `0 0 15px ${gradientConfig.glowColor}40, 0 0 30px ${gradientConfig.glowColor}20`
         }}
       >
         {/* Inner container for the actual profile image */}
-        <div className="w-full h-full rounded-full overflow-hidden bg-gray-800">
+        <div className="w-full h-full rounded-lg overflow-hidden bg-gray-800">
           <ProfileImage
             src={src}
             username={username}
@@ -100,10 +100,10 @@ const GradientProfileImage = ({
       
       {/* Additional outer glow ring */}
       <div 
-        className="absolute inset-0 rounded-full opacity-20 blur-xl -z-40"
+        className="absolute inset-0 rounded-lg opacity-15 blur-lg -z-40"
         style={{
           background: gradientConfig.gradient,
-          transform: 'scale(1.8)'
+          transform: 'scale(1.3)'
         }}
       />
     </div>
