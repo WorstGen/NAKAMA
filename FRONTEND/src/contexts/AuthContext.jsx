@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }) => {
     // Get the active wallet from PhantomMultiChain context
     const activeWallet = getActiveWallet();
     const activePublicKey = activeWallet?.publicKey;
-    const activeSignMessage = activeWallet?.signMessage || phantomSignMessage;
+    const activeSignMessage = activeWallet?.signMessage;
     
     if (!activePublicKey || !activeSignMessage) {
       console.log('Authentication skipped: missing publicKey or signMessage function');
