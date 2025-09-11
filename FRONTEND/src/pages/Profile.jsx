@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useTheme } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
+import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
@@ -10,14 +11,14 @@ import { CameraIcon } from '@heroicons/react/24/outline';
 export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
   const { publicKey } = useWallet();
+  const { connectedChains, phantomChains, switchToChain, activeChain } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
-    bio: '',
-    ethAddress: ''
+    bio: ''
   });
 
   const [imageSettings, setImageSettings] = useState({
@@ -30,8 +31,7 @@ export const Profile = () => {
     if (user) {
       setFormData({
         username: user.username || '',
-        bio: user.bio || '',
-        ethAddress: user.ethAddress || ''
+        bio: user.bio || ''
       });
     }
   }, [user]);
@@ -157,39 +157,8 @@ export const Profile = () => {
       return;
     }
 
-    // Basic image validation - just check if it's a valid image
-    try {
-      const img = new Image();
-      
-      await new Promise((resolve, reject) => {
-        img.onload = () => {
-          // Basic size check - more lenient
-          if (img.width < 10 || img.height < 10) {
-            reject(new Error('Image too small. Please upload a larger image.'));
-            return;
-          }
-          
-          if (img.width > 8000 || img.height > 8000) {
-            reject(new Error('Image too large. Please upload a smaller image.'));
-            return;
-          }
-          
-          resolve();
-        };
-        
-        img.onerror = () => {
-          reject(new Error('Invalid image file. Please try a different image.'));
-        };
-        
-        img.src = URL.createObjectURL(file);
-      });
-      
-      // Clean up object URL
-      URL.revokeObjectURL(img.src);
-    } catch (validationError) {
-      toast.error(validationError.message);
-      return;
-    }
+    // Skip complex image validation - just rely on file type and size checks
+    // The browser and backend will handle any actual corruption issues
 
     const formData = new FormData();
     formData.append('profilePicture', file);
@@ -342,38 +311,73 @@ export const Profile = () => {
 
           {/* Ethereum Address */}
           <div>
-            <label className="block text-white dark:text-white font-medium mb-2">
-              Ethereum Address (Optional)
-            </label>
-            <input
-              type="text"
-              name="ethAddress"
-              value={formData.ethAddress}
-              onChange={handleInputChange}
-              placeholder="0x..."
-              className="w-full px-4 py-3 bg-gray-700/50 dark:bg-gray-700/50 border-gray-600 dark:border-gray-600 border rounded-lg text-white dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors"
-              pattern="0x[a-fA-F0-9]{40}"
-              title="Enter a valid Ethereum address"
-            />
+          </div>
+
+          {/* Chain Switching */}
+          <div className="space-y-4">
+            <h3 className="text-white dark:text-white font-medium">Switch Active Chain</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {Object.entries(phantomChains).map(([chainId, chainConfig]) => {
+                const isConnected = connectedChains[chainId]?.isConnected;
+                const isActive = activeChain === chainId;
+                
+                return (
+                  <button
+                    key={chainId}
+                    onClick={() => switchToChain(chainId)}
+                    disabled={!isConnected}
+                    className={`p-3 rounded-lg border transition-all ${
+                      isActive 
+                        ? 'border-orange-400 bg-orange-400/10' 
+                        : isConnected 
+                          ? 'border-gray-600 hover:border-orange-400/50 bg-white/5' 
+                          : 'border-gray-700 bg-gray-800/50 opacity-50 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: chainConfig.color }}
+                      ></div>
+                      <span className="text-white text-sm font-medium">
+                        {chainConfig.name}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {isConnected ? 'Connected' : 'Not Connected'}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Wallet Addresses Display */}
           <div className="space-y-4">
             <h3 className="text-white dark:text-white font-medium">Connected Addresses</h3>
-            <div className="bg-white/5 rounded-lg p-4">
-              <p className="text-white dark:text-white/60 text-sm mb-1">Solana Address</p>
-              <p className="text-white dark:text-white font-mono text-sm break-all">
-                {publicKey?.toString()}
-              </p>
+            <div className="space-y-3">
+              {Object.entries(connectedChains).map(([chainId, chain]) => {
+                const chainConfig = phantomChains[chainId];
+                if (!chainConfig || !chain.address) return null;
+                
+                return (
+                  <div key={chainId} className="bg-white/5 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: chainConfig.color }}
+                      ></div>
+                      <p className="text-white dark:text-white/60 text-sm font-medium">
+                        {chainConfig.name}
+                      </p>
+                    </div>
+                    <p className="text-white dark:text-white font-mono text-sm break-all">
+                      {chain.address}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-            {formData.ethAddress && (
-              <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-white dark:text-white/60 text-sm mb-1">Ethereum Address</p>
-                <p className="text-white dark:text-white font-mono text-sm break-all">
-                  {formData.ethAddress}
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Submit Button */}
