@@ -210,14 +210,14 @@ export const Send = () => {
             </select>
             
             {/* Current network indicator */}
-            {connectedWallets[selectedChain]?.isConnected && (
+            {connectedChains[selectedChain]?.isConnected && (
               <div className="mt-2 flex items-center space-x-2 text-sm text-gray-400">
                 <div 
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: phantomChains[selectedChain]?.color }}
                 />
                 <span>
-                  Connected: {connectedWallets[selectedChain].address.slice(0, 6)}...{connectedWallets[selectedChain].address.slice(-4)}
+                  Connected: {connectedChains[selectedChain].address.slice(0, 6)}...{connectedChains[selectedChain].address.slice(-4)}
                 </span>
               </div>
             )}
@@ -359,7 +359,7 @@ export const Send = () => {
                 
                 <div className="pt-2 border-t border-white/10">
                   <p className="text-xs text-gray-400">
-                    Using wallet: {connectedWallets[selectedChain]?.address.slice(0, 8)}...{connectedWallets[selectedChain]?.address.slice(-6)}
+                    Using wallet: {connectedChains[selectedChain]?.address.slice(0, 8)}...{connectedChains[selectedChain]?.address.slice(-6)}
                   </p>
                 </div>
               </div>
