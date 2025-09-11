@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
 import ProfileImage from '../components/ProfileImage';
-import { CameraIcon } from '@heroicons/react/24/outline';
+import { CameraIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
   const { user, setUser, isAuthenticated } = useAuth();
@@ -14,6 +14,7 @@ export const Profile = () => {
   const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [registeringEVM, setRegisteringEVM] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     bio: ''
@@ -172,6 +173,33 @@ export const Profile = () => {
       const errorMessage = error?.error || error?.message || 'Failed to upload profile picture';
       toast.error(errorMessage);
       console.error('Profile picture upload error:', error);
+    }
+  };
+
+  const handleRegisterEVM = async () => {
+    setRegisteringEVM(true);
+    
+    try {
+      toast.loading('Registering EVM wallet...');
+      
+      // Trigger authentication with EVM wallet
+      // This will automatically register the EVM address
+      const profile = await api.getProfile();
+      
+      if (profile.exists) {
+        setUser(profile);
+        toast.dismiss();
+        toast.success('EVM wallet registered successfully!');
+      } else {
+        toast.dismiss();
+        toast.error('Failed to register EVM wallet. Please try again.');
+      }
+    } catch (error) {
+      toast.dismiss();
+      console.error('EVM registration error:', error);
+      toast.error('Failed to register EVM wallet. Please make sure you have an EVM wallet connected.');
+    } finally {
+      setRegisteringEVM(false);
     }
   };
 
@@ -358,6 +386,50 @@ export const Profile = () => {
                       <p className="text-white/60 text-xs mt-1">
                         This address works across all EVM chains (Ethereum, Base, Polygon, Arbitrum, Optimism) - they are interchangeable
                       </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* EVM Registration Button (show only if no EVM address is registered) */}
+              {(() => {
+                const evmChains = ['ethereum', 'polygon', 'arbitrum', 'optimism', 'base'];
+                const hasEVMAddress = evmChains.some(chainId => connectedChains[chainId]?.address);
+                const userHasEVMAddress = user?.wallets?.ethereum?.address || 
+                                       user?.wallets?.polygon?.address || 
+                                       user?.wallets?.arbitrum?.address || 
+                                       user?.wallets?.optimism?.address || 
+                                       user?.wallets?.base?.address;
+                
+                // Show button if user doesn't have EVM address registered in their profile
+                if (!userHasEVMAddress) {
+                  return (
+                    <div className="bg-white/5 rounded-lg p-4 border-2 border-dashed border-white/20">
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                          <p className="text-white/60 text-sm font-medium">
+                            EVM Multi-Chain Support
+                          </p>
+                        </div>
+                        <p className="text-white/60 text-xs mb-3">
+                          Register your EVM wallet to receive ETH, MATIC, and other EVM tokens
+                        </p>
+                        <button
+                          onClick={handleRegisterEVM}
+                          disabled={registeringEVM || !hasEVMAddress}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                          <PlusIcon className="w-4 h-4" />
+                          {registeringEVM ? 'Registering...' : hasEVMAddress ? 'Register EVM Wallet' : 'Connect EVM Wallet First'}
+                        </button>
+                        {!hasEVMAddress && (
+                          <p className="text-white/40 text-xs mt-2">
+                            Switch to an EVM chain (Ethereum, Base, etc.) to enable registration
+                          </p>
+                        )}
+                      </div>
                     </div>
                   );
                 }
