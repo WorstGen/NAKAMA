@@ -639,6 +639,63 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
       return res.json({ exists: false });
     }
 
+    // Auto-register wallet address if user is signing in with one
+    if (user.wallets) {
+      let needsUpdate = false;
+      const updateData = {};
+      
+      if (isEVMAddress) {
+        // Check if this EVM address is already registered in any EVM chain
+        const hasEVMAddress = user.wallets.ethereum?.address || 
+                             user.wallets.polygon?.address || 
+                             user.wallets.arbitrum?.address || 
+                             user.wallets.optimism?.address || 
+                             user.wallets.base?.address;
+        
+        if (!hasEVMAddress) {
+          // Register this EVM address to all EVM chains
+          updateData['wallets.ethereum.address'] = walletAddress;
+          updateData['wallets.polygon.address'] = walletAddress;
+          updateData['wallets.arbitrum.address'] = walletAddress;
+          updateData['wallets.optimism.address'] = walletAddress;
+          updateData['wallets.base.address'] = walletAddress;
+          updateData['wallets.ethereum.isPrimary'] = true;
+          needsUpdate = true;
+        } else if (hasEVMAddress && hasEVMAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+          // Different EVM address - update all EVM chains
+          updateData['wallets.ethereum.address'] = walletAddress;
+          updateData['wallets.polygon.address'] = walletAddress;
+          updateData['wallets.arbitrum.address'] = walletAddress;
+          updateData['wallets.optimism.address'] = walletAddress;
+          updateData['wallets.base.address'] = walletAddress;
+          needsUpdate = true;
+        }
+      } else if (!isEVMAddress) {
+        // Check if this Solana address is already registered
+        const hasSolanaAddress = user.wallets.solana?.address;
+        
+        if (!hasSolanaAddress) {
+          // Register this Solana address
+          updateData['wallets.solana.address'] = walletAddress;
+          updateData['wallets.solana.isPrimary'] = true;
+          needsUpdate = true;
+        } else if (hasSolanaAddress !== walletAddress) {
+          // Different Solana address - update it
+          updateData['wallets.solana.address'] = walletAddress;
+          needsUpdate = true;
+        }
+      }
+      
+      if (needsUpdate) {
+        user = await User.findOneAndUpdate(
+          { _id: user._id },
+          updateData,
+          { new: true }
+        );
+        console.log(`Auto-registered ${isEVMAddress ? 'EVM' : 'Solana'} address ${walletAddress} for user ${user.username}`);
+      }
+    }
+
     res.json({
       exists: true,
       username: user.username,
