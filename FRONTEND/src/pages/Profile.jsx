@@ -182,7 +182,23 @@ export const Profile = () => {
     try {
       toast.loading('Connecting to EVM wallet...');
       
-      // First, switch to an EVM chain (Ethereum by default)
+      // First, ensure EVM wallet is connected
+      if (window.ethereum) {
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          console.log('EVM wallet connected successfully');
+        } catch (error) {
+          console.error('EVM connection failed:', error);
+          throw new Error('Failed to connect EVM wallet. Please approve the connection in your wallet.');
+        }
+      } else {
+        throw new Error('EVM wallet not found. Please install MetaMask or another EVM wallet.');
+      }
+      
+      // Wait a moment for the connection to establish
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Now switch to an EVM chain (Ethereum by default)
       await switchToChain('ethereum');
       
       // Wait for the authentication to complete
@@ -220,7 +236,7 @@ export const Profile = () => {
     } catch (error) {
       toast.dismiss();
       console.error('EVM registration error:', error);
-      toast.error('Failed to register EVM wallet. Please make sure you have an EVM wallet connected.');
+      toast.error(error.message || 'Failed to register EVM wallet. Please make sure you have an EVM wallet connected.');
     } finally {
       setRegisteringEVM(false);
     }
@@ -441,17 +457,15 @@ export const Profile = () => {
                         </p>
                         <button
                           onClick={handleRegisterEVM}
-                          disabled={registeringEVM || !hasEVMAddress}
+                          disabled={registeringEVM}
                           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
                         >
                           <PlusIcon className="w-4 h-4" />
-                          {registeringEVM ? 'Registering...' : hasEVMAddress ? 'Register EVM Wallet' : 'Connect EVM Wallet First'}
+                          {registeringEVM ? 'Connecting & Registering...' : 'Connect & Register EVM Wallet'}
                         </button>
-                        {!hasEVMAddress && (
-                          <p className="text-white/40 text-xs mt-2">
-                            Switch to an EVM chain (Ethereum, Base, etc.) to enable registration
-                          </p>
-                        )}
+                        <p className="text-white/40 text-xs mt-2">
+                          This will connect your EVM wallet and register it across all EVM chains
+                        </p>
                       </div>
                     </div>
                   );
