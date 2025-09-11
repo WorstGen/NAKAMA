@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { useSearchParams } from 'react-router-dom';
-import { useWallet } from '../contexts/WalletContext';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { Transaction } from '@solana/web3.js';
 import { api } from '../services/api';
@@ -13,11 +12,11 @@ import { PaperAirplaneIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outl
 
 export const Send = () => {
   const { isAuthenticated } = useAuth();
-  const { signTransaction } = useWallet();
   const { 
     activeChain, 
     connectedChains, 
-    switchToChain
+    switchToChain,
+    getActiveWallet
   } = usePhantomMultiChain();
   const [searchParams] = useSearchParams();
   const { classes } = useTheme();
@@ -100,7 +99,8 @@ export const Send = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!signTransaction) {
+    const activeWallet = getActiveWallet();
+    if (!activeWallet || !activeWallet.signMessage) {
       toast.error('Wallet not connected properly');
       return;
     }
@@ -116,51 +116,42 @@ export const Send = () => {
       });
 
       // Step 2: Sign transaction
-      const transactionBuffer = Buffer.from(prepared.transaction, 'base64');
-      const transaction = Transaction.from(transactionBuffer);
-      
-      const signedTransaction = await signTransaction(transaction);
-      const signedTransactionBase64 = signedTransaction.serialize().toString('base64');
-
-      // Step 3: Submit signed transaction
-      toast.dismiss();
-      toast.loading('Submitting transaction...');
-      
-      const result = await submitTransactionMutation.mutateAsync({
-        signedTransaction: signedTransactionBase64,
-        recipientUsername: formData.recipient,
-        amount: parseFloat(formData.amount),
-        token: formData.token,
-        memo: formData.memo
-      });
-
-      toast.dismiss();
-      toast.success('Transaction sent successfully!');
-      
-      // Reset form
-      setFormData({
-        recipient: '',
-        amount: '',
-        token: 'SOL',
-        memo: ''
-      });
-
-      // Show explorer link
-      if (result.explorerUrl) {
-        toast.success(
-          <div>
-            <p>Transaction confirmed!</p>
-            <a 
-              href={result.explorerUrl} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-400 underline"
-            >
-              View on Explorer
-            </a>
-          </div>,
-          { duration: 10000 }
-        );
+      if (activeChain === 'solana') {
+        // Solana transaction signing
+        const transactionBuffer = Buffer.from(prepared.transaction, 'base64');
+        const transaction = Transaction.from(transactionBuffer);
+        
+        // Use Phantom's signTransaction for Solana
+        if (window.solana && window.solana.signTransaction) {
+          const signedTransaction = await window.solana.signTransaction(transaction);
+          const signedTransactionBase64 = signedTransaction.serialize().toString('base64');
+          
+          // Step 3: Submit signed transaction
+          toast.dismiss();
+          toast.loading('Submitting transaction...');
+          
+          const result = await submitTransactionMutation.mutateAsync({
+            transaction: signedTransactionBase64
+          });
+          
+          toast.dismiss();
+          toast.success('Transaction sent successfully!');
+          console.log('Transaction result:', result);
+          
+          // Reset form
+          setFormData({
+            recipient: '',
+            amount: '',
+            message: ''
+          });
+        } else {
+          throw new Error('Phantom wallet not connected');
+        }
+      } else {
+        // EVM transaction signing - not implemented yet
+        toast.dismiss();
+        toast.error('EVM transaction signing not yet implemented');
+        return;
       }
 
     } catch (error) {
