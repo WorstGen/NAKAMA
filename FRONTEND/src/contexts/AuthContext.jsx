@@ -96,6 +96,11 @@ export const AuthProvider = ({ children }) => {
     // Check for direct Solana connection first (from ConnectModal)
     let activePublicKey, activeSignMessage;
     
+    console.log('🔐 Checking wallet connections...');
+    console.log('window.solana exists:', !!window.solana);
+    console.log('window.solana.isConnected:', window.solana?.isConnected);
+    console.log('window.solana.publicKey:', !!window.solana?.publicKey);
+    
     if (window.solana && window.solana.isConnected && window.solana.publicKey) {
       console.log('Using direct Solana connection from ConnectModal');
       activePublicKey = window.solana.publicKey;
@@ -105,6 +110,7 @@ export const AuthProvider = ({ children }) => {
       const activeWallet = getActiveWallet();
       activePublicKey = activeWallet?.publicKey;
       activeSignMessage = activeWallet?.signMessage;
+      console.log('Using PhantomMultiChain context');
     }
     
     if (!activePublicKey || !activeSignMessage) {
@@ -139,12 +145,22 @@ export const AuthProvider = ({ children }) => {
         console.log('Message bytes:', messageBytes);
         console.log('Message bytes length:', messageBytes.length);
 
-        // Convert Uint8Array to Buffer for Solana wallet
-        const messageBuffer = Buffer.from(messageBytes);
-        console.log('Message buffer:', messageBuffer);
+        // Try different approaches for Solana signing
+        let signPromise;
+        if (typeof activeSignMessage === 'function') {
+          // Try with Uint8Array first (some wallets prefer this)
+          try {
+            signPromise = activeSignMessage(messageBytes);
+          } catch (e) {
+            console.log('Uint8Array failed, trying Buffer...');
+            // Fallback to Buffer
+            const messageBuffer = Buffer.from(messageBytes);
+            signPromise = activeSignMessage(messageBuffer);
+          }
+        } else {
+          throw new Error('signMessage is not a function');
+        }
 
-        // Add timeout for signing operation
-        const signPromise = activeSignMessage(messageBuffer); // Pass Buffer, not string
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Wallet signing timeout')), 30000)
         );
