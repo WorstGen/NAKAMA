@@ -138,7 +138,7 @@ export const Header = () => {
           </div>
 
           {/* Universal Navigation Menu - Portal Rendered */}
-          {portalRoot && connected && mobileMenuOpen && createPortal(
+          {portalRoot && (connected || isAnyChainConnected) && user && mobileMenuOpen && createPortal(
             <div
               className="fixed inset-0"
               style={{
