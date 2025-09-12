@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWallet } from './WalletContext';
 import { usePhantomMultiChain } from './PhantomMultiChainContext';
-import { useWalletConnect } from './WalletConnectContext';
 import { api } from '../services/api';
 import bs58 from 'bs58';
 import toast from 'react-hot-toast';
@@ -76,12 +75,6 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const { publicKey, connected } = useWallet();
   const { getActiveWallet, isAnyChainConnected } = usePhantomMultiChain();
-  const { 
-    isConnected: walletConnectConnected, 
-    address: walletConnectAddress, 
-    getSignMessage: walletConnectSignMessage,
-    connect: connectWalletConnect 
-  } = useWalletConnect();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [authToken, setAuthToken] = useState(null);
@@ -115,8 +108,6 @@ export const AuthProvider = ({ children }) => {
     const isEVMChain = activeWallet?.address?.startsWith('0x');
     
     console.log('🔐 Active wallet:', activeWallet);
-    console.log('🔐 WalletConnect connected:', walletConnectConnected);
-    console.log('🔐 WalletConnect address:', walletConnectAddress);
     console.log('🔐 Is EVM chain:', isEVMChain);
     console.log('🔐 Active chain address:', activeWallet?.address);
     
@@ -149,13 +140,6 @@ export const AuthProvider = ({ children }) => {
         };
         setActiveWalletType('phantom');
       }
-    }
-    // Priority 3: WalletConnect connection (fallback for EVM)
-    else if (walletConnectConnected && walletConnectAddress) {
-      console.log('Using WalletConnect connection for authentication');
-      activePublicKey = walletConnectAddress;
-      activeSignMessage = walletConnectSignMessage();
-      setActiveWalletType('walletconnect');
     }
     // Priority 4: Fall back to PhantomMultiChain context
     else {
@@ -426,7 +410,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [getActiveWallet, lastAuthAttempt, publicKey, walletConnectConnected, walletConnectAddress, walletConnectSignMessage]);
+  }, [getActiveWallet, lastAuthAttempt, publicKey]);
 
   const logout = () => {
     setUser(null);
@@ -464,14 +448,8 @@ export const AuthProvider = ({ children }) => {
       let evmAddress = null;
       let signMessage = null;
 
-      // Priority 1: Check if WalletConnect is connected
-      if (walletConnectConnected && walletConnectAddress) {
-        console.log('Using WalletConnect for EVM registration');
-        evmAddress = walletConnectAddress;
-        signMessage = walletConnectSignMessage();
-      } 
-      // Priority 2: Use window.ethereum (Phantom EVM or other injected wallets)
-      else if (window.ethereum) {
+      // Priority 1: Use window.ethereum (Phantom EVM or other injected wallets)
+      if (window.ethereum) {
         console.log('Using window.ethereum for EVM registration');
         
         // Connect to EVM wallet
@@ -502,7 +480,7 @@ export const AuthProvider = ({ children }) => {
           });
         };
       } else {
-        throw new Error('No EVM wallet available. Please connect WalletConnect or Phantom with EVM support.');
+        throw new Error('No EVM wallet available. Please connect Phantom with EVM support.');
       }
 
       console.log('EVM address for registration:', evmAddress);
@@ -522,9 +500,6 @@ export const AuthProvider = ({ children }) => {
           hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
         );
         encodedSignature = bs58.encode(signatureArray);
-      } else {
-        // WalletConnect or other format
-        encodedSignature = signature;
       }
 
       console.log('Encoded signature:', encodedSignature);
@@ -554,24 +529,8 @@ export const AuthProvider = ({ children }) => {
       toast.error(error.message || 'Failed to add EVM address');
       throw error;
     }
-  }, [user, setUser, walletConnectConnected, walletConnectAddress, walletConnectSignMessage]);
+  }, [user, setUser]);
 
-  // WalletConnect connection functions
-  const connectWalletConnectAuth = useCallback(async () => {
-    try {
-      const success = await connectWalletConnect();
-      if (success) {
-        // Trigger authentication after successful connection
-        await authenticate();
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('WalletConnect connection error:', error);
-      toast.error('Failed to connect wallet');
-      return false;
-    }
-  }, [connectWalletConnect, authenticate]);
 
   const value = {
     user,
@@ -581,7 +540,6 @@ export const AuthProvider = ({ children }) => {
     authenticate,
     logout,
     addEVM,
-    connectWalletConnect: connectWalletConnectAuth,
     activeWalletType,
     isAuthenticated: !!user && !!authToken // Simplified: only authenticated if we have both user and token
   };
