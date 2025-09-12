@@ -1738,15 +1738,47 @@ app.post('/api/transactions/submit',
 // Get transaction history
 app.get('/api/transactions', verifyWallet, async (req, res) => {
   try {
+    // Find the user to get all their wallet addresses
+    let userWalletAddresses = [req.walletAddress]; // Start with the authenticated address
+    
+    const user = await User.findOne({
+      $or: [
+        { walletAddress: req.walletAddress },
+        { 'wallets.solana.address': req.walletAddress },
+        { 'wallets.ethereum.address': req.walletAddress },
+        { 'wallets.polygon.address': req.walletAddress },
+        { 'wallets.arbitrum.address': req.walletAddress },
+        { 'wallets.optimism.address': req.walletAddress },
+        { 'wallets.base.address': req.walletAddress }
+      ]
+    });
+    
+    if (user) {
+      // Add all the user's wallet addresses
+      if (user.walletAddress) userWalletAddresses.push(user.walletAddress);
+      if (user.wallets?.solana?.address) userWalletAddresses.push(user.wallets.solana.address);
+      if (user.wallets?.ethereum?.address) userWalletAddresses.push(user.wallets.ethereum.address);
+      if (user.wallets?.polygon?.address) userWalletAddresses.push(user.wallets.polygon.address);
+      if (user.wallets?.arbitrum?.address) userWalletAddresses.push(user.wallets.arbitrum.address);
+      if (user.wallets?.optimism?.address) userWalletAddresses.push(user.wallets.optimism.address);
+      if (user.wallets?.base?.address) userWalletAddresses.push(user.wallets.base.address);
+    }
+    
+    // Remove duplicates
+    userWalletAddresses = [...new Set(userWalletAddresses)];
+    
+    console.log('Transaction history query for addresses:', userWalletAddresses);
+    
     const transactions = await TransactionRecord.find({
       $or: [
-        { fromAddress: req.walletAddress },
-        { toAddress: req.walletAddress }
+        { fromAddress: { $in: userWalletAddresses } },
+        { toAddress: { $in: userWalletAddresses } }
       ]
     }).sort({ createdAt: -1 }).limit(50);
 
     res.json({ transactions });
   } catch (error) {
+    console.error('Transaction history error:', error);
     res.status(500).json({ error: 'Failed to fetch transactions' });
   }
 });
