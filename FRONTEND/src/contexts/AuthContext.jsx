@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWallet } from './WalletContext';
 import { usePhantomMultiChain } from './PhantomMultiChainContext';
+import { useMetaMask } from './MetaMaskContext';
 import { api } from '../services/api';
 import bs58 from 'bs58';
 import toast from 'react-hot-toast';
@@ -75,10 +76,12 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const { publicKey, connected } = useWallet();
   const { getActiveWallet, isAnyChainConnected } = usePhantomMultiChain();
+  const { isConnected: metaMaskConnected, account: metaMaskAccount, signMessage: metaMaskSignMessage } = useMetaMask();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [authToken, setAuthToken] = useState(null);
   const [lastAuthAttempt, setLastAuthAttempt] = useState(0);
+  const [activeWalletType, setActiveWalletType] = useState(null); // 'phantom' or 'metamask'
 
   const authenticate = useCallback(async () => {
     // Check cooldown period to prevent rate limiting (reduced to 1 second)
@@ -102,11 +105,13 @@ export const AuthProvider = ({ children }) => {
     console.log('window.solana.publicKey:', !!window.solana?.publicKey);
     console.log('window.ethereum exists:', !!window.ethereum);
     
-    // Check if we're on an EVM chain and have EVM connection
+    // Check wallet connections and prioritize MetaMask if available
     const activeWallet = getActiveWallet();
     const isEVMChain = activeWallet?.address?.startsWith('0x');
     
     console.log('🔐 Active wallet:', activeWallet);
+    console.log('🔐 MetaMask connected:', metaMaskConnected);
+    console.log('🔐 MetaMask account:', metaMaskAccount);
     console.log('🔐 Is EVM chain:', isEVMChain);
     console.log('🔐 Active chain address:', activeWallet?.address);
     
@@ -115,7 +120,15 @@ export const AuthProvider = ({ children }) => {
     console.log('🔐 Has EVM address in publicKey:', hasEVMAddress);
     console.log('🔐 PublicKey value:', publicKey);
     
-    if ((isEVMChain || hasEVMAddress) && window.ethereum) {
+    // Priority 1: MetaMask connection
+    if (metaMaskConnected && metaMaskAccount) {
+      console.log('Using MetaMask connection for authentication');
+      activePublicKey = metaMaskAccount;
+      activeSignMessage = metaMaskSignMessage;
+      setActiveWalletType('metamask');
+    }
+    // Priority 2: EVM connection via Phantom
+    else if ((isEVMChain || hasEVMAddress) && window.ethereum) {
       console.log('Using EVM connection for authentication');
       // For EVM, we need to get the address and use personal_sign
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
@@ -129,16 +142,22 @@ export const AuthProvider = ({ children }) => {
             params: [messageHex, accounts[0]]
           });
         };
+        setActiveWalletType('phantom');
       }
-    } else if (window.solana && window.solana.isConnected && window.solana.publicKey) {
+    }
+    // Priority 3: Direct Solana connection
+    else if (window.solana && window.solana.isConnected && window.solana.publicKey) {
       console.log('Using direct Solana connection');
       activePublicKey = window.solana.publicKey;
       activeSignMessage = window.solana.signMessage;
-    } else {
-      // Fall back to PhantomMultiChain context
+      setActiveWalletType('phantom');
+    }
+    // Priority 4: Fall back to PhantomMultiChain context
+    else {
       activePublicKey = activeWallet?.publicKey;
       activeSignMessage = activeWallet?.signMessage;
       console.log('Using PhantomMultiChain context');
+      setActiveWalletType('phantom');
     }
     
     if (!activePublicKey || !activeSignMessage) {
@@ -500,6 +519,23 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user, setUser]);
 
+  // MetaMask connection functions
+  const connectMetaMask = useCallback(async () => {
+    try {
+      const success = await window.metaMask?.connect();
+      if (success) {
+        // Trigger authentication after successful connection
+        await authenticate();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('MetaMask connection error:', error);
+      toast.error('Failed to connect MetaMask');
+      return false;
+    }
+  }, [authenticate]);
+
   const value = {
     user,
     setUser,
@@ -508,6 +544,8 @@ export const AuthProvider = ({ children }) => {
     authenticate,
     logout,
     addEVM,
+    connectMetaMask,
+    activeWalletType,
     isAuthenticated: !!authToken || (!!user && !loading) || api.hasAuthHeaders() // Consider authenticated if we have user profile or auth headers
   };
 
