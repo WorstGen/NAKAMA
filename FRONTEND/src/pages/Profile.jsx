@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useTheme } from '../contexts/AuthContext';
-import { useMetaMask } from '../contexts/MetaMaskContext';
+import { useWalletConnect } from '../contexts/WalletConnectContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
@@ -9,7 +9,11 @@ import { CameraIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
   const { user, setUser, isAuthenticated, addEVM } = useAuth();
-  const { connect: connectMetaMask, isConnected: metaMaskConnected } = useMetaMask();
+  const { 
+    isConnected: walletConnectConnected, 
+    address: walletConnectAddress, 
+    connect: connectWalletConnect 
+  } = useWalletConnect();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
@@ -187,14 +191,19 @@ export const Profile = () => {
                            user?.wallets?.arbitrum?.address || 
                            user?.wallets?.optimism?.address;
       
-      // Only auto-connect MetaMask if user has no EVM address
-      if (!hasEVMAddress && !metaMaskConnected) {
-        // Check if MetaMask is available before attempting connection
-        if (!window.ethereum || !window.ethereum.isMetaMask) {
-          throw new Error('MetaMask is not installed. Please install MetaMask browser extension to add an EVM address.');
+      // Check if user already has an EVM address
+      if (hasEVMAddress) {
+        throw new Error('You already have an EVM address registered. No need to add another one.');
+      }
+      
+      // Only auto-connect WalletConnect if user has no EVM address
+      if (!hasEVMAddress && !walletConnectConnected) {
+        // Check if WalletConnect is available before attempting connection
+        if (!window.ethereum) {
+          throw new Error('No wallet detected. Please install a compatible wallet to add an EVM address.');
         }
         
-        toast.loading('Connecting to MetaMask...');
+        toast.loading('Connecting to wallet...');
         
         // Try connecting with a retry mechanism
         let connected = false;
@@ -203,16 +212,16 @@ export const Profile = () => {
         
         while (!connected && attempts < maxAttempts) {
           attempts++;
-          console.log(`MetaMask connection attempt ${attempts}/${maxAttempts}`);
+          console.log(`WalletConnect connection attempt ${attempts}/${maxAttempts}`);
           
           try {
-            connected = await connectMetaMask();
+            connected = await connectWalletConnect();
             if (connected) {
-              console.log('MetaMask connected successfully on attempt', attempts);
+              console.log('WalletConnect connected successfully on attempt', attempts);
               break;
             }
           } catch (error) {
-            console.log(`MetaMask connection attempt ${attempts} failed:`, error);
+            console.log(`WalletConnect connection attempt ${attempts} failed:`, error);
             if (attempts < maxAttempts) {
               // Wait a bit before retrying
               await new Promise(resolve => setTimeout(resolve, 1000));
@@ -221,7 +230,7 @@ export const Profile = () => {
         }
         
         if (!connected) {
-          throw new Error('Failed to connect to MetaMask after multiple attempts. Please make sure MetaMask is unlocked and try again.');
+          throw new Error('Failed to connect to wallet after multiple attempts. Please make sure your wallet is unlocked and try again.');
         }
       }
       

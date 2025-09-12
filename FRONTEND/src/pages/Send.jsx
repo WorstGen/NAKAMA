@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { useSearchParams } from 'react-router-dom';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
-import { useMetaMask } from '../contexts/MetaMaskContext';
+import { useWalletConnect } from '../contexts/WalletConnectContext';
 import { Transaction } from '@solana/web3.js';
 import { api } from '../services/api';
 import { useAuth, useTheme } from '../contexts/AuthContext';
@@ -20,10 +20,10 @@ export const Send = () => {
     getActiveWallet
   } = usePhantomMultiChain();
   const { 
-    isConnected: metaMaskConnected, 
-    account: metaMaskAccount, 
-    connect: connectMetaMask 
-  } = useMetaMask();
+    isConnected: walletConnectConnected, 
+    address: walletConnectAddress, 
+    connect: connectWalletConnect 
+  } = useWalletConnect();
   const [searchParams] = useSearchParams();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
@@ -82,7 +82,7 @@ export const Send = () => {
       if (chainName === 'solana') {
         await switchToChain(chainName);
       } else {
-        // For EVM chains, try Phantom first, then MetaMask as fallback
+        // For EVM chains, try Phantom first, then WalletConnect as fallback
         if (!connectedChains[chainName]?.isConnected) {
           toast.loading(`Connecting to ${phantomChains[chainName]?.name}...`);
           
@@ -94,12 +94,12 @@ export const Send = () => {
             } catch (error) {
               console.log('Phantom EVM connection failed:', error);
               
-              // If Phantom fails, try MetaMask as fallback
-              if (!metaMaskConnected) {
-                console.log('Attempting MetaMask connection as fallback...');
-                const connected = await connectMetaMask();
+              // If Phantom fails, try WalletConnect as fallback
+              if (!walletConnectConnected) {
+                console.log('Attempting WalletConnect connection as fallback...');
+                const connected = await connectWalletConnect();
                 if (!connected) {
-                  throw new Error('No EVM wallet available. Please connect Phantom with EVM support or MetaMask.');
+                  throw new Error('No EVM wallet available. Please connect Phantom with EVM support or use WalletConnect.');
                 }
               }
             }
@@ -187,9 +187,9 @@ export const Send = () => {
           throw new Error('Phantom wallet not connected');
         }
       } else {
-        // EVM transaction signing - try Phantom first, then MetaMask as fallback
+        // EVM transaction signing - try Phantom first, then WalletConnect as fallback
         let evmAccount = null;
-        let useMetaMask = false;
+        let useWalletConnect = false;
         
         // First, try to get EVM account from Phantom
         if (window.ethereum) {
@@ -204,26 +204,26 @@ export const Send = () => {
           }
         }
         
-        // If no Phantom EVM account, try MetaMask as fallback
-        if (!evmAccount && metaMaskConnected && metaMaskAccount) {
-          evmAccount = metaMaskAccount;
-          useMetaMask = true;
-          console.log('Using MetaMask account as fallback:', evmAccount);
+        // If no Phantom EVM account, try WalletConnect as fallback
+        if (!evmAccount && walletConnectConnected && walletConnectAddress) {
+          evmAccount = walletConnectAddress;
+          useWalletConnect = true;
+          console.log('Using WalletConnect account as fallback:', evmAccount);
         }
         
-        // If still no EVM account, try to connect MetaMask
+        // If still no EVM account, try to connect WalletConnect
         if (!evmAccount) {
-          console.log('No EVM account available, attempting MetaMask connection...');
-          const connected = await connectMetaMask();
+          console.log('No EVM account available, attempting WalletConnect connection...');
+          const connected = await connectWalletConnect();
           if (connected) {
-            evmAccount = metaMaskAccount;
-            useMetaMask = true;
-            console.log('Connected to MetaMask for EVM transaction:', evmAccount);
+            evmAccount = walletConnectAddress;
+            useWalletConnect = true;
+            console.log('Connected to WalletConnect for EVM transaction:', evmAccount);
           }
         }
         
         if (!evmAccount) {
-          throw new Error('No EVM wallet available. Please connect Phantom with EVM support or MetaMask.');
+          throw new Error('No EVM wallet available. Please connect Phantom with EVM support or use WalletConnect.');
         }
 
         // Send the transaction directly (eth_sendTransaction handles signing)
@@ -232,7 +232,7 @@ export const Send = () => {
           params: [prepared.transaction]
         });
         
-        console.log(`Transaction sent via ${useMetaMask ? 'MetaMask' : 'Phantom'}, hash:`, txHash);
+        console.log(`Transaction sent via ${useWalletConnect ? 'WalletConnect' : 'Phantom'}, hash:`, txHash);
 
         // Step 3: Record the transaction (already sent to blockchain)
         toast.dismiss();
