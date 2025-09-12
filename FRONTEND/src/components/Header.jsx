@@ -207,7 +207,7 @@ export const Header = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className={`block px-4 py-3 rounded-xl transition-all duration-200 ${
                         isActive('/dashboard')
-                          ? 'bg-orange-500 text-white shadow-lg'
+                          ? 'bg-blue-500 text-white shadow-lg'
                           : 'text-gray-200 hover:bg-gray-800/70 hover:text-white'
                       }`}
                     >
@@ -218,7 +218,7 @@ export const Header = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className={`block px-4 py-3 rounded-xl transition-all duration-200 ${
                         isActive('/profile')
-                          ? 'bg-orange-500 text-white shadow-lg'
+                          ? 'bg-blue-500 text-white shadow-lg'
                           : 'text-gray-200 hover:bg-gray-800/70 hover:text-white'
                       }`}
                     >
@@ -229,7 +229,7 @@ export const Header = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className={`block px-4 py-3 rounded-xl transition-all duration-200 ${
                         isActive('/contacts')
-                          ? 'bg-orange-500 text-white shadow-lg'
+                          ? 'bg-blue-500 text-white shadow-lg'
                           : 'text-gray-200 hover:bg-gray-800/70 hover:text-white'
                       }`}
                     >
@@ -240,7 +240,7 @@ export const Header = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className={`block px-4 py-3 rounded-xl transition-all duration-200 ${
                         isActive('/send')
-                          ? 'bg-orange-500 text-white shadow-lg'
+                          ? 'bg-blue-500 text-white shadow-lg'
                           : 'text-gray-200 hover:bg-gray-800/70 hover:text-white'
                       }`}
                     >
@@ -251,36 +251,12 @@ export const Header = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className={`block px-4 py-3 rounded-xl transition-all duration-200 ${
                         isActive('/transactions')
-                          ? 'bg-orange-500 text-white shadow-lg'
+                          ? 'bg-blue-500 text-white shadow-lg'
                           : 'text-gray-200 hover:bg-gray-800/70 hover:text-white'
                       }`}
                     >
                       📋 History
                     </Link>
-                  </div>
-
-                  {/* Quick Disconnect - Always Accessible */}
-                  <div className="mt-4 pt-3 border-t border-gray-700/50">
-                    <button
-                      onClick={async () => {
-                        try {
-                          setMobileMenuOpen(false);
-                          console.log('🔌 Disconnecting from all wallets...');
-
-                          // Disconnect from Phantom (Solana + EVM)
-                          await disconnectAllChains();
-
-
-                          console.log('✅ All wallets disconnected');
-                        } catch (error) {
-                          console.error('❌ Disconnection failed:', error);
-                          alert(`Disconnection failed: ${error.message}`);
-                        }
-                      }}
-                      className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm"
-                    >
-                      🚪 Disconnect Wallet
-                    </button>
                   </div>
 
                   {/* Chain Selection - Compact Horizontal */}
@@ -333,7 +309,7 @@ export const Header = () => {
                                 switchToChain(chain.id);
                                 setMobileMenuOpen(false);
                               }}
-                              className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all min-w-0 ${
+                              className={`flex-shrink-0 flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-all min-w-0 ${
                                 chain.isActive
                                   ? 'bg-orange-500/20 border border-orange-500/50'
                                   : 'bg-gray-800/50 hover:bg-gray-700/50'
@@ -362,6 +338,30 @@ export const Header = () => {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Quick Disconnect - Below Active Chains */}
+                  <div className="mt-4 pt-3 border-t border-gray-700/50">
+                    <button
+                      onClick={async () => {
+                        try {
+                          setMobileMenuOpen(false);
+                          console.log('🔌 Disconnecting from all wallets...');
+
+                          // Disconnect from Phantom (Solana + EVM)
+                          await disconnectAllChains();
+
+
+                          console.log('✅ All wallets disconnected');
+                        } catch (error) {
+                          console.error('❌ Disconnection failed:', error);
+                          alert(`Disconnection failed: ${error.message}`);
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm"
+                    >
+                      🚪 Disconnect Wallet
+                    </button>
                   </div>
 
                 </nav>
