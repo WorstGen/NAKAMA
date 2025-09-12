@@ -593,7 +593,7 @@ export const AuthProvider = ({ children }) => {
     addEVM,
     connectWalletConnect: connectWalletConnectAuth,
     activeWalletType,
-    isAuthenticated: !!user && !!authToken // Simplified: only authenticated if we have both user and token
+    isAuthenticated: !!authToken // Authenticated if we have auth token (even without user profile yet)
   };
 
   return (
