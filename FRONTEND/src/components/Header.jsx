@@ -148,7 +148,7 @@ export const Header = () => {
                     @{user?.username || 'User'}
                   </div>
                   <div className="text-xs text-gray-400 truncate max-w-24">
-                    {phantomChains[activeChain]?.name || 'Unknown'}
+                    {activeChain ? phantomChains[activeChain]?.name || 'Unknown' : 'Solana'}
                   </div>
                 </div>
 
@@ -180,8 +180,8 @@ export const Header = () => {
 
           {/* Wallet Selector Modal */}
           {showWalletSelector && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
+              <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold text-white">Choose Wallet</h3>
                   <button
@@ -341,7 +341,7 @@ export const Header = () => {
                     <div className="px-4 py-2">
                       <div className="text-xs font-medium text-gray-400 mb-3">Active Chain</div>
                       <div className="space-y-2">
-                        {Object.entries(connectedChains).map(([chainId, chain]) => {
+                        {Object.entries(connectedChains).length > 0 ? Object.entries(connectedChains).map(([chainId, chain]) => {
                           const chainConfig = phantomChains[chainId];
                           const isActive = activeChain === chainId;
                           
@@ -373,7 +373,11 @@ export const Header = () => {
                               )}
                             </button>
                           );
-                        })}
+                        }) : (
+                          <div className="text-sm text-gray-500 px-3 py-2">
+                            No chains connected
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
