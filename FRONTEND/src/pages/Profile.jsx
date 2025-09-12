@@ -267,6 +267,20 @@ export const Profile = () => {
       toast.loading('Adding EVM address to your profile...');
       
       // Use the new addEVM function from AuthContext
+      // For new users, user._id might not be available yet, so we need to check
+      if (!user?._id) {
+        console.log('User ID not available yet, refreshing user data...');
+        // The user object should be updated after profile creation
+        // Let's try to get the user data again
+        const currentUser = await api.getProfile();
+        if (currentUser.exists && currentUser._id) {
+          await addEVM(currentUser._id);
+          return;
+        } else {
+          throw new Error('Unable to get user ID for EVM registration');
+        }
+      }
+
       await addEVM(user._id);
       
       console.log('EVM address successfully added!');
@@ -476,6 +490,24 @@ export const Profile = () => {
                   </div>
                 ));
               })()}
+
+              {/* Show registered Solana address if user exists */}
+              {user?.wallets?.solana?.address && (
+                <div className="bg-white/5 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: '#9945FF' }}
+                    ></div>
+                    <p className="text-white dark:text-white/60 text-sm font-medium">
+                      Solana (SOL)
+                    </p>
+                  </div>
+                  <p className="text-white dark:text-white font-mono text-sm break-all">
+                    {user.wallets.solana.address}
+                  </p>
+                </div>
+              )}
 
               {/* Show registered EVM address if user exists and has one */}
               {user && (() => {
