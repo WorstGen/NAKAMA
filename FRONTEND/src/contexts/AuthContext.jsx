@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWallet } from './WalletContext';
 import { usePhantomMultiChain } from './PhantomMultiChainContext';
-import { useMetaMask } from './MetaMaskContext';
+import { useWalletConnect } from './WalletConnectContext';
 import { api } from '../services/api';
 import bs58 from 'bs58';
 import toast from 'react-hot-toast';
@@ -76,7 +76,12 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const { publicKey, connected } = useWallet();
   const { getActiveWallet, isAnyChainConnected } = usePhantomMultiChain();
-  const { isConnected: metaMaskConnected, account: metaMaskAccount, signMessage: metaMaskSignMessage, connect: metaMaskConnect } = useMetaMask();
+  const { 
+    isConnected: walletConnectConnected, 
+    address: walletConnectAddress, 
+    getSignMessage: walletConnectSignMessage,
+    connect: connectWalletConnect 
+  } = useWalletConnect();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [authToken, setAuthToken] = useState(null);
@@ -105,13 +110,13 @@ export const AuthProvider = ({ children }) => {
     console.log('window.solana.publicKey:', !!window.solana?.publicKey);
     console.log('window.ethereum exists:', !!window.ethereum);
     
-    // Check wallet connections and prioritize MetaMask if available
+    // Check wallet connections
     const activeWallet = getActiveWallet();
     const isEVMChain = activeWallet?.address?.startsWith('0x');
     
     console.log('🔐 Active wallet:', activeWallet);
-    console.log('🔐 MetaMask connected:', metaMaskConnected);
-    console.log('🔐 MetaMask account:', metaMaskAccount);
+    console.log('🔐 WalletConnect connected:', walletConnectConnected);
+    console.log('🔐 WalletConnect address:', walletConnectAddress);
     console.log('🔐 Is EVM chain:', isEVMChain);
     console.log('🔐 Active chain address:', activeWallet?.address);
     
@@ -145,12 +150,12 @@ export const AuthProvider = ({ children }) => {
         setActiveWalletType('phantom');
       }
     }
-    // Priority 3: MetaMask connection (only when explicitly chosen)
-    else if (metaMaskConnected && metaMaskAccount) {
-      console.log('Using MetaMask connection for authentication');
-      activePublicKey = metaMaskAccount;
-      activeSignMessage = metaMaskSignMessage;
-      setActiveWalletType('metamask');
+    // Priority 3: WalletConnect connection (fallback for EVM)
+    else if (walletConnectConnected && walletConnectAddress) {
+      console.log('Using WalletConnect connection for authentication');
+      activePublicKey = walletConnectAddress;
+      activeSignMessage = walletConnectSignMessage();
+      setActiveWalletType('walletconnect');
     }
     // Priority 4: Fall back to PhantomMultiChain context
     else {
@@ -421,7 +426,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [getActiveWallet, lastAuthAttempt, publicKey, metaMaskConnected, metaMaskAccount, metaMaskSignMessage]);
+  }, [getActiveWallet, lastAuthAttempt, publicKey, walletConnectConnected, walletConnectAddress, walletConnectSignMessage]);
 
   const logout = () => {
     setUser(null);
@@ -521,11 +526,10 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user, setUser]);
 
-  // MetaMask connection functions
-  const connectMetaMask = useCallback(async () => {
+  // WalletConnect connection functions
+  const connectWalletConnect = useCallback(async () => {
     try {
-      // Use the MetaMask context's connect function
-      const success = await metaMaskConnect();
+      const success = await connectWalletConnect();
       if (success) {
         // Trigger authentication after successful connection
         await authenticate();
@@ -533,11 +537,11 @@ export const AuthProvider = ({ children }) => {
       }
       return false;
     } catch (error) {
-      console.error('MetaMask connection error:', error);
-      toast.error('Failed to connect MetaMask');
+      console.error('WalletConnect connection error:', error);
+      toast.error('Failed to connect wallet');
       return false;
     }
-  }, [metaMaskConnect, authenticate]);
+  }, [connectWalletConnect, authenticate]);
 
   const value = {
     user,
@@ -547,7 +551,7 @@ export const AuthProvider = ({ children }) => {
     authenticate,
     logout,
     addEVM,
-    connectMetaMask,
+    connectWalletConnect,
     activeWalletType,
     isAuthenticated: !!user && !!authToken // Simplified: only authenticated if we have both user and token
   };
