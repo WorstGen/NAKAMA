@@ -363,6 +363,10 @@ export const Header = () => {
                           }
 
                           console.log('✅ All wallets disconnected');
+                          
+                          // Refresh the page to ensure complete state reset
+                          console.log('🔄 Refreshing page to complete disconnection...');
+                          window.location.reload();
                         } catch (error) {
                           console.error('❌ Disconnection failed:', error);
                           alert(`Disconnection failed: ${error.message}`);
