@@ -46,13 +46,20 @@ export const MetaMaskProvider = ({ children }) => {
         
         toast.success('MetaMask connected successfully!');
         return true;
+      } else {
+        toast.error('No MetaMask accounts found');
+        return false;
       }
     } catch (error) {
       console.error('MetaMask connection error:', error);
       if (error.code === 4001) {
         toast.error('MetaMask connection rejected by user');
+      } else if (error.code === -32002) {
+        toast.error('MetaMask connection request already pending. Please check MetaMask.');
+      } else if (error.message?.includes('Requested resource not available')) {
+        toast.error('MetaMask is not available. Please make sure MetaMask is installed and unlocked.');
       } else {
-        toast.error('Failed to connect to MetaMask');
+        toast.error(`Failed to connect to MetaMask: ${error.message || 'Unknown error'}`);
       }
       return false;
     } finally {
