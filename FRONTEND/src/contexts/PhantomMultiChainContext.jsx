@@ -128,20 +128,18 @@ export const PhantomMultiChainProvider = ({ children }) => {
   const getConnectedChains = useCallback(async () => {
     console.log('🔗 getConnectedChains called - isPhantomAvailable:', isPhantomAvailable(), 'connected:', connected);
     
-    // Check if Phantom is available and either connected via old context OR has a public key
-    const isPhantomConnected = isPhantomAvailable() && (connected || (window.solana && window.solana.isConnected));
-    
-    if (!isPhantomConnected) {
-      console.log('🔗 Returning empty chains - Phantom not available or not connected');
+    if (!isPhantomAvailable()) {
+      console.log('🔗 Returning empty chains - Phantom not available');
       return {};
     }
 
     try {
       const chains = {};
       
-      // Solana is always available when Phantom is connected
+      // Check Solana connection
+      const isSolanaConnected = connected || (window.solana && window.solana.isConnected);
       const solanaPublicKey = publicKey || (window.solana && window.solana.publicKey);
-      if (solanaPublicKey) {
+      if (isSolanaConnected && solanaPublicKey) {
         console.log('🔗 Adding Solana chain with publicKey:', solanaPublicKey.toString());
         chains.solana = {
           isConnected: true,
@@ -157,6 +155,8 @@ export const PhantomMultiChainProvider = ({ children }) => {
           // Get current chain
           const chainId = await window.ethereum.request({ method: 'eth_chainId' });
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          
+          console.log('🔗 EVM chainId:', chainId, 'accounts:', accounts);
           
           if (accounts.length > 0) {
             const chainIdHex = parseInt(chainId, 16);
@@ -194,11 +194,12 @@ export const PhantomMultiChainProvider = ({ children }) => {
             };
           }
         } catch (error) {
-          console.log('EVM chains not available:', error);
+          console.log('🔗 EVM chains not available:', error);
         }
       }
 
       console.log('🔗 Final chains object:', chains);
+      console.log('🔗 Connected chain count:', Object.keys(chains).length);
       return chains;
     } catch (error) {
       console.error('🔗 Error getting connected chains:', error);
@@ -293,6 +294,13 @@ export const PhantomMultiChainProvider = ({ children }) => {
         console.log('🔄 Attempting to switch to chain ID:', chainIdHex);
 
         try {
+          // First ensure we have EVM accounts connected
+          const currentAccounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (currentAccounts.length === 0) {
+            console.log('🔄 No EVM accounts connected, requesting connection...');
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+          }
+          
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: chainIdHex }],
@@ -413,11 +421,9 @@ export const PhantomMultiChainProvider = ({ children }) => {
 
   // Update connected chains when wallet connection changes
   useEffect(() => {
-    if (connected) {
-      getConnectedChains().then(setConnectedChains);
-    } else {
-      setConnectedChains({});
-    }
+    // Always check for connected chains, don't clear them automatically
+    // This allows EVM chains to remain connected even if Solana disconnects
+    getConnectedChains().then(setConnectedChains);
   }, [connected, getConnectedChains]);
 
   // Disconnect from all chains
