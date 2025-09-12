@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useWeb3Modal } from '@web3modal/react';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
 import toast from 'react-hot-toast';
 
 const WalletConnectContext = createContext();
@@ -17,6 +17,7 @@ export const WalletConnectProvider = ({ children }) => {
   const { open } = useWeb3Modal();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  const { signMessageAsync } = useSignMessage();
   
   const [isConnecting, setIsConnecting] = useState(false);
   const [chainId, setChainId] = useState(null);
@@ -116,23 +117,23 @@ export const WalletConnectProvider = ({ children }) => {
   // Get sign message function for EVM
   const getSignMessage = useCallback(() => {
     return async (message) => {
-      if (!window.ethereum || !address) {
-        throw new Error('Wallet not connected');
+      if (!isConnected || !address) {
+        throw new Error('WalletConnect not connected');
       }
       
       try {
-        // Convert message to hex string for EVM signing
-        const messageHex = '0x' + Buffer.from(message).toString('hex');
-        return await window.ethereum.request({
-          method: 'personal_sign',
-          params: [messageHex, address]
-        });
+        console.log('WalletConnect signing message:', message);
+        // Use wagmi's signMessageAsync for WalletConnect
+        const messageString = typeof message === 'string' ? message : Buffer.from(message).toString();
+        const signature = await signMessageAsync({ message: messageString });
+        console.log('WalletConnect signature:', signature);
+        return signature;
       } catch (error) {
-        console.error('Sign message error:', error);
+        console.error('WalletConnect sign message error:', error);
         throw error;
       }
     };
-  }, [address]);
+  }, [isConnected, address, signMessageAsync]);
 
   // Switch chain
   const switchChain = useCallback(async (targetChainId) => {
