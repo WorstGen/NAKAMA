@@ -68,22 +68,7 @@ export const Landing = () => {
                 Go to Dashboard
               </Link>
             </div>
-          ) : isAuthenticated ? (
-            <div>
-              <p className="text-gray-200 mb-4">
-                🎉 Great! Your wallet is connected. You can now use NAKAMA!
-              </p>
-              <p className="text-gray-400 text-sm mb-4">
-                Switch between chains using the dropdown in the header to access different networks.
-              </p>
-              <Link
-                to="/send"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
-              >
-                Go to Send
-              </Link>
-            </div>
-          ) : (
+          ) : isAuthenticated && !user ? (
             <div>
               <p className="text-gray-200 mb-4">
                 🎉 Wallet Connected! Let's complete your setup.
@@ -97,6 +82,30 @@ export const Landing = () => {
               >
                 Create Profile
               </Link>
+            </div>
+          ) : isAuthenticated && user ? (
+            <div>
+              <p className="text-gray-200 mb-4">
+                🎉 Great! Your wallet is connected. You can now use NAKAMA!
+              </p>
+              <p className="text-gray-400 text-sm mb-4">
+                Switch between chains using the dropdown in the header to access different networks.
+              </p>
+              <Link
+                to="/dashboard"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
+              >
+                Go to Dashboard
+              </Link>
+            </div>
+          ) : (
+            <div>
+              <p className="text-gray-200 mb-4">
+                Something went wrong with your connection.
+              </p>
+              <p className="text-gray-400 text-sm mb-4">
+                Please try refreshing the page or reconnecting your wallet.
+              </p>
             </div>
           )}
 

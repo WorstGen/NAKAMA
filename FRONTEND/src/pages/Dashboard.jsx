@@ -51,24 +51,23 @@ export const Dashboard = () => {
     return isFromMe ? 'sent' : 'received';
   };
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return (
       <div className="text-center py-12">
-        <p className="text-white text-lg">Please connect your wallet first.</p>
+        <p className="text-white text-lg">
+          {!isAuthenticated ? 'Please connect your wallet first.' : 'Please create your profile first.'}
+        </p>
+        {!isAuthenticated ? (
+          <p className="text-gray-400 mt-2">Connect your wallet to get started.</p>
+        ) : (
+          <Link to="/profile" className="text-orange-400 hover:text-orange-300 mt-2 inline-block">
+            Create Profile →
+          </Link>
+        )}
       </div>
     );
   }
 
-  if (!user) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-white text-lg">Please set up your profile.</p>
-        <Link to="/profile" className="text-orange-400 hover:text-orange-300">
-          Set up profile →
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto transition-all duration-500">
