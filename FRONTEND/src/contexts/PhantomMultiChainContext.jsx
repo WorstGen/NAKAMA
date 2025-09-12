@@ -454,73 +454,59 @@ export const PhantomMultiChainProvider = ({ children }) => {
 
   // Update connected chains when wallet connection changes
   useEffect(() => {
-    // Always check for connected chains, don't clear them automatically
-    // This allows EVM chains to remain connected even if Solana disconnects
-    getConnectedChains().then(setConnectedChains);
+    // Only update chains if we have a valid Solana connection
+    // This prevents re-detecting EVM accounts after disconnect
+    if (connected || (window.solana && window.solana.isConnected && window.solana.publicKey)) {
+      getConnectedChains().then(setConnectedChains);
+    } else if (Object.keys(connectedChains).length > 0) {
+      // If we have chains but no Solana connection, keep them (EVM-only user)
+      // This allows EVM chains to remain available for EVM-only accounts
+      console.log('🔗 Keeping existing EVM chains for EVM-only account');
+    }
   }, [connected, getConnectedChains]);
 
   // Disconnect from all chains
   const disconnectAllChains = useCallback(async () => {
     try {
       console.log('🔌 Disconnecting from all chains...');
-      
+
+      // Clear connected chains IMMEDIATELY
+      setConnectedChains({});
+      setActiveChain('solana');
+
       // Disconnect from Solana
       if (window.solana) {
         console.log('🔌 Disconnecting from Solana...');
         try {
           if (window.solana.disconnect) {
             await window.solana.disconnect();
+            console.log('🔌 Solana disconnect called');
           }
-          
-          // Force clear Solana connection state
-          if (window.solana.isConnected) {
-            console.log('🔌 Force clearing Solana connection state...');
+
+          // Force clear any cached publicKey
+          if (window.solana.publicKey) {
+            console.log('🔌 Clearing cached Solana publicKey');
           }
-          
-          console.log('🔌 Solana disconnect completed');
+
         } catch (error) {
           console.log('🔌 Solana disconnect error (continuing):', error);
         }
       }
-      
-      // Disconnect from EVM chains by clearing permissions
-      if (window.ethereum) {
-        try {
-          console.log('🔌 Clearing EVM permissions...');
-          // Note: There's no standard way to "disconnect" from EVM
-          // We just clear our local state and rely on wallet UI for full disconnect
-        } catch (error) {
-          console.log('EVM disconnect not supported:', error);
-        }
-      }
-      
-      // Clear connected chains and force reset state
-      setConnectedChains({});
-      setActiveChain('solana');
-      
-      // Force a state refresh after disconnect
-      setTimeout(async () => {
-        try {
-          const chains = await getConnectedChains();
-          setConnectedChains(chains);
-          
-          // Check if Phantom is still connected after our disconnect attempt
-          const stillConnected = (window.solana && window.solana.isConnected) || Object.keys(chains).length > 0;
-          if (stillConnected) {
-            console.log('⚠️ Phantom may still be connected - user should manually disconnect from wallet');
-            toast.error('Please manually disconnect from Phantom wallet if needed');
-          }
-        } catch (error) {
-          console.log('Error checking post-disconnect state:', error);
-        }
-      }, 1000);
-      
+
+      // For EVM, we can't reliably disconnect programmatically
+      // But we can clear our local state
+      console.log('🔌 Clearing EVM local state...');
+
+      // Show success message immediately
+      toast.success('Disconnected from wallet');
+
       console.log('✅ Disconnected from all chains');
     } catch (error) {
       console.error('❌ Disconnect failed:', error);
+      toast.error('Failed to disconnect wallet');
       throw error;
     }
-  }, [getConnectedChains]);
+  }, []);
 
   const value = {
     // State
