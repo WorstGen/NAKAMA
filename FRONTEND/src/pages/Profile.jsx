@@ -8,8 +8,8 @@ import ProfileImage from '../components/ProfileImage';
 import { CameraIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
-  const { user, setUser, isAuthenticated, authenticate, addEVM } = useAuth();
-  const { connectedChains, phantomChains, switchToChain } = usePhantomMultiChain();
+  const { user, setUser, isAuthenticated, addEVM } = useAuth();
+  const { connectedChains, phantomChains } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
