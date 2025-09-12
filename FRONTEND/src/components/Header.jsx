@@ -19,19 +19,13 @@ export const Header = () => {
   const { user, authenticate } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [portalRoot, setPortalRoot] = useState(null);
 
   const isActive = (path) => location.pathname === path;
 
-  const handleConnectWallet = () => {
-    setShowWalletSelector(true);
-  };
-
-  const handleConnectPhantom = async () => {
+  const handleConnectWallet = async () => {
     try {
       setConnecting(true);
-      setShowWalletSelector(false);
       
       if (window.solana && window.solana.isPhantom) {
         const response = await window.solana.connect();
@@ -56,6 +50,7 @@ export const Header = () => {
       setConnecting(false);
     }
   };
+
 
 
   // Create portal root on mount
@@ -160,56 +155,6 @@ export const Header = () => {
             )}
           </div>
 
-          {/* Wallet Selector Modal */}
-          {showWalletSelector && createPortal(
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-              style={{ zIndex: 2147483647 }}
-              onClick={() => setShowWalletSelector(false)}
-            >
-              <div
-                className="bg-gray-900 rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl"
-                style={{ zIndex: 2147483647 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-semibold text-white">Choose Wallet</h3>
-                  <button
-                    onClick={() => setShowWalletSelector(false)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    ✕
-                  </button>
-                </div>
-                
-                <div className="space-y-3">
-                  {/* Phantom Wallet Option - Primary Choice */}
-                  <button
-                    onClick={handleConnectPhantom}
-                    disabled={connecting}
-                    className="w-full flex items-center justify-center space-x-3 p-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors border-2 border-purple-400"
-                  >
-                    {connecting ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                    ) : (
-                      <>
-                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                          <span className="text-purple-600 font-bold text-sm">P</span>
-                        </div>
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">Connect with Phantom</span>
-                          <span className="text-xs text-purple-200">Recommended</span>
-                        </div>
-                      </>
-                    )}
-                  </button>
-
-
-                </div>
-              </div>
-            </div>,
-            document.body
-          )}
 
           {/* Universal Navigation Menu - Portal Rendered */}
           {portalRoot && user && mobileMenuOpen && createPortal(
@@ -385,17 +330,14 @@ export const Header = () => {
                             <button
                               key={chain.id}
                               onClick={() => {
-                                if (chain.id !== 'walletconnect') {
-                                  switchToChain(chain.id);
-                                }
+                                switchToChain(chain.id);
                                 setMobileMenuOpen(false);
                               }}
-                              disabled={chain.id === 'walletconnect'}
                               className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all min-w-0 ${
                                 chain.isActive
                                   ? 'bg-orange-500/20 border border-orange-500/50'
                                   : 'bg-gray-800/50 hover:bg-gray-700/50'
-                              } ${chain.id === 'walletconnect' ? 'cursor-default opacity-75' : ''}`}
+                              }`}
                               title={`${chain.fullName}: ${chain.address}`}
                             >
                               <div className="flex items-center gap-1">
