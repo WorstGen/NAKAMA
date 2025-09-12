@@ -18,7 +18,11 @@ export const Header = () => {
     switchToChain
   } = usePhantomMultiChain();
   const { user, authenticate, connectWalletConnect } = useAuth();
-  const { isConnecting: walletConnectConnecting } = useWalletConnect();
+  const { 
+    isConnecting: walletConnectConnecting, 
+    isConnected: walletConnectConnected,
+    address: walletConnectAddress 
+  } = useWalletConnect();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
@@ -148,7 +152,7 @@ export const Header = () => {
                     @{user?.username || 'User'}
                   </div>
                   <div className="text-xs text-gray-400 truncate max-w-24">
-                    {activeChain ? phantomChains[activeChain]?.name || 'Unknown' : 'Solana'}
+                    {activeChain ? phantomChains[activeChain]?.name || 'Solana' : 'Solana'}
                   </div>
                 </div>
 
@@ -345,43 +349,84 @@ export const Header = () => {
                     <div className="px-4 py-2">
                       <div className="text-xs font-medium text-gray-400 mb-3">Active Chain</div>
                       <div className="space-y-2">
-                        {Object.entries(connectedChains).length > 0 ? Object.entries(connectedChains).map(([chainId, chain]) => {
-                          const chainConfig = phantomChains[chainId];
-                          const isActive = activeChain === chainId;
+{(() => {
+                          const allChains = [];
                           
-                          return (
+                          // Always show Solana if user is authenticated (since they connected with Solana)
+                          if (user) {
+                            allChains.push({
+                              id: 'solana',
+                              name: 'Solana',
+                              color: '#14F195',
+                              address: user.wallets?.solana?.address || 'Connected',
+                              isActive: activeChain === 'solana' || !activeChain
+                            });
+                          }
+                          
+                          // Add WalletConnect if connected
+                          if (walletConnectConnected && walletConnectAddress) {
+                            allChains.push({
+                              id: 'walletconnect',
+                              name: 'WalletConnect',
+                              color: '#3b99fc',
+                              address: walletConnectAddress,
+                              isActive: false
+                            });
+                          }
+                          
+                          // Add other connected chains from PhantomMultiChain
+                          Object.entries(connectedChains).forEach(([chainId, chain]) => {
+                            if (chainId !== 'solana') { // Don't duplicate Solana
+                              const chainConfig = phantomChains[chainId];
+                              allChains.push({
+                                id: chainId,
+                                name: chainConfig?.name || chainId,
+                                color: chainConfig?.color || '#666',
+                                address: chain.address,
+                                isActive: activeChain === chainId
+                              });
+                            }
+                          });
+                          
+                          return allChains.length > 0 ? allChains.map((chain) => (
                             <button
-                              key={chainId}
+                              key={chain.id}
                               onClick={() => {
-                                switchToChain(chainId);
+                                if (chain.id !== 'walletconnect') {
+                                  switchToChain(chain.id);
+                                }
                                 setMobileMenuOpen(false);
                               }}
+                              disabled={chain.id === 'walletconnect'}
                               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                                isActive ? 'bg-gray-800/70' : 'hover:bg-gray-800/50'
-                              }`}
+                                chain.isActive ? 'bg-gray-800/70' : 'hover:bg-gray-800/50'
+                              } ${chain.id === 'walletconnect' ? 'cursor-default opacity-75' : ''}`}
                             >
                               <div 
                                 className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: chainConfig?.color || '#666' }}
+                                style={{ backgroundColor: chain.color }}
                               ></div>
                               <div className="flex-1 text-left">
                                 <div className="text-sm font-medium text-white">
-                                  {chainConfig?.name || 'Unknown'}
+                                  {chain.name}
                                 </div>
                                 <div className="text-xs text-gray-400 font-mono">
-                                  {chain.address?.slice(0, 6)}...{chain.address?.slice(-4)}
+                                  {typeof chain.address === 'string' && chain.address.length > 10 
+                                    ? `${chain.address.slice(0, 6)}...${chain.address.slice(-4)}`
+                                    : chain.address
+                                  }
                                 </div>
                               </div>
-                              {isActive && (
+                              {chain.isActive && (
                                 <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                               )}
                             </button>
+                          )) : (
+                            <div className="text-sm text-gray-500 px-3 py-2">
+                              No chains connected
+                            </div>
                           );
-                        }) : (
-                          <div className="text-sm text-gray-500 px-3 py-2">
-                            No chains connected
-                          </div>
-                        )}
+                        })()}
                       </div>
                     </div>
                   </div>
