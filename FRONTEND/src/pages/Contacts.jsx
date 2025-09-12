@@ -13,7 +13,7 @@ import {
 import { Link } from 'react-router-dom';
 
 export const Contacts = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [searchUsername, setSearchUsername] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searching, setSearching] = useState(false);

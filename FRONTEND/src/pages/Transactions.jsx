@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from 'react-query';
+import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth, useTheme } from '../contexts/AuthContext';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
