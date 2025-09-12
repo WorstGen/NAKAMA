@@ -55,10 +55,26 @@ export const MetaMaskProvider = ({ children }) => {
 
     setIsConnecting(true);
     try {
-      // Request account access
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      });
+      // Add a small delay to ensure MetaMask is ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // First check if we can get accounts without requesting
+      let accounts;
+      try {
+        accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        console.log('MetaMask accounts check:', accounts);
+      } catch (error) {
+        console.log('MetaMask accounts check failed:', error);
+        accounts = [];
+      }
+      
+      // If no accounts, request access
+      if (!accounts || accounts.length === 0) {
+        console.log('Requesting MetaMask account access...');
+        accounts = await window.ethereum.request({ 
+          method: 'eth_requestAccounts' 
+        });
+      }
       
       if (accounts.length > 0) {
         setAccount(accounts[0]);
@@ -68,6 +84,7 @@ export const MetaMaskProvider = ({ children }) => {
         const chainId = await window.ethereum.request({ method: 'eth_chainId' });
         setChainId(chainId);
         
+        console.log('MetaMask connected successfully:', accounts[0]);
         toast.success('MetaMask connected successfully!');
         return true;
       } else {
@@ -83,8 +100,8 @@ export const MetaMaskProvider = ({ children }) => {
       } else if (error.message?.includes('Requested resource not available')) {
         toast.error(
           <div>
-            <div className="font-semibold">MetaMask not available</div>
-            <div className="text-sm mt-1">Please make sure MetaMask is installed, unlocked, and refresh the page.</div>
+            <div className="font-semibold">MetaMask is locked</div>
+            <div className="text-sm mt-1">Please unlock MetaMask and try again.</div>
           </div>,
           { duration: 5000 }
         );
