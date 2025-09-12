@@ -94,32 +94,51 @@ export const Send = () => {
       if (chainName === 'solana') {
         await switchToChain(chainName);
       } else {
-        // For EVM chains, try Phantom first, then WalletConnect as fallback
-        if (!connectedChains[chainName]?.isConnected) {
+        // For EVM chains, prioritize WalletConnect if already connected
+        if (walletConnectConnected && walletConnectAddress) {
+          console.log('Using existing WalletConnect connection for EVM chain');
+          toast.success(`Switched to ${phantomChains[chainName]?.name} via WalletConnect`);
+          // Don't call switchToChain as it will try Phantom EVM and cause popup
+        } else if (!connectedChains[chainName]?.isConnected) {
           toast.loading(`Connecting to ${phantomChains[chainName]?.name}...`);
           
-          // Try Phantom EVM access first
+          // Try Phantom EVM access only if WalletConnect is not available
           if (window.ethereum) {
             try {
               await window.ethereum.request({ method: 'eth_requestAccounts' });
               console.log('Phantom EVM access granted');
+              // Switch to the selected chain via Phantom
+              await switchToChain(chainName);
             } catch (error) {
               console.log('Phantom EVM connection failed:', error);
               
               // If Phantom fails, try WalletConnect as fallback
-              if (!walletConnectConnected) {
-                console.log('Attempting WalletConnect connection as fallback...');
-                const connected = await connectWalletConnect();
-                if (!connected) {
-                  throw new Error('No EVM wallet available. Please connect Phantom with EVM support or use WalletConnect.');
-                }
+              console.log('Attempting WalletConnect connection as fallback...');
+              const connected = await connectWalletConnect();
+              if (!connected) {
+                throw new Error('No EVM wallet available. Please connect Phantom with EVM support or use WalletConnect.');
               }
+              toast.dismiss();
+              toast.success(`Connected to ${phantomChains[chainName]?.name} via WalletConnect`);
+              return; // Don't call switchToChain for WalletConnect
             }
+          } else {
+            // No Phantom EVM, try WalletConnect
+            console.log('No Phantom EVM available, attempting WalletConnect...');
+            const connected = await connectWalletConnect();
+            if (!connected) {
+              throw new Error('No EVM wallet available. Please connect WalletConnect.');
+            }
+            toast.dismiss();
+            toast.success(`Connected to ${phantomChains[chainName]?.name} via WalletConnect`);
+            return; // Don't call switchToChain for WalletConnect
           }
+          
+          toast.dismiss();
+        } else {
+          // Chain is already connected via Phantom, switch to it
+          await switchToChain(chainName);
         }
-        
-        // Switch to the selected chain
-        await switchToChain(chainName);
       }
       
       // Update form data
@@ -199,12 +218,18 @@ export const Send = () => {
           throw new Error('Phantom wallet not connected');
         }
       } else {
-        // EVM transaction signing - try Phantom first, then WalletConnect as fallback
+        // EVM transaction signing - prioritize WalletConnect if already connected
         let evmAccount = null;
         let useWalletConnect = false;
         
-        // First, try to get EVM account from Phantom
-        if (window.ethereum) {
+        // First, check if WalletConnect is already connected (prioritize to avoid Phantom popups)
+        if (walletConnectConnected && walletConnectAddress) {
+          evmAccount = walletConnectAddress;
+          useWalletConnect = true;
+          console.log('Using WalletConnect account (prioritized):', evmAccount);
+        }
+        // Only try Phantom EVM if WalletConnect is not available
+        else if (window.ethereum) {
           try {
             const accounts = await window.ethereum.request({ method: 'eth_accounts' });
             if (accounts.length > 0) {
@@ -213,14 +238,18 @@ export const Send = () => {
             }
           } catch (error) {
             console.log('Phantom EVM not available:', error);
+            
+            // If Phantom fails and WalletConnect is not connected, try to connect it
+            if (!walletConnectConnected) {
+              console.log('Phantom failed, trying WalletConnect as fallback...');
+              const connected = await connectWalletConnect();
+              if (connected && walletConnectAddress) {
+                evmAccount = walletConnectAddress;
+                useWalletConnect = true;
+                console.log('Connected to WalletConnect for EVM transaction:', evmAccount);
+              }
+            }
           }
-        }
-        
-        // If no Phantom EVM account, try WalletConnect as fallback
-        if (!evmAccount && walletConnectConnected && walletConnectAddress) {
-          evmAccount = walletConnectAddress;
-          useWalletConnect = true;
-          console.log('Using WalletConnect account as fallback:', evmAccount);
         }
         
         // If still no EVM account, try to connect WalletConnect
