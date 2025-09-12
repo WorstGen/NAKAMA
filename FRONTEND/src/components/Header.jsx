@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
-import { useMetaMask } from '../contexts/MetaMaskContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useWalletConnect } from '../contexts/WalletConnectContext';
 import GradientProfileImage from './GradientProfileImage';
 import Logo from './Logo';
 import toast from 'react-hot-toast';
@@ -17,8 +17,8 @@ export const Header = () => {
     phantomChains,
     switchToChain
   } = usePhantomMultiChain();
-  const { connect: connectMetaMask, isConnecting: metaMaskConnecting } = useMetaMask();
-  const { user, authenticate } = useAuth();
+  const { user, authenticate, connectWalletConnect } = useAuth();
+  const { isConnecting: walletConnectConnecting } = useWalletConnect();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
@@ -59,18 +59,18 @@ export const Header = () => {
     }
   };
 
-  const handleConnectMetaMask = async () => {
+  const handleConnectWalletConnect = async () => {
     try {
       setConnecting(true);
       setShowWalletSelector(false);
       
-      const success = await connectMetaMask();
+      const success = await connectWalletConnect();
       if (success) {
-        toast.success('MetaMask connected successfully!');
+        toast.success('Wallet connected successfully!');
       }
     } catch (error) {
-      console.error('MetaMask connection error:', error);
-      toast.error(`Failed to connect MetaMask: ${error.message}`);
+      console.error('WalletConnect connection error:', error);
+      toast.error(`Failed to connect wallet: ${error.message}`);
     } finally {
       setConnecting(false);
     }
@@ -214,36 +214,24 @@ export const Header = () => {
                     )}
                   </button>
 
-                  {/* MetaMask Wallet Option */}
+                  {/* WalletConnect Option */}
                   <button
-                    onClick={handleConnectMetaMask}
-                    disabled={connecting || metaMaskConnecting}
-                    className="w-full flex items-center justify-center space-x-3 p-4 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-800 text-white rounded-lg transition-colors"
+                    onClick={handleConnectWalletConnect}
+                    disabled={connecting || walletConnectConnecting}
+                    className="w-full flex items-center justify-center space-x-3 p-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors"
                   >
-                    {metaMaskConnecting ? (
+                    {walletConnectConnecting ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
                     ) : (
                       <>
                         <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                          <span className="text-orange-600 font-bold text-sm">M</span>
+                          <span className="text-blue-600 font-bold text-sm">W</span>
                         </div>
-                        <span className="font-medium">Connect with MetaMask</span>
+                        <span className="font-medium">Connect with WalletConnect</span>
                       </>
                     )}
                   </button>
-                  
-                  {/* MetaMask Installation Help */}
-                  <div className="text-xs text-gray-400 text-center mt-2">
-                    Don't have MetaMask? 
-                    <a 
-                      href="https://metamask.io/download/" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-orange-400 hover:text-orange-300 underline ml-1"
-                    >
-                      Install it here
-                    </a>
-                  </div>
+
                 </div>
               </div>
             </div>
