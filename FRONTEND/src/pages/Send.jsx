@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import { PaperAirplaneIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 
 export const Send = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { 
     activeChain, 
     connectedChains, 
@@ -27,6 +27,18 @@ export const Send = () => {
   const [searchParams] = useSearchParams();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
+  
+  // Helper function to determine if a chain is connected
+  const isChainConnected = (chainName) => {
+    if (chainName === 'solana') {
+      // Solana is connected if user is authenticated (they connected with Solana)
+      return !!user;
+    } else {
+      // For EVM chains, check both PhantomMultiChain and WalletConnect
+      return connectedChains[chainName]?.isConnected || 
+             (walletConnectConnected && walletConnectAddress);
+    }
+  };
   
   const [selectedChain, setSelectedChain] = useState(activeChain || 'solana');
   const [availableTokens, setAvailableTokens] = useState([]);
@@ -305,7 +317,7 @@ export const Send = () => {
               className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
             >
               {Object.entries(phantomChains).map(([chainName, chainInfo]) => {
-                const isConnected = connectedChains[chainName]?.isConnected;
+                const isConnected = isChainConnected(chainName);
                 return (
                   <option 
                     key={chainName} 
@@ -319,14 +331,21 @@ export const Send = () => {
             </select>
             
             {/* Current network indicator */}
-            {connectedChains[selectedChain]?.isConnected && (
+            {isChainConnected(selectedChain) && (
               <div className="mt-2 flex items-center space-x-2 text-sm text-gray-400">
                 <div 
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: phantomChains[selectedChain]?.color }}
                 />
                 <span>
-                  Connected: {connectedChains[selectedChain].address.slice(0, 6)}...{connectedChains[selectedChain].address.slice(-4)}
+                  Connected: {selectedChain === 'solana' 
+                    ? (user?.wallets?.solana?.address?.slice(0, 6) + '...' + user?.wallets?.solana?.address?.slice(-4) || 'Solana Connected')
+                    : walletConnectConnected && walletConnectAddress
+                    ? `${walletConnectAddress.slice(0, 6)}...${walletConnectAddress.slice(-4)}`
+                    : connectedChains[selectedChain]?.address
+                    ? `${connectedChains[selectedChain].address.slice(0, 6)}...${connectedChains[selectedChain].address.slice(-4)}`
+                    : 'Connected'
+                  }
                 </span>
               </div>
             )}
