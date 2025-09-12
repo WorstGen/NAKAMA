@@ -376,18 +376,23 @@ export const Send = () => {
               onChange={(e) => handleChainChange(e.target.value)}
               className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
             >
-              {Object.entries(phantomChains).map(([chainName, chainInfo]) => {
-                const isConnected = isChainConnected(chainName);
-                return (
-                  <option 
-                    key={chainName} 
-                    value={chainName} 
-                    className={`bg-gray-800 ${!isConnected ? 'text-gray-500' : 'text-white'}`}
-                  >
-                    {chainInfo.name} {isConnected ? '✓' : '(Connect to enable)'}
-                  </option>
-                );
-              })}
+              {Object.entries(phantomChains)
+                .filter(([chainName]) => {
+                  // Temporarily remove BNB chain, Optimism, and Arbitrum
+                  return !['bsc', 'optimism', 'arbitrum'].includes(chainName);
+                })
+                .map(([chainName, chainInfo]) => {
+                  const isConnected = isChainConnected(chainName);
+                  return (
+                    <option 
+                      key={chainName} 
+                      value={chainName} 
+                      className={`bg-gray-800 ${!isConnected ? 'text-gray-500' : 'text-white'}`}
+                    >
+                      {chainInfo.name} {isConnected ? '✓' : '(Connect to enable)'}
+                    </option>
+                  );
+                })}
             </select>
             
             {/* Current network indicator */}
