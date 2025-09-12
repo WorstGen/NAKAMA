@@ -351,8 +351,8 @@ const UserSchema = new mongoose.Schema({
   // Multi-chain wallet support
   wallets: {
     solana: {
-      address: { type: String },
-      isPrimary: { type: Boolean, default: false }
+      address: { type: String, required: true },
+      isPrimary: { type: Boolean, default: true }
     },
     ethereum: {
       address: { type: String },
@@ -834,140 +834,6 @@ app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
   }
 });
 
-// Add wallet address to current user's profile (Solana, EVM, or other chains)
-app.post('/api/profile/add-wallet',
-  verifyWallet,
-  [
-    body('chain').isIn(['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base', 'bsc']).withMessage('Invalid chain'),
-    body('address').isLength({ min: 32, max: 44 }).withMessage('Invalid address format')
-  ],
-  async (req, res) => {
-    console.log('🚀 Add Wallet endpoint hit!');
-    console.log('Request body:', req.body);
-    console.log('Request headers:', req.headers);
-
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { chain, address } = req.body;
-      const walletAddress = req.walletAddress;
-
-      // Find the user by their authenticated wallet address
-      const user = await User.findOne({
-        $or: [
-          { walletAddress: walletAddress },
-          { 'wallets.solana.address': walletAddress },
-          { 'wallets.ethereum.address': walletAddress },
-          { 'wallets.polygon.address': walletAddress },
-          { 'wallets.arbitrum.address': walletAddress },
-          { 'wallets.optimism.address': walletAddress },
-          { 'wallets.base.address': walletAddress },
-          { 'wallets.bsc.address': walletAddress }
-        ]
-      });
-
-      if (!user) {
-        console.error(`❌ User not found for wallet address: ${walletAddress}`);
-        return res.status(404).json({ error: 'User not found' });
-      }
-
-      console.log(`Adding ${chain} address ${address} to user ${user.username} (ID: ${user._id})`);
-      console.log(`Current user wallets:`, JSON.stringify(user.wallets, null, 2));
-
-      // Validate the address format based on chain
-      if (chain === 'solana') {
-        if (address.length !== 44 && !address.startsWith('0x')) {
-          return res.status(400).json({ error: 'Invalid Solana address format' });
-        }
-      } else {
-        // EVM chains
-        if (address.length !== 42 || !address.startsWith('0x')) {
-          return res.status(400).json({ error: `Invalid ${chain} address format` });
-        }
-      }
-
-      // Check if user already has this wallet address in any chain
-      const existingWallet = Object.values(user.wallets || {}).find(wallet =>
-        wallet && wallet.address === address
-      );
-
-      if (existingWallet) {
-        console.log(`❌ User ${user.username} already has this address in another chain: ${address}`);
-        return res.status(400).json({ error: 'This wallet address is already registered to your account' });
-      }
-
-      // Check if this address is already registered to another user
-      const existingUser = await User.findOne({
-        $or: [
-          { walletAddress: address },
-          { 'wallets.solana.address': address },
-          { 'wallets.ethereum.address': address },
-          { 'wallets.polygon.address': address },
-          { 'wallets.arbitrum.address': address },
-          { 'wallets.optimism.address': address },
-          { 'wallets.base.address': address },
-          { 'wallets.bsc.address': address }
-        ],
-        _id: { $ne: user._id } // Exclude current user
-      });
-
-      if (existingUser) {
-        console.error(`❌ Address ${address} already belongs to user: ${existingUser.username}`);
-        return res.status(400).json({ error: 'This wallet address is already registered to another user' });
-      }
-
-      // Prepare update data
-      const updateData = {
-        [`wallets.${chain}.address`]: address,
-        [`wallets.${chain}.isPrimary`]: false, // New addresses are not primary by default
-        updatedAt: new Date()
-      };
-
-      // For Solana, also update the legacy walletAddress field if it's the first Solana address
-      if (chain === 'solana' && !user.wallets?.solana?.address) {
-        updateData.walletAddress = address;
-        updateData['wallets.solana.isPrimary'] = true; // First Solana address is primary
-      }
-
-      console.log(`🔄 Updating user with data:`, JSON.stringify(updateData, null, 2));
-
-      const updatedUser = await User.findOneAndUpdate(
-        { _id: user._id },
-        updateData,
-        { new: true }
-      );
-
-      if (!updatedUser) {
-        console.error(`❌ Failed to update user ${user.username} with ${chain} address ${address}`);
-        return res.status(500).json({ error: 'Failed to update user profile' });
-      }
-
-      console.log(`✅ Successfully added ${chain} address ${address} to user ${updatedUser.username}`);
-      console.log(`Updated user wallets:`, JSON.stringify(updatedUser.wallets, null, 2));
-
-      res.json({
-        success: true,
-        message: `${chain} address added successfully`,
-        user: {
-          _id: updatedUser._id,
-          username: updatedUser.username,
-          bio: updatedUser.bio,
-          profilePicture: updatedUser.profilePicture,
-          ethAddress: updatedUser.wallets?.ethereum?.address || updatedUser.ethAddress,
-          wallets: updatedUser.wallets || {}
-        }
-      });
-
-    } catch (error) {
-      console.error('❌ Add wallet address error:', error);
-      res.status(500).json({ error: 'Failed to add wallet address' });
-    }
-  }
-);
-
 // Create/Update user profile
 app.post('/api/profile', 
   verifyWallet,
@@ -986,34 +852,18 @@ app.post('/api/profile',
       .customSanitizer(sanitizeInput)
   ],
   async (req, res) => {
-    console.log('🎯 PROFILE CREATION REQUEST RECEIVED!');
-    console.log('Request body:', req.body);
-    console.log('Authenticated wallet:', req.walletAddress);
-
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        console.log('❌ Validation errors:', errors.array());
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { username, bio, walletAddress: providedWalletAddress } = req.body;
-      const walletAddress = req.walletAddress; // This comes from authentication
-
-      console.log('🔍 Wallet address comparison:', {
-        authenticated: walletAddress,
-        provided: providedWalletAddress,
-        match: walletAddress === providedWalletAddress
-      });
-
-      // Use authenticated wallet address, ignore provided one for security
-      const actualWalletAddress = walletAddress;
-
-      console.log('📝 Processing profile creation for:', { username, actualWalletAddress });
+      const { username, bio } = req.body;
+      const walletAddress = req.walletAddress;
 
       // Determine if this is a Solana or EVM address
-      const isSolanaAddress = actualWalletAddress.length === 44;
-      const isEVMAddress = actualWalletAddress.length === 42 && actualWalletAddress.startsWith('0x');
+      const isSolanaAddress = walletAddress.length === 44;
+      const isEVMAddress = walletAddress.length === 42 && walletAddress.startsWith('0x');
 
       if (!isSolanaAddress && !isEVMAddress) {
         return res.status(400).json({ error: 'Invalid wallet address format' });
@@ -1022,13 +872,13 @@ app.post('/api/profile',
       // First, find if there's an existing user with this wallet address
       let existingUserByWallet = await User.findOne({
         $or: [
-          { walletAddress: actualWalletAddress },
-          { 'wallets.solana.address': actualWalletAddress },
-          { 'wallets.ethereum.address': actualWalletAddress },
-          { 'wallets.polygon.address': actualWalletAddress },
-          { 'wallets.arbitrum.address': actualWalletAddress },
-          { 'wallets.optimism.address': actualWalletAddress },
-          { 'wallets.base.address': actualWalletAddress }
+          { walletAddress: walletAddress },
+          { 'wallets.solana.address': walletAddress },
+          { 'wallets.ethereum.address': walletAddress },
+          { 'wallets.polygon.address': walletAddress },
+          { 'wallets.arbitrum.address': walletAddress },
+          { 'wallets.optimism.address': walletAddress },
+          { 'wallets.base.address': walletAddress }
         ]
       });
 
@@ -1038,7 +888,7 @@ app.post('/api/profile',
       // CATASTROPHIC BUG FIX: Never allow EVM addresses to be stolen from existing users
       // This was allowing one user to steal another user's EVM address by authenticating with it
       if (!existingUserByWallet && isEVMAddress) {
-        console.error(`🚨 CATASTROPHIC BUG PREVENTION: EVM address ${actualWalletAddress} not found for authenticating user`);
+        console.error(`🚨 CATASTROPHIC BUG PREVENTION: EVM address ${walletAddress} not found for authenticating user`);
         console.error(`🚨 This prevents identity theft where users steal each other's EVM addresses`);
         console.error(`🚨 Creating new user instead of stealing from existing user`);
       }
@@ -1066,30 +916,21 @@ app.post('/api/profile',
 
         // Add wallet to the appropriate chain
         if (isSolanaAddress) {
-          updateData['wallets.solana.address'] = actualWalletAddress;
+          updateData['wallets.solana.address'] = walletAddress;
           updateData['wallets.solana.isPrimary'] = true;
-          // Ensure EVM chains exist (set to null if not present)
-          if (!user.wallets?.ethereum?.address) updateData['wallets.ethereum.address'] = null;
-          if (!user.wallets?.polygon?.address) updateData['wallets.polygon.address'] = null;
-          if (!user.wallets?.arbitrum?.address) updateData['wallets.arbitrum.address'] = null;
-          if (!user.wallets?.optimism?.address) updateData['wallets.optimism.address'] = null;
-          if (!user.wallets?.base?.address) updateData['wallets.base.address'] = null;
-          if (!user.wallets?.bsc?.address) updateData['wallets.bsc.address'] = null;
         } else if (isEVMAddress) {
           // For EVM addresses, add to all EVM chains since they use the same address
-          updateData['wallets.ethereum.address'] = actualWalletAddress;
-          updateData['wallets.polygon.address'] = actualWalletAddress;
-          updateData['wallets.arbitrum.address'] = actualWalletAddress;
-          updateData['wallets.optimism.address'] = actualWalletAddress;
-          updateData['wallets.base.address'] = actualWalletAddress;
-          updateData['wallets.bsc.address'] = actualWalletAddress;
-          // Ensure Solana exists (set to null if not present)
-          if (!user.wallets?.solana?.address) updateData['wallets.solana.address'] = null;
+          updateData['wallets.ethereum.address'] = walletAddress;
+          updateData['wallets.polygon.address'] = walletAddress;
+          updateData['wallets.arbitrum.address'] = walletAddress;
+          updateData['wallets.optimism.address'] = walletAddress;
+          updateData['wallets.base.address'] = walletAddress;
+          updateData['wallets.bsc.address'] = walletAddress;
           // Mark the first EVM chain as primary if no other EVM chain is primary
-          if (!user.wallets?.ethereum?.isPrimary &&
-              !user.wallets?.polygon?.isPrimary &&
-              !user.wallets?.arbitrum?.isPrimary &&
-              !user.wallets?.optimism?.isPrimary &&
+          if (!user.wallets?.ethereum?.isPrimary && 
+              !user.wallets?.polygon?.isPrimary && 
+              !user.wallets?.arbitrum?.isPrimary && 
+              !user.wallets?.optimism?.isPrimary && 
               !user.wallets?.base?.isPrimary) {
             updateData['wallets.ethereum.isPrimary'] = true;
           }
@@ -1105,55 +946,39 @@ app.post('/api/profile',
         // Never automatically associate EVM addresses with random existing users
         // This prevents catastrophic bugs where wrong users get access to EVM addresses
         if (isEVMAddress) {
-        console.log(`Creating new EVM-only user for address ${actualWalletAddress}`);
-        console.log(`This prevents catastrophic association with wrong existing users`);
+          console.log(`Creating new EVM-only user for address ${walletAddress}`);
+          console.log(`This prevents catastrophic association with wrong existing users`);
         }
         
         // Create new user
         const wallets = {};
-
         if (isSolanaAddress) {
-          // Solana user - set Solana as primary
-          wallets.solana = { address: actualWalletAddress, isPrimary: true };
-          // Set EVM chains to null since this is a Solana-only user
-          wallets.ethereum = { address: null, isPrimary: false };
-          wallets.polygon = { address: null, isPrimary: false };
-          wallets.arbitrum = { address: null, isPrimary: false };
-          wallets.optimism = { address: null, isPrimary: false };
-          wallets.base = { address: null, isPrimary: false };
-          wallets.bsc = { address: null, isPrimary: false };
+          wallets.solana = { address: walletAddress, isPrimary: true };
         } else if (isEVMAddress) {
-          // EVM user - set EVM chains as primary, Solana as null
-          wallets.solana = { address: null, isPrimary: false };
-          wallets.ethereum = { address: actualWalletAddress, isPrimary: true };
-          wallets.polygon = { address: actualWalletAddress, isPrimary: false };
-          wallets.arbitrum = { address: actualWalletAddress, isPrimary: false };
-          wallets.optimism = { address: actualWalletAddress, isPrimary: false };
-          wallets.base = { address: actualWalletAddress, isPrimary: false };
-          wallets.bsc = { address: actualWalletAddress, isPrimary: false };
+          // For EVM addresses, add to all EVM chains since they use the same address
+          wallets.ethereum = { address: walletAddress, isPrimary: true };
+          wallets.polygon = { address: walletAddress, isPrimary: false };
+          wallets.arbitrum = { address: walletAddress, isPrimary: false };
+          wallets.optimism = { address: walletAddress, isPrimary: false };
+          wallets.base = { address: walletAddress, isPrimary: false };
+          wallets.bsc = { address: walletAddress, isPrimary: false };
         }
 
-        console.log('🆕 Creating user with wallets:', JSON.stringify(wallets, null, 2));
-
         user = await User.create({
-          walletAddress: actualWalletAddress, // Set legacy field for both Solana and EVM for backward compatibility
+          walletAddress: isSolanaAddress ? walletAddress : null, // Keep legacy field for Solana
           username: username.toLowerCase(),
           bio,
           wallets,
           createdAt: new Date()
         });
-
-        console.log('✅ User created successfully:', user.username);
       }
 
       // Audit log profile update
       auditLog('PROFILE_UPDATE', user._id, {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
-        changes: { username, bio: bio ? 'updated' : 'not provided', walletAddress: actualWalletAddress }
+        changes: { username, bio: bio ? 'updated' : 'not provided', walletAddress }
       });
-
-      console.log('✅ Profile creation successful for user:', user.username);
 
       res.json({
         success: true,
@@ -1167,9 +992,6 @@ app.post('/api/profile',
         }
       });
     } catch (error) {
-      console.error('❌ Profile creation error:', error);
-      console.error('Error details:', error.message);
-      console.error('Stack trace:', error.stack);
       res.status(500).json({ error: 'Failed to save profile' });
     }
   }
@@ -1215,26 +1037,9 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
       size: req.file.size
     });
 
-    // Get user info for unique ID - support both legacy and new wallet fields
-    let user = await User.findOne({ walletAddress: req.walletAddress });
-
-    // If not found with legacy field, try multi-chain wallets
+    // Get user info for unique ID
+    const user = await User.findOne({ walletAddress: req.walletAddress });
     if (!user) {
-      user = await User.findOne({
-        $or: [
-          { 'wallets.solana.address': req.walletAddress },
-          { 'wallets.ethereum.address': req.walletAddress },
-          { 'wallets.polygon.address': req.walletAddress },
-          { 'wallets.arbitrum.address': req.walletAddress },
-          { 'wallets.optimism.address': req.walletAddress },
-          { 'wallets.base.address': req.walletAddress },
-          { 'wallets.bsc.address': req.walletAddress }
-        ]
-      });
-    }
-
-    if (!user) {
-      console.log('User not found for wallet address:', req.walletAddress);
       return res.status(404).json({ error: 'User not found' });
     }
 
@@ -2006,24 +1811,8 @@ app.post('/api/oauth/authorize', verifyWallet, async (req, res) => {
 
     // In production, validate clientId and redirectUri
     
-    // Support both legacy and new wallet fields
-    let user = await User.findOne({ walletAddress: req.walletAddress });
-
-    // If not found with legacy field, try multi-chain wallets
-    if (!user) {
-      user = await User.findOne({
-        $or: [
-          { 'wallets.solana.address': req.walletAddress },
-          { 'wallets.ethereum.address': req.walletAddress },
-          { 'wallets.polygon.address': req.walletAddress },
-          { 'wallets.arbitrum.address': req.walletAddress },
-          { 'wallets.optimism.address': req.walletAddress },
-          { 'wallets.base.address': req.walletAddress },
-          { 'wallets.bsc.address': req.walletAddress }
-        ]
-      });
-    }
-
+    const user = await User.findOne({ walletAddress: req.walletAddress });
+    
     if (!user) {
       return res.status(404).json({ error: 'User profile not found' });
     }
