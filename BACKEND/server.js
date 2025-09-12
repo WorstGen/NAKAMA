@@ -79,7 +79,7 @@ const createRateLimit = (windowMs, max, message) => {
 
 // Solana imports
 const { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = require('@solana/web3.js');
-const { getOrCreateAssociatedTokenAccount, transfer, TOKEN_PROGRAM_ID } = require('@solana/spl-token');
+const { getOrCreateAssociatedTokenAccount, transfer, TOKEN_PROGRAM_ID, getAssociatedTokenAddress, createTransferInstruction } = require('@solana/spl-token');
 const nacl = require('tweetnacl');
 const bs58 = require('bs58');
 
@@ -1331,18 +1331,45 @@ app.post('/api/transactions/prepare',
           })
         );
       } else {
-        // SPL Token transfer (USDC/USDT)
-        const tokenMintAddress = token === 'USDC' 
-          ? 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'  // USDC mint
-          : 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';   // USDT mint
+        // SPL Token transfer (USDC/USDT and other tokens)
+        const tokenConfig = {
+          'USDC': { mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6 },
+          'USDT': { mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', decimals: 6 },
+          'wPOND': { mint: '3JgFwoYV74f6LwWjQWnr3YDPFnmBdwQfNyubv99jqUoq', decimals: 9 },
+          'DEAL': { mint: 'EdhCrv9wh2dVy7LwA4kZ3pvBRhSXzhPrYeVqX7VcsmbS', decimals: 9 },
+          'CHILLDEV': { mint: '9oVBh2BFFhXyv3P8EmQRdNEi6QvqHSRhRnhPnst3pump', decimals: 9 },
+          'SKULL': { mint: '3X36yhq35MJnt2JjwodeFDfv2MFPb99RC53yUyNrpump', decimals: 9 },
+          'BBL': { mint: 'GangK9z6ebVdonVRAbMwsQzy2ougUAK5x1GQ7Uf7daos', decimals: 9 },
+          'GARDEN': { mint: 'Fs9GkAtXRwADRtqtUjSufyYXcQjLgWvNbvijQdn6pump', decimals: 9 },
+          'DEMPLAR': { mint: '4kU3B6hvnMEWNZadKWkQatky8fBgDLt7R9HwoysVpump', decimals: 9 },
+          'Pepe': { mint: 'B5WTLaRwaUQpKk7ir1wniNB6m5o8GgMrimhKMYan2R6B', decimals: 9 },
+          'On': { mint: '9N4MMNdYM8CAt9jav7nmet63WYRsJmH5HXobyBrPpump', decimals: 9 },
+          'pondSOL': { mint: 'Ep83qXdvJbofEgpPqphGRq4eMnpjBVUGPYz32QyrWaaC', decimals: 9 },
+          'omSOL': { mint: '514edCqN6tsuxA15TvSnBZT968guNvvaxuAyJrccNcRs', decimals: 9 }
+        };
 
-        const mint = new PublicKey(tokenMintAddress);
-        const decimals = 6; // Both USDC and USDT have 6 decimals
+        const tokenInfo = tokenConfig[token];
+        if (!tokenInfo) {
+          return res.status(400).json({ error: `Unsupported SPL token: ${token}` });
+        }
+
+        const mint = new PublicKey(tokenInfo.mint);
+        const decimals = tokenInfo.decimals;
         const tokenAmount = Math.floor(amount * Math.pow(10, decimals));
 
-        // This would need actual SPL token transfer logic
-        // For now, we'll return a placeholder
-        return res.status(501).json({ error: 'SPL token transfers not yet implemented' });
+        // Get or create associated token accounts
+        const fromTokenAccount = await getAssociatedTokenAddress(mint, fromPubkey);
+        const toTokenAccount = await getAssociatedTokenAddress(mint, toPubkey);
+
+        // Create SPL token transfer instruction
+        const transferInstruction = createTransferInstruction(
+          fromTokenAccount,
+          toTokenAccount,
+          fromPubkey,
+          tokenAmount
+        );
+
+        transaction = new Transaction().add(transferInstruction);
       }
 
       // Get recent blockhash
@@ -1427,8 +1454,69 @@ app.post('/api/transactions/prepare',
           console.log(`Created transaction data:`, JSON.stringify(transactionData, null, 2));
         } else {
           // ERC-20 token transfer (USDC, USDT, etc.)
-          // For now, return error as ERC-20 transfers need more complex logic
-          return res.status(501).json({ error: 'ERC-20 token transfers not yet implemented' });
+          const tokenConfig = {
+            'USDC': { 
+              ethereum: { address: '0xA0b86a33E6441e12e1A9fF2df3DC6F7eE2AB1Bc6', decimals: 6 },
+              polygon: { address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', decimals: 6 },
+              base: { address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', decimals: 6 },
+              arbitrum: { address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', decimals: 6 },
+              optimism: { address: '0x7F5c764cBc14f9669B88837ca1490cCa17c31607', decimals: 6 }
+            },
+            'USDT': { 
+              ethereum: { address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', decimals: 6 },
+              polygon: { address: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F', decimals: 6 },
+              base: { address: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb', decimals: 6 },
+              arbitrum: { address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', decimals: 6 },
+              optimism: { address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', decimals: 6 }
+            },
+            'DAI': { 
+              ethereum: { address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', decimals: 18 },
+              polygon: { address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063', decimals: 18 }
+            },
+            'PORK': { 
+              ethereum: { address: '0xb9f599ce614feb2e1bbe58f180f370d05b39344e', decimals: 18 }
+            },
+            'PNDC': { 
+              ethereum: { address: '0x423f4e6138e475d85cf7ea071ac92097ed631eea', decimals: 18 }
+            }
+          };
+
+          const tokenInfo = tokenConfig[token]?.[targetChain];
+          if (!tokenInfo) {
+            return res.status(400).json({ error: `Token ${token} not supported on ${targetChain}` });
+          }
+
+          // Create ERC-20 transfer data
+          const tokenContract = new ethers.Contract(tokenInfo.address, [
+            'function transfer(address to, uint256 amount) returns (bool)',
+            'function decimals() view returns (uint8)',
+            'function balanceOf(address account) view returns (uint256)'
+          ], provider);
+
+          // Convert amount to token units
+          const tokenAmount = ethers.parseUnits(amount.toString(), tokenInfo.decimals);
+          
+          // Encode the transfer function call
+          const transferData = tokenContract.interface.encodeFunctionData('transfer', [toAddress, tokenAmount]);
+          
+          // Get gas price and nonce
+          const gasPrice = await provider.getFeeData();
+          const nonce = await provider.getTransactionCount(fromAddress, 'pending');
+          
+          // Estimate gas for the transfer
+          const gasEstimate = await tokenContract.transfer.estimateGas(toAddress, tokenAmount, { from: fromAddress });
+          
+          transactionData = {
+            from: fromAddress,
+            to: tokenInfo.address, // Contract address, not recipient
+            value: '0x0', // No ETH value for token transfers
+            gas: '0x' + (gasEstimate * 120n / 100n).toString(16), // Add 20% buffer
+            gasPrice: '0x' + (gasPrice.gasPrice?.toString(16) || '4a817c800'),
+            nonce: '0x' + nonce.toString(16),
+            data: transferData // The encoded transfer function call
+          };
+          
+          console.log(`Created ERC-20 transaction data:`, JSON.stringify(transactionData, null, 2));
         }
 
         res.json({
