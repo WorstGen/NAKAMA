@@ -21,7 +21,8 @@ export const Header = () => {
   const { 
     isConnecting: walletConnectConnecting, 
     isConnected: walletConnectConnected,
-    address: walletConnectAddress 
+    address: walletConnectAddress,
+    disconnect: disconnectWalletConnect
   } = useWalletConnect();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -437,9 +438,18 @@ export const Header = () => {
                       onClick={async () => {
                         try {
                           setMobileMenuOpen(false);
-                          console.log('🔌 Disconnecting from all chains...');
+                          console.log('🔌 Disconnecting from all wallets...');
+                          
+                          // Disconnect from Phantom (Solana + EVM)
                           await disconnectAllChains();
-                          console.log('✅ Disconnection completed');
+                          
+                          // Disconnect from WalletConnect
+                          if (walletConnectConnected) {
+                            console.log('🔌 Disconnecting from WalletConnect...');
+                            disconnectWalletConnect();
+                          }
+                          
+                          console.log('✅ All wallets disconnected');
                         } catch (error) {
                           console.error('❌ Disconnection failed:', error);
                           alert(`Disconnection failed: ${error.message}`);
