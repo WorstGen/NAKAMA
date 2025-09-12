@@ -50,16 +50,18 @@ export const phantomChains = {
   polygon: {
     id: 'polygon',
     name: 'Polygon',
-    symbol: 'MATIC',
+    symbol: 'POL',
     decimals: 18,
     color: '#8247E5',
     rpcUrl: 'https://polygon-rpc.com',
     blockExplorer: 'https://polygonscan.com',
     phantomSupported: true,
     tokens: [
-      { symbol: 'MATIC', name: 'Polygon', decimals: 18, isNative: true },
+      { symbol: 'POL', name: 'Polygon Ecosystem Token', decimals: 18, isNative: true },
+      { symbol: 'MATIC', name: 'MATIC (Legacy)', decimals: 18, address: '0x0000000000000000000000000000000000001010' },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174' },
-      { symbol: 'USDT', name: 'Tether USD', decimals: 6, address: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F' }
+      { symbol: 'USDT', name: 'Tether USD', decimals: 6, address: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F' },
+      { symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18, address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063' }
     ]
   },
   base: {
