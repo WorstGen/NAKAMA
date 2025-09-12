@@ -94,6 +94,21 @@ export const phantomChains = {
       { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' }
     ]
+  },
+  bsc: {
+    id: 'bsc',
+    name: 'BNB Smart Chain',
+    symbol: 'BNB',
+    decimals: 18,
+    color: '#F3BA2F',
+    rpcUrl: 'https://bsc-dataseed1.binance.org',
+    blockExplorer: 'https://bscscan.com',
+    tokens: [
+      { symbol: 'BNB', name: 'BNB', decimals: 18, isNative: true },
+      { symbol: 'USDT', name: 'Tether USD', decimals: 18, address: '0x55d398326f99059fF775485246999027B3197955' },
+      { symbol: 'USDC', name: 'USD Coin', decimals: 18, address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d' },
+      { symbol: 'BUSD', name: 'Binance USD', decimals: 18, address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56' }
+    ]
   }
 };
 
@@ -163,6 +178,9 @@ export const PhantomMultiChainProvider = ({ children }) => {
                 break;
               case 10:
                 chainName = 'optimism';
+                break;
+              case 56:
+                chainName = 'bsc';
                 break;
               default:
                 chainName = 'ethereum';
@@ -268,7 +286,8 @@ export const PhantomMultiChainProvider = ({ children }) => {
                               chainName === 'polygon' ? 137 : 
                               chainName === 'base' ? 8453 :
                               chainName === 'arbitrum' ? 42161 :
-                              chainName === 'optimism' ? 10 : 1;
+                              chainName === 'optimism' ? 10 :
+                              chainName === 'bsc' ? 56 : 1;
         const chainIdHex = `0x${chainIdDecimal.toString(16)}`;
         
         console.log('🔄 Attempting to switch to chain ID:', chainIdHex);
