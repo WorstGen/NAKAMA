@@ -6,7 +6,7 @@ import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { ClockIcon, CheckCircleIcon, XCircleIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
 
 export const Transactions = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { connectedChains } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
@@ -42,14 +42,40 @@ export const Transactions = () => {
   };
 
   const getTransactionType = (tx) => {
-    // Get all connected addresses from all chains
-    const myAddresses = Object.values(connectedChains)
-      .filter(chain => chain?.address)
-      .map(chain => chain.address);
+    // Get all user addresses from the user object (more reliable than connectedChains)
+    const myAddresses = [];
     
-    // Check if the transaction's fromAddress matches any of our connected addresses
+    if (user?.wallets?.solana?.address) myAddresses.push(user.wallets.solana.address);
+    if (user?.wallets?.ethereum?.address) myAddresses.push(user.wallets.ethereum.address);
+    if (user?.wallets?.polygon?.address) myAddresses.push(user.wallets.polygon.address);
+    if (user?.wallets?.arbitrum?.address) myAddresses.push(user.wallets.arbitrum.address);
+    if (user?.wallets?.optimism?.address) myAddresses.push(user.wallets.optimism.address);
+    if (user?.wallets?.base?.address) myAddresses.push(user.wallets.base.address);
+    
+    // Fallback to connected chains if user wallets not available
+    if (myAddresses.length === 0) {
+      const chainAddresses = Object.values(connectedChains)
+        .filter(chain => chain?.address)
+        .map(chain => chain.address);
+      myAddresses.push(...chainAddresses);
+    }
+    
+    // Check if the transaction's fromAddress matches any of our addresses
     const isFromMe = myAddresses.includes(tx.fromAddress);
     return isFromMe ? 'sent' : 'received';
+  };
+
+  const getBlockchainInfo = (blockchain) => {
+    const blockchainConfig = {
+      solana: { name: 'Solana', color: '#14F195', explorer: 'https://explorer.solana.com/tx/' },
+      ethereum: { name: 'Ethereum', color: '#627EEA', explorer: 'https://etherscan.io/tx/' },
+      polygon: { name: 'Polygon', color: '#8247E5', explorer: 'https://polygonscan.com/tx/' },
+      base: { name: 'Base', color: '#0052FF', explorer: 'https://basescan.org/tx/' },
+      arbitrum: { name: 'Arbitrum', color: '#28A0F0', explorer: 'https://arbiscan.io/tx/' },
+      optimism: { name: 'Optimism', color: '#FF0420', explorer: 'https://optimistic.etherscan.io/tx/' }
+    };
+    
+    return blockchainConfig[blockchain] || { name: 'Unknown', color: '#666', explorer: 'https://explorer.solana.com/tx/' };
   };
 
   if (!isAuthenticated) {
@@ -73,6 +99,7 @@ export const Transactions = () => {
           <div className="space-y-4">
             {transactions.transactions.map((tx) => {
               const type = getTransactionType(tx);
+              const blockchainInfo = getBlockchainInfo(tx.blockchain);
               return (
                 <div key={tx.signature} className="bg-gray-700/50 rounded-lg p-4 border">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -104,14 +131,20 @@ export const Transactions = () => {
                         {tx.memo && (
                           <p className="text-white/40 text-sm italic">"{tx.memo}"</p>
                         )}
-                        <p className="text-white/40 text-xs">
-                          {formatDate(tx.createdAt)}
-                        </p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: blockchainInfo.color }}
+                          />
+                          <p className="text-white/40 text-xs">
+                            {blockchainInfo.name} • {formatDate(tx.createdAt)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                     <div className="text-left sm:text-right">
                       <a
-                        href={`https://explorer.solana.com/tx/${tx.signature}`}
+                        href={`${blockchainInfo.explorer}${tx.signature}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-400 hover:text-blue-300 text-sm underline break-all sm:break-normal"

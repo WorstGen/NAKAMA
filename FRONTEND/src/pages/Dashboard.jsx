@@ -27,12 +27,25 @@ export const Dashboard = () => {
   });
 
   const getTransactionType = (tx) => {
-    // Get all connected addresses from all chains
-    const myAddresses = Object.values(connectedChains)
-      .filter(chain => chain?.address)
-      .map(chain => chain.address);
+    // Get all user addresses from the user object (more reliable than connectedChains)
+    const myAddresses = [];
     
-    // Check if the transaction's fromAddress matches any of our connected addresses
+    if (user?.wallets?.solana?.address) myAddresses.push(user.wallets.solana.address);
+    if (user?.wallets?.ethereum?.address) myAddresses.push(user.wallets.ethereum.address);
+    if (user?.wallets?.polygon?.address) myAddresses.push(user.wallets.polygon.address);
+    if (user?.wallets?.arbitrum?.address) myAddresses.push(user.wallets.arbitrum.address);
+    if (user?.wallets?.optimism?.address) myAddresses.push(user.wallets.optimism.address);
+    if (user?.wallets?.base?.address) myAddresses.push(user.wallets.base.address);
+    
+    // Fallback to connected chains if user wallets not available
+    if (myAddresses.length === 0) {
+      const chainAddresses = Object.values(connectedChains)
+        .filter(chain => chain?.address)
+        .map(chain => chain.address);
+      myAddresses.push(...chainAddresses);
+    }
+    
+    // Check if the transaction's fromAddress matches any of our addresses
     const isFromMe = myAddresses.includes(tx.fromAddress);
     return isFromMe ? 'sent' : 'received';
   };
