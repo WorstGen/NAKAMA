@@ -508,7 +508,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
           const stillConnected = (window.solana && window.solana.isConnected) || Object.keys(chains).length > 0;
           if (stillConnected) {
             console.log('⚠️ Phantom may still be connected - user should manually disconnect from wallet');
-            toast.warning('Please manually disconnect from Phantom wallet if needed');
+            toast.error('Please manually disconnect from Phantom wallet if needed');
           }
         } catch (error) {
           console.log('Error checking post-disconnect state:', error);
