@@ -84,10 +84,10 @@ export const AuthProvider = ({ children }) => {
   const [activeWalletType, setActiveWalletType] = useState(null); // 'phantom' or 'metamask'
 
   const authenticate = useCallback(async () => {
-    // Check cooldown period to prevent rate limiting (reduced to 1 second)
+    // Check cooldown period to prevent rate limiting
     const now = Date.now();
     const timeSinceLastAttempt = now - lastAuthAttempt;
-    const cooldownPeriod = 500; // 0.5 seconds
+    const cooldownPeriod = 1000; // 1 second
     
     if (timeSinceLastAttempt < cooldownPeriod) {
       console.log('Authentication skipped: cooldown period active');
@@ -120,14 +120,21 @@ export const AuthProvider = ({ children }) => {
     console.log('🔐 Has EVM address in publicKey:', hasEVMAddress);
     console.log('🔐 PublicKey value:', publicKey);
     
-    // Priority 1: MetaMask connection
-    if (metaMaskConnected && metaMaskAccount) {
+    // Priority 1: Direct Solana connection (always prefer Solana)
+    if (window.solana && window.solana.isConnected && window.solana.publicKey) {
+      console.log('Using direct Solana connection');
+      activePublicKey = window.solana.publicKey;
+      activeSignMessage = window.solana.signMessage;
+      setActiveWalletType('phantom');
+    }
+    // Priority 2: MetaMask connection
+    else if (metaMaskConnected && metaMaskAccount) {
       console.log('Using MetaMask connection for authentication');
       activePublicKey = metaMaskAccount;
       activeSignMessage = metaMaskSignMessage;
       setActiveWalletType('metamask');
     }
-    // Priority 2: EVM connection via Phantom
+    // Priority 3: EVM connection via Phantom
     else if ((isEVMChain || hasEVMAddress) && window.ethereum) {
       console.log('Using EVM connection for authentication');
       // For EVM, we need to get the address and use personal_sign
@@ -144,13 +151,6 @@ export const AuthProvider = ({ children }) => {
         };
         setActiveWalletType('phantom');
       }
-    }
-    // Priority 3: Direct Solana connection
-    else if (window.solana && window.solana.isConnected && window.solana.publicKey) {
-      console.log('Using direct Solana connection');
-      activePublicKey = window.solana.publicKey;
-      activeSignMessage = window.solana.signMessage;
-      setActiveWalletType('phantom');
     }
     // Priority 4: Fall back to PhantomMultiChain context
     else {
@@ -546,7 +546,7 @@ export const AuthProvider = ({ children }) => {
     addEVM,
     connectMetaMask,
     activeWalletType,
-    isAuthenticated: !!authToken || (!!user && !loading) || api.hasAuthHeaders() // Consider authenticated if we have user profile or auth headers
+    isAuthenticated: !!user && !!authToken // Simplified: only authenticated if we have both user and token
   };
 
   return (
