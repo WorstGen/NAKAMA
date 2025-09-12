@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useTheme } from '../contexts/AuthContext';
 import { useWalletConnect } from '../contexts/WalletConnectContext';
+import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
@@ -9,10 +10,12 @@ import { CameraIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
   const { user, setUser, isAuthenticated, addEVM } = useAuth();
-  const { 
-    isConnected: walletConnectConnected, 
-    connect: connectWalletConnect 
+  const {
+    isConnected: walletConnectConnected,
+    address: walletConnectAddress,
+    connect: connectWalletConnect
   } = useWalletConnect();
+  const { connectedChains, getActiveWallet } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
@@ -35,8 +38,14 @@ export const Profile = () => {
         username: user.username || '',
         bio: user.bio || ''
       });
+    } else if (isAuthenticated) {
+      // New user creating profile for the first time
+      setFormData({
+        username: '',
+        bio: ''
+      });
     }
-  }, [user]);
+  }, [user, isAuthenticated]);
 
   // Load saved image settings from localStorage
   useEffect(() => {
@@ -50,15 +59,24 @@ export const Profile = () => {
           console.error('Error loading saved image settings:', error);
         }
       }
+    } else if (isAuthenticated && !user) {
+      // New user - use default settings
+      setImageSettings({
+        position: { x: 50, y: 50 },
+        zoom: 100
+      });
     }
-  }, [user?.username]);
+  }, [user?.username, isAuthenticated, user]);
 
   // Save image settings to localStorage whenever they change
   useEffect(() => {
     if (user?.username && imageSettings) {
       localStorage.setItem(`profileImageSettings_${user.username}`, JSON.stringify(imageSettings));
+    } else if (isAuthenticated && !user && imageSettings) {
+      // Temporary storage for new users before they have a username
+      localStorage.setItem('profileImageSettings_temp', JSON.stringify(imageSettings));
     }
-  }, [imageSettings, user?.username]);
+  }, [imageSettings, user?.username, isAuthenticated, user]);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -92,6 +110,9 @@ export const Profile = () => {
     setImageSettings(defaultSettings);
     if (user?.username) {
       localStorage.setItem(`profileImageSettings_${user.username}`, JSON.stringify(defaultSettings));
+    } else if (isAuthenticated && !user) {
+      // Temporary storage for new users
+      localStorage.setItem('profileImageSettings_temp', JSON.stringify(defaultSettings));
     }
     toast.success('Image settings reset to default');
   };
@@ -128,6 +149,16 @@ export const Profile = () => {
     try {
       const result = await api.updateProfile(formData);
       setUser(result.user);
+
+      // Transfer temporary image settings to permanent storage
+      if (!user && result.user?.username) {
+        const tempSettings = localStorage.getItem('profileImageSettings_temp');
+        if (tempSettings) {
+          localStorage.setItem(`profileImageSettings_${result.user.username}`, tempSettings);
+          localStorage.removeItem('profileImageSettings_temp');
+        }
+      }
+
       toast.success(user ? 'Profile updated successfully!' : 'Profile created successfully!');
 
       // Redirect to dashboard after successful profile creation/update
@@ -388,34 +419,72 @@ export const Profile = () => {
 
           {/* Wallet Addresses Display */}
           <div className="space-y-4">
-            <h3 className="text-white dark:text-white font-medium">Registered Wallet Addresses</h3>
+            <h3 className="text-white dark:text-white font-medium">
+              {user ? 'Registered Wallet Addresses' : 'Current Wallet Connection'}
+            </h3>
             <div className="space-y-3">
-              {/* Solana Address */}
-              {user?.wallets?.solana?.address && (
-                <div className="bg-white/5 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: '#9945FF' }}
-                    ></div>
-                    <p className="text-white dark:text-white/60 text-sm font-medium">
-                      Solana (SOL)
+              {/* Show current connected wallets */}
+              {(() => {
+                const walletsToShow = [];
+
+                // Add Solana from connectedChains if available
+                if (connectedChains.solana?.address) {
+                  walletsToShow.push({
+                    address: connectedChains.solana.address,
+                    name: 'Solana (SOL)',
+                    color: '#9945FF',
+                    type: 'solana'
+                  });
+                }
+
+                // Add WalletConnect if connected
+                if (walletConnectConnected && walletConnectAddress) {
+                  walletsToShow.push({
+                    address: walletConnectAddress,
+                    name: 'WalletConnect',
+                    color: '#3b99fc',
+                    type: 'walletconnect'
+                  });
+                }
+
+                // Add other EVM chains from connectedChains
+                Object.entries(connectedChains).forEach(([chainId, chain]) => {
+                  if (chainId !== 'solana' && chain.address) {
+                    walletsToShow.push({
+                      address: chain.address,
+                      name: `${chain.chainName || chainId} (${chainId.toUpperCase()})`,
+                      color: '#627EEA',
+                      type: 'evm'
+                    });
+                  }
+                });
+
+                return walletsToShow.map((wallet, index) => (
+                  <div key={`${wallet.type}-${index}`} className="bg-white/5 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: wallet.color }}
+                      ></div>
+                      <p className="text-white dark:text-white/60 text-sm font-medium">
+                        {wallet.name}
+                      </p>
+                    </div>
+                    <p className="text-white dark:text-white font-mono text-sm break-all">
+                      {wallet.address}
                     </p>
                   </div>
-                  <p className="text-white dark:text-white font-mono text-sm break-all">
-                    {user.wallets.solana.address}
-                  </p>
-                </div>
-              )}
+                ));
+              })()}
 
-              {/* EVM Address (if any EVM address is registered) */}
-              {(() => {
-                const evmAddress = user?.wallets?.ethereum?.address || 
-                                 user?.wallets?.polygon?.address || 
-                                 user?.wallets?.arbitrum?.address || 
-                                 user?.wallets?.optimism?.address || 
+              {/* Show registered EVM address if user exists and has one */}
+              {user && (() => {
+                const evmAddress = user?.wallets?.ethereum?.address ||
+                                 user?.wallets?.polygon?.address ||
+                                 user?.wallets?.arbitrum?.address ||
+                                 user?.wallets?.optimism?.address ||
                                  user?.wallets?.base?.address;
-                
+
                 if (evmAddress) {
                   return (
                     <div className="bg-white/5 rounded-lg p-4">
