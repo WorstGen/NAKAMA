@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useWalletConnect } from '../contexts/WalletConnectContext';
 import GradientProfileImage from './GradientProfileImage';
 import Logo from './Logo';
 import toast from 'react-hot-toast';
@@ -17,6 +18,10 @@ export const Header = () => {
     switchToChain
   } = usePhantomMultiChain();
   const { user, authenticate } = useAuth();
+  const { 
+    isConnected: walletConnectConnected,
+    disconnect: disconnectWalletConnect
+  } = useWalletConnect();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [portalRoot, setPortalRoot] = useState(null);
@@ -351,6 +356,11 @@ export const Header = () => {
                           // Disconnect from Phantom (Solana + EVM)
                           await disconnectAllChains();
 
+                          // Disconnect from WalletConnect if connected
+                          if (walletConnectConnected) {
+                            console.log('🔌 Disconnecting from WalletConnect...');
+                            disconnectWalletConnect();
+                          }
 
                           console.log('✅ All wallets disconnected');
                         } catch (error) {
