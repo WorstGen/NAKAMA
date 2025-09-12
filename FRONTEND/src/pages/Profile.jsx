@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useTheme } from '../contexts/AuthContext';
 import { useWalletConnect } from '../contexts/WalletConnectContext';
-import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
@@ -10,18 +9,15 @@ import { CameraIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
   const { user, setUser, isAuthenticated, addEVM } = useAuth();
-  const {
-    isConnected: walletConnectConnected,
-    address: walletConnectAddress,
-    connect: connectWalletConnect
+  const { 
+    isConnected: walletConnectConnected, 
+    connect: connectWalletConnect 
   } = useWalletConnect();
-  const { connectedChains } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [registeringEVM, setRegisteringEVM] = useState(false);
-  const [registeringSolana, setRegisteringSolana] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     bio: ''
@@ -39,14 +35,8 @@ export const Profile = () => {
         username: user.username || '',
         bio: user.bio || ''
       });
-    } else if (isAuthenticated) {
-      // New user creating profile for the first time
-      setFormData({
-        username: '',
-        bio: ''
-      });
     }
-  }, [user, isAuthenticated]);
+  }, [user]);
 
   // Load saved image settings from localStorage
   useEffect(() => {
@@ -60,24 +50,15 @@ export const Profile = () => {
           console.error('Error loading saved image settings:', error);
         }
       }
-    } else if (isAuthenticated && !user) {
-      // New user - use default settings
-      setImageSettings({
-        position: { x: 50, y: 50 },
-        zoom: 100
-      });
     }
-  }, [user?.username, isAuthenticated, user]);
+  }, [user?.username]);
 
   // Save image settings to localStorage whenever they change
   useEffect(() => {
     if (user?.username && imageSettings) {
       localStorage.setItem(`profileImageSettings_${user.username}`, JSON.stringify(imageSettings));
-    } else if (isAuthenticated && !user && imageSettings) {
-      // Temporary storage for new users before they have a username
-      localStorage.setItem('profileImageSettings_temp', JSON.stringify(imageSettings));
     }
-  }, [imageSettings, user?.username, isAuthenticated, user]);
+  }, [imageSettings, user?.username]);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -111,9 +92,6 @@ export const Profile = () => {
     setImageSettings(defaultSettings);
     if (user?.username) {
       localStorage.setItem(`profileImageSettings_${user.username}`, JSON.stringify(defaultSettings));
-    } else if (isAuthenticated && !user) {
-      // Temporary storage for new users
-      localStorage.setItem('profileImageSettings_temp', JSON.stringify(defaultSettings));
     }
     toast.success('Image settings reset to default');
   };
@@ -143,85 +121,13 @@ export const Profile = () => {
     };
   };
 
-  // Determine primary wallet type based on what's connected
-  const getPrimaryWalletInfo = () => {
-    if (!user) {
-      // New user - determine based on current connections
-
-      // Priority 1: WalletConnect (EVM) if connected
-      if (walletConnectConnected && walletConnectAddress) {
-        return {
-          address: walletConnectAddress,
-          type: 'walletconnect',
-          chain: 'ethereum',
-          name: 'Ethereum'
-        };
-      }
-
-      // Priority 2: Solana if connected
-      if (connectedChains.solana?.address) {
-        return {
-          address: connectedChains.solana.address,
-          type: 'solana',
-          chain: 'solana',
-          name: 'Solana'
-        };
-      }
-
-      // Priority 3: Any EVM chain from Phantom
-      const phantomEVMChains = ['ethereum', 'polygon', 'base', 'arbitrum', 'optimism'];
-      for (const chain of phantomEVMChains) {
-        if (connectedChains[chain]?.address) {
-          return {
-            address: connectedChains[chain].address,
-            type: 'phantom',
-            chain: chain,
-            name: connectedChains[chain].chainName || chain
-          };
-        }
-      }
-    }
-    return null;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      let profileData = { ...formData };
-
-      // For new users, determine what to register based on connected wallets
-      if (!user) {
-        const primaryWallet = getPrimaryWalletInfo();
-
-        if (primaryWallet) {
-          profileData.walletAddress = primaryWallet.address;
-          profileData.walletType = primaryWallet.type;
-          profileData.primaryChain = primaryWallet.chain;
-
-          console.log('🆕 Creating profile with primary wallet:', {
-            type: primaryWallet.type,
-            chain: primaryWallet.chain,
-            address: primaryWallet.address.substring(0, 8) + '...'
-          });
-        } else {
-          throw new Error('No wallet connected. Please connect a wallet before creating your profile.');
-        }
-      }
-
-      const result = await api.updateProfile(profileData);
+      const result = await api.updateProfile(formData);
       setUser(result.user);
-
-      // Transfer temporary image settings to permanent storage
-      if (!user && result.user?.username) {
-        const tempSettings = localStorage.getItem('profileImageSettings_temp');
-        if (tempSettings) {
-          localStorage.setItem(`profileImageSettings_${result.user.username}`, tempSettings);
-          localStorage.removeItem('profileImageSettings_temp');
-        }
-      }
-
       toast.success(user ? 'Profile updated successfully!' : 'Profile created successfully!');
 
       // Redirect to dashboard after successful profile creation/update
@@ -229,21 +135,7 @@ export const Profile = () => {
         navigate('/dashboard');
       }, 1500);
     } catch (error) {
-      console.error('Profile creation error:', error);
-
-      // Provide more specific error messages
-      let errorMessage = 'Failed to create profile';
-      if (error.message?.includes('signature')) {
-        errorMessage = 'Authentication failed. Please reconnect your wallet.';
-      } else if (error.message?.includes('username')) {
-        errorMessage = 'Username is already taken. Please choose a different one.';
-      } else if (error.response?.status === 401) {
-        errorMessage = 'Authentication expired. Please reconnect your wallet.';
-      } else if (error.response?.status === 400) {
-        errorMessage = 'Invalid profile data. Please check your information.';
-      }
-
-      toast.error(errorMessage);
+      toast.error(error.error || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -344,20 +236,6 @@ export const Profile = () => {
       toast.loading('Adding EVM address to your profile...');
       
       // Use the new addEVM function from AuthContext
-      // For new users, user._id might not be available yet, so we need to check
-      if (!user?._id) {
-        console.log('User ID not available yet, refreshing user data...');
-        // The user object should be updated after profile creation
-        // Let's try to get the user data again
-        const currentUser = await api.getProfile();
-        if (currentUser.exists && currentUser._id) {
-          await addEVM(currentUser._id);
-          return;
-        } else {
-          throw new Error('Unable to get user ID for EVM registration');
-        }
-      }
-
       await addEVM(user._id);
       
       console.log('EVM address successfully added!');
@@ -368,54 +246,6 @@ export const Profile = () => {
       toast.error(error.message || 'Failed to add EVM address');
     } finally {
       setRegisteringEVM(false);
-    }
-  };
-
-  const handleRegisterSolana = async () => {
-    setRegisteringSolana(true);
-
-    try {
-      // Check if user already has a Solana address
-      const hasSolanaAddress = user?.wallets?.solana?.address;
-
-      if (hasSolanaAddress) {
-        throw new Error('You already have a Solana address registered.');
-      }
-
-      // Check if Solana is connected
-      if (!connectedChains.solana?.address) {
-        throw new Error('Please connect your Solana wallet in Phantom first.');
-      }
-
-      toast.loading('Adding Solana address to your profile...');
-
-      // For new users, user._id might not be available yet
-      if (!user?._id) {
-        console.log('User ID not available yet, refreshing user data...');
-        const currentUser = await api.getProfile();
-        if (currentUser.exists && currentUser._id) {
-          // Use API to add Solana address
-          const result = await api.addWallet('solana', connectedChains.solana.address);
-          setUser(result.user);
-          toast.success('Solana address added successfully!');
-          return;
-        } else {
-          throw new Error('Unable to get user ID for Solana registration');
-        }
-      }
-
-      // Use API to add Solana address
-      const result = await api.addWallet('solana', connectedChains.solana.address);
-      setUser(result.user);
-
-      console.log('Solana address successfully added!');
-      toast.success('Solana address added successfully!');
-
-    } catch (error) {
-      console.error('Solana registration error:', error);
-      toast.error(error.message || 'Failed to add Solana address');
-    } finally {
-      setRegisteringSolana(false);
     }
   };
 
@@ -558,70 +388,14 @@ export const Profile = () => {
 
           {/* Wallet Addresses Display */}
           <div className="space-y-4">
-            <h3 className="text-white dark:text-white font-medium">
-              {user ? 'Registered Wallet Addresses' : 'Current Wallet Connection'}
-            </h3>
+            <h3 className="text-white dark:text-white font-medium">Registered Wallet Addresses</h3>
             <div className="space-y-3">
-              {/* Show current connected wallets */}
-              {(() => {
-                const walletsToShow = [];
-
-                // Add Solana from connectedChains if available
-                if (connectedChains.solana?.address) {
-                  walletsToShow.push({
-                    address: connectedChains.solana.address,
-                    name: 'Solana (SOL)',
-                    color: '#9945FF',
-                    type: 'solana'
-                  });
-                }
-
-                // Add WalletConnect if connected
-                if (walletConnectConnected && walletConnectAddress) {
-                  walletsToShow.push({
-                    address: walletConnectAddress,
-                    name: 'WalletConnect',
-                    color: '#3b99fc',
-                    type: 'walletconnect'
-                  });
-                }
-
-                // Add other EVM chains from connectedChains
-                Object.entries(connectedChains).forEach(([chainId, chain]) => {
-                  if (chainId !== 'solana' && chain.address) {
-                    walletsToShow.push({
-                      address: chain.address,
-                      name: `${chain.chainName || chainId} (${chainId.toUpperCase()})`,
-                      color: '#627EEA',
-                      type: 'evm'
-                    });
-                  }
-                });
-
-                return walletsToShow.map((wallet, index) => (
-                  <div key={`${wallet.type}-${index}`} className="bg-white/5 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: wallet.color }}
-                      ></div>
-                      <p className="text-white dark:text-white/60 text-sm font-medium">
-                        {wallet.name}
-                      </p>
-                    </div>
-                    <p className="text-white dark:text-white font-mono text-sm break-all">
-                      {wallet.address}
-                    </p>
-                  </div>
-                ));
-              })()}
-
-              {/* Show registered Solana address if user exists */}
+              {/* Solana Address */}
               {user?.wallets?.solana?.address && (
                 <div className="bg-white/5 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
+                    <div 
+                      className="w-3 h-3 rounded-full" 
                       style={{ backgroundColor: '#9945FF' }}
                     ></div>
                     <p className="text-white dark:text-white/60 text-sm font-medium">
@@ -634,14 +408,14 @@ export const Profile = () => {
                 </div>
               )}
 
-              {/* Show registered EVM address if user exists and has one */}
-              {user && (() => {
-                const evmAddress = user?.wallets?.ethereum?.address ||
-                                 user?.wallets?.polygon?.address ||
-                                 user?.wallets?.arbitrum?.address ||
-                                 user?.wallets?.optimism?.address ||
+              {/* EVM Address (if any EVM address is registered) */}
+              {(() => {
+                const evmAddress = user?.wallets?.ethereum?.address || 
+                                 user?.wallets?.polygon?.address || 
+                                 user?.wallets?.arbitrum?.address || 
+                                 user?.wallets?.optimism?.address || 
                                  user?.wallets?.base?.address;
-
+                
                 if (evmAddress) {
                   return (
                     <div className="bg-white/5 rounded-lg p-4">
@@ -698,43 +472,6 @@ export const Profile = () => {
                         </button>
                         <p className="text-white/40 text-xs mt-2">
                           This will add your EVM address to your existing profile
-                        </p>
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
-              {/* Solana Registration Button (show only if no Solana address is registered and Solana is connected) */}
-              {(() => {
-                const userHasSolanaAddress = user?.wallets?.solana?.address;
-                const hasSolanaConnected = connectedChains.solana?.address;
-
-                // Show button if user doesn't have Solana address registered but has Solana connected
-                if (!userHasSolanaAddress && hasSolanaConnected) {
-                  return (
-                    <div className="bg-white/5 rounded-lg p-4 border-2 border-dashed border-white/20">
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#9945FF' }}></div>
-                          <p className="text-white/60 text-sm font-medium">
-                            Solana Support
-                          </p>
-                        </div>
-                        <p className="text-white/60 text-xs mb-3">
-                          Add your Solana wallet to receive SOL and SPL tokens
-                        </p>
-                        <button
-                          onClick={handleRegisterSolana}
-                          disabled={registeringSolana}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
-                        >
-                          <PlusIcon className="w-4 h-4" />
-                          {registeringSolana ? 'Adding Solana Address...' : 'Add Solana Address'}
-                        </button>
-                        <p className="text-white/40 text-xs mt-2">
-                          This will add your Solana address to your existing profile
                         </p>
                       </div>
                     </div>
