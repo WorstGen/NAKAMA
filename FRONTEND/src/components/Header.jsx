@@ -181,7 +181,7 @@ export const Header = () => {
           {/* Wallet Selector Modal */}
           {showWalletSelector && (
             <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999]">
-              <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-gray-900 rounded-lg p-6 w-96 max-h-[70vh] overflow-y-auto">
+              <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-gray-900 rounded-lg p-6 w-96 max-h-[70vh] overflow-y-auto">t
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold text-white">Choose Wallet</h3>
                   <button
@@ -193,11 +193,11 @@ export const Header = () => {
                 </div>
                 
                 <div className="space-y-3">
-                  {/* Phantom Wallet Option */}
+                  {/* Phantom Wallet Option - Primary Choice */}
                   <button
                     onClick={handleConnectPhantom}
                     disabled={connecting}
-                    className="w-full flex items-center justify-center space-x-3 p-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center space-x-3 p-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors border-2 border-purple-400"
                   >
                     {connecting ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
@@ -206,7 +206,10 @@ export const Header = () => {
                         <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                           <span className="text-purple-600 font-bold text-sm">P</span>
                         </div>
-                        <span className="font-medium">Connect with Phantom</span>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Connect with Phantom</span>
+                          <span className="text-xs text-purple-200">Recommended</span>
+                        </div>
                       </>
                     )}
                   </button>
@@ -228,6 +231,19 @@ export const Header = () => {
                       </>
                     )}
                   </button>
+                  
+                  {/* MetaMask Installation Help */}
+                  <div className="text-xs text-gray-400 text-center mt-2">
+                    Don't have MetaMask? 
+                    <a 
+                      href="https://metamask.io/download/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-orange-400 hover:text-orange-300 underline ml-1"
+                    >
+                      Install it here
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
