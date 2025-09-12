@@ -161,11 +161,20 @@ Object.entries(EVM_CHAINS).forEach(([chainName, config]) => {
   }
 });
 
-// Rate limiting
+// Rate limiting - More generous for better user experience
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too Many Requests'
+  max: 1000, // limit each IP to 1000 requests per windowMs (was 100)
+  message: 'Too many requests from this IP, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    console.warn(`Rate limit exceeded for IP: ${req.ip} - ${req.method} ${req.path}`);
+    res.status(429).json({ 
+      error: 'Too many requests from this IP, please try again later',
+      retryAfter: Math.round(15 * 60) // 15 minutes in seconds
+    });
+  }
 });
 
 // Enhanced security middleware
@@ -1214,7 +1223,11 @@ app.post('/api/transactions/prepare',
   [
     body('recipientUsername').isLength({ min: 3, max: 20 }).matches(/^[a-zA-Z0-9_]+$/),
     body('amount').isNumeric().isFloat({ min: 0.000000001 }),
-    body('token').isIn(['SOL', 'USDC', 'USDT', 'ETH', 'MATIC']),
+    body('token').isIn([
+      'SOL', 'USDC', 'USDT', 'ETH', 'MATIC', 'DAI',
+      'wPOND', 'DEAL', 'CHILLDEV', 'SKULL', 'BBL', 'GARDEN', 'DEMPLAR', 'Pepe', 'On', 'pondSOL', 'omSOL',
+      'PORK', 'PNDC'
+    ]),
     body('memo').optional().isLength({ max: 280 }),
     body('chain').optional().isIn(['solana', 'ethereum', 'polygon', 'base', 'arbitrum', 'optimism'])
   ],
@@ -1369,9 +1382,15 @@ app.post('/api/transactions/prepare',
 
         // Get recipient's EVM address for this chain
         console.log(`Checking recipient ${recipientUsername} for ${targetChain} address:`, recipient.wallets?.[targetChain]?.address);
+        console.log(`Recipient ${recipientUsername} full wallet data:`, JSON.stringify(recipient.wallets, null, 2));
+        
         if (!recipient.wallets?.[targetChain]?.address) {
           console.log(`Recipient ${recipientUsername} missing ${targetChain} address. Available wallets:`, Object.keys(recipient.wallets || {}));
-          return res.status(400).json({ error: `Recipient does not have a ${chainConfig.name} address` });
+          return res.status(400).json({ 
+            error: `Recipient does not have a ${chainConfig.name} address`,
+            availableChains: Object.keys(recipient.wallets || {}).filter(chain => recipient.wallets[chain]?.address),
+            requestedChain: targetChain
+          });
         }
 
         const toAddress = recipient.wallets[targetChain].address;
@@ -1382,6 +1401,9 @@ app.post('/api/transactions/prepare',
         }
 
         // Prepare EVM transaction
+        console.log(`Preparing EVM transaction: ${token} on ${targetChain}`);
+        console.log(`From: ${fromAddress}, To: ${toAddress}, Amount: ${amount}`);
+        
         let transactionData;
 
         if (token === chainConfig.nativeCurrency.symbol) {
@@ -1395,11 +1417,14 @@ app.post('/api/transactions/prepare',
           transactionData = {
             from: fromAddress,
             to: toAddress,
-            value: value.toString(),
-            gasLimit: '21000', // Standard gas limit for simple transfers
-            gasPrice: gasPrice.gasPrice?.toString() || '20000000000', // 20 gwei fallback
-            nonce: nonce
+            value: '0x' + value.toString(16), // Convert to hex
+            gas: '0x5208', // 21000 in hex
+            gasPrice: '0x' + (gasPrice.gasPrice?.toString(16) || '4a817c800'), // 20 gwei in hex
+            nonce: '0x' + nonce.toString(16), // Convert to hex
+            data: '0x' // Empty data for simple transfer
           };
+          
+          console.log(`Created transaction data:`, JSON.stringify(transactionData, null, 2));
         } else {
           // ERC-20 token transfer (USDC, USDT, etc.)
           // For now, return error as ERC-20 transfers need more complex logic
@@ -1554,9 +1579,17 @@ app.post('/api/transactions/submit',
           return res.status(500).json({ error: `Ethers provider not available for ${chainConfig.name}` });
         }
 
-        // Send EVM transaction
-        const txResponse = await provider.broadcastTransaction(signedTransaction);
-        signature = txResponse.hash;
+        // Handle EVM transaction - check if it's a hash or signed transaction
+        if (signedTransaction.startsWith('0x') && signedTransaction.length === 66) {
+          // It's a transaction hash (from eth_sendTransaction)
+          console.log(`Received transaction hash: ${signedTransaction}`);
+          signature = signedTransaction;
+        } else {
+          // It's a signed transaction (from eth_signTransaction)
+          console.log(`Broadcasting signed transaction: ${signedTransaction}`);
+          const txResponse = await provider.broadcastTransaction(signedTransaction);
+          signature = txResponse.hash;
+        }
 
         // Generate explorer URL based on chain
         const explorerUrls = {
