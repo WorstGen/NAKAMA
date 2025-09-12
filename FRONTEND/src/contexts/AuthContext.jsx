@@ -419,7 +419,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [getActiveWallet, lastAuthAttempt, publicKey]);
+  }, [getActiveWallet, lastAuthAttempt, publicKey, metaMaskConnected, metaMaskAccount, metaMaskSignMessage]);
 
   const logout = () => {
     setUser(null);
