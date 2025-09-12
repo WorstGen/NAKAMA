@@ -189,10 +189,39 @@ export const Profile = () => {
       
       // Only auto-connect MetaMask if user has no EVM address
       if (!hasEVMAddress && !metaMaskConnected) {
+        // Check if MetaMask is available before attempting connection
+        if (!window.ethereum || !window.ethereum.isMetaMask) {
+          throw new Error('MetaMask is not installed. Please install MetaMask browser extension to add an EVM address.');
+        }
+        
         toast.loading('Connecting to MetaMask...');
-        const connected = await connectMetaMask();
+        
+        // Try connecting with a retry mechanism
+        let connected = false;
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (!connected && attempts < maxAttempts) {
+          attempts++;
+          console.log(`MetaMask connection attempt ${attempts}/${maxAttempts}`);
+          
+          try {
+            connected = await connectMetaMask();
+            if (connected) {
+              console.log('MetaMask connected successfully on attempt', attempts);
+              break;
+            }
+          } catch (error) {
+            console.log(`MetaMask connection attempt ${attempts} failed:`, error);
+            if (attempts < maxAttempts) {
+              // Wait a bit before retrying
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        }
+        
         if (!connected) {
-          throw new Error('Failed to connect to MetaMask');
+          throw new Error('Failed to connect to MetaMask after multiple attempts. Please make sure MetaMask is unlocked and try again.');
         }
       }
       
