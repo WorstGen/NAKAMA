@@ -15,7 +15,7 @@ export const Profile = () => {
     address: walletConnectAddress,
     connect: connectWalletConnect
   } = useWalletConnect();
-  const { connectedChains, getActiveWallet } = usePhantomMultiChain();
+  const { connectedChains } = usePhantomMultiChain();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
