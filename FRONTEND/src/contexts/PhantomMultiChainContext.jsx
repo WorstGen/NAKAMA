@@ -170,38 +170,54 @@ export const PhantomMultiChainProvider = ({ children }) => {
           
           if (accounts.length > 0) {
             const chainIdHex = parseInt(chainId, 16);
-            let chainName = 'ethereum';
+            let currentChainName = 'ethereum';
             
             // Map chain ID to our chain names
             switch (chainIdHex) {
               case 1:
-                chainName = 'ethereum';
+                currentChainName = 'ethereum';
                 break;
               case 137:
-                chainName = 'polygon';
+                currentChainName = 'polygon';
                 break;
               case 8453:
-                chainName = 'base';
+                currentChainName = 'base';
                 break;
               case 42161:
-                chainName = 'arbitrum';
+                currentChainName = 'arbitrum';
                 break;
               case 10:
-                chainName = 'optimism';
+                currentChainName = 'optimism';
                 break;
               case 56:
-                chainName = 'bsc';
+                currentChainName = 'bsc';
                 break;
               default:
-                chainName = 'ethereum';
+                currentChainName = 'ethereum';
             }
             
-            chains[chainName] = {
+            // Add the currently connected chain
+            chains[currentChainName] = {
               isConnected: true,
               address: accounts[0],
               chainId: chainIdHex,
-              chainName: phantomChains[chainName]?.name || 'Unknown'
+              chainName: phantomChains[currentChainName]?.name || 'Unknown'
             };
+            
+            // For EVM accounts, also mark all Phantom-supported EVM chains as "available"
+            // This helps with chain switching when user has EVM access
+            console.log('🔗 EVM account detected, marking Phantom-supported EVM chains as available');
+            phantomSupportedChains.forEach(chainName => {
+              if (chainName !== 'solana' && chainName !== currentChainName && phantomChains[chainName]?.phantomSupported) {
+                chains[chainName] = {
+                  isConnected: false, // Not currently on this chain
+                  address: accounts[0], // Same address for all EVM chains
+                  chainId: null,
+                  chainName: phantomChains[chainName]?.name || 'Unknown',
+                  isAvailable: true // Phantom can switch to this chain
+                };
+              }
+            });
           }
         } catch (error) {
           console.log('🔗 EVM chains not available:', error);
