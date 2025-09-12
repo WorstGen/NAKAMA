@@ -716,29 +716,25 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
 app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
   try {
     const walletAddress = req.walletAddress;
+    const { userId } = req.body; // Get user ID from request body
     const isEVMAddress = walletAddress.startsWith('0x') && walletAddress.length === 42;
 
     if (!isEVMAddress) {
       return res.status(400).json({ error: 'This endpoint requires an EVM address' });
     }
 
-    // Find the user by the EVM address they're authenticating with
-    // This is safe because the signature verification ensures they own the EVM address
-    const user = await User.findOne({
-      $or: [
-        { walletAddress: walletAddress },
-        { 'wallets.solana.address': walletAddress },
-        { 'wallets.ethereum.address': walletAddress },
-        { 'wallets.polygon.address': walletAddress },
-        { 'wallets.arbitrum.address': walletAddress },
-        { 'wallets.optimism.address': walletAddress },
-        { 'wallets.base.address': walletAddress }
-      ]
-    });
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Find the user by their ID - this is the safest approach
+    const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found. Please authenticate first.' });
+      return res.status(404).json({ error: 'User not found' });
     }
+
+    console.log(`Adding EVM address ${walletAddress} to user ${user.username} (ID: ${user._id})`);
 
     // Check if user already has this EVM address
     const hasThisEVMAddress = user.wallets?.ethereum?.address === walletAddress ||
