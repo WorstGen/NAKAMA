@@ -997,14 +997,23 @@ app.post('/api/profile',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { username, bio } = req.body;
-      const walletAddress = req.walletAddress;
+      const { username, bio, walletAddress: providedWalletAddress } = req.body;
+      const walletAddress = req.walletAddress; // This comes from authentication
 
-      console.log('📝 Processing profile creation for:', { username, walletAddress });
+      console.log('🔍 Wallet address comparison:', {
+        authenticated: walletAddress,
+        provided: providedWalletAddress,
+        match: walletAddress === providedWalletAddress
+      });
+
+      // Use authenticated wallet address, ignore provided one for security
+      const actualWalletAddress = walletAddress;
+
+      console.log('📝 Processing profile creation for:', { username, actualWalletAddress });
 
       // Determine if this is a Solana or EVM address
-      const isSolanaAddress = walletAddress.length === 44;
-      const isEVMAddress = walletAddress.length === 42 && walletAddress.startsWith('0x');
+      const isSolanaAddress = actualWalletAddress.length === 44;
+      const isEVMAddress = actualWalletAddress.length === 42 && actualWalletAddress.startsWith('0x');
 
       if (!isSolanaAddress && !isEVMAddress) {
         return res.status(400).json({ error: 'Invalid wallet address format' });
@@ -1013,13 +1022,13 @@ app.post('/api/profile',
       // First, find if there's an existing user with this wallet address
       let existingUserByWallet = await User.findOne({
         $or: [
-          { walletAddress: walletAddress },
-          { 'wallets.solana.address': walletAddress },
-          { 'wallets.ethereum.address': walletAddress },
-          { 'wallets.polygon.address': walletAddress },
-          { 'wallets.arbitrum.address': walletAddress },
-          { 'wallets.optimism.address': walletAddress },
-          { 'wallets.base.address': walletAddress }
+          { walletAddress: actualWalletAddress },
+          { 'wallets.solana.address': actualWalletAddress },
+          { 'wallets.ethereum.address': actualWalletAddress },
+          { 'wallets.polygon.address': actualWalletAddress },
+          { 'wallets.arbitrum.address': actualWalletAddress },
+          { 'wallets.optimism.address': actualWalletAddress },
+          { 'wallets.base.address': actualWalletAddress }
         ]
       });
 
@@ -1029,7 +1038,7 @@ app.post('/api/profile',
       // CATASTROPHIC BUG FIX: Never allow EVM addresses to be stolen from existing users
       // This was allowing one user to steal another user's EVM address by authenticating with it
       if (!existingUserByWallet && isEVMAddress) {
-        console.error(`🚨 CATASTROPHIC BUG PREVENTION: EVM address ${walletAddress} not found for authenticating user`);
+        console.error(`🚨 CATASTROPHIC BUG PREVENTION: EVM address ${actualWalletAddress} not found for authenticating user`);
         console.error(`🚨 This prevents identity theft where users steal each other's EVM addresses`);
         console.error(`🚨 Creating new user instead of stealing from existing user`);
       }
@@ -1087,26 +1096,26 @@ app.post('/api/profile',
         // Never automatically associate EVM addresses with random existing users
         // This prevents catastrophic bugs where wrong users get access to EVM addresses
         if (isEVMAddress) {
-          console.log(`Creating new EVM-only user for address ${walletAddress}`);
-          console.log(`This prevents catastrophic association with wrong existing users`);
+        console.log(`Creating new EVM-only user for address ${actualWalletAddress}`);
+        console.log(`This prevents catastrophic association with wrong existing users`);
         }
         
         // Create new user
         const wallets = {};
         if (isSolanaAddress) {
-          wallets.solana = { address: walletAddress, isPrimary: true };
+          wallets.solana = { address: actualWalletAddress, isPrimary: true };
         } else if (isEVMAddress) {
           // For EVM addresses, add to all EVM chains since they use the same address
-          wallets.ethereum = { address: walletAddress, isPrimary: true };
-          wallets.polygon = { address: walletAddress, isPrimary: false };
-          wallets.arbitrum = { address: walletAddress, isPrimary: false };
-          wallets.optimism = { address: walletAddress, isPrimary: false };
-          wallets.base = { address: walletAddress, isPrimary: false };
-          wallets.bsc = { address: walletAddress, isPrimary: false };
+          wallets.ethereum = { address: actualWalletAddress, isPrimary: true };
+          wallets.polygon = { address: actualWalletAddress, isPrimary: false };
+          wallets.arbitrum = { address: actualWalletAddress, isPrimary: false };
+          wallets.optimism = { address: actualWalletAddress, isPrimary: false };
+          wallets.base = { address: actualWalletAddress, isPrimary: false };
+          wallets.bsc = { address: actualWalletAddress, isPrimary: false };
         }
 
         user = await User.create({
-          walletAddress: walletAddress, // Set legacy field for both Solana and EVM for backward compatibility
+          walletAddress: actualWalletAddress, // Set legacy field for both Solana and EVM for backward compatibility
           username: username.toLowerCase(),
           bio,
           wallets,
@@ -1118,7 +1127,7 @@ app.post('/api/profile',
       auditLog('PROFILE_UPDATE', user._id, {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
-        changes: { username, bio: bio ? 'updated' : 'not provided', walletAddress }
+        changes: { username, bio: bio ? 'updated' : 'not provided', walletAddress: actualWalletAddress }
       });
 
       console.log('✅ Profile creation successful for user:', user.username);
