@@ -363,7 +363,17 @@ export const AuthProvider = ({ children }) => {
           }
           
           // If still no profile found, this is a new EVM address
+          console.log('New EVM address detected - user needs to create profile');
           setUser(null);
+
+          // For new EVM users, set authenticated state so they can access profile creation
+          setAuthToken('authenticated');
+
+          // Show helpful message for new EVM users
+          toast.success('EVM wallet connected! Please create your profile to get started.', {
+            duration: 5000,
+          });
+
           return; // Exit early, don't clear auth headers
         } else {
           // This is a Solana address without a profile
