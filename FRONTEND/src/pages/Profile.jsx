@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useTheme } from '../contexts/AuthContext';
+import { useMetaMask } from '../contexts/MetaMaskContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
@@ -8,6 +9,7 @@ import { CameraIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export const Profile = () => {
   const { user, setUser, isAuthenticated, addEVM } = useAuth();
+  const { connect: connectMetaMask, isConnected: metaMaskConnected } = useMetaMask();
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   const navigate = useNavigate();
@@ -178,6 +180,22 @@ export const Profile = () => {
     setRegisteringEVM(true);
     
     try {
+      // Check if user already has an EVM address
+      const hasEVMAddress = user?.wallets?.ethereum?.address || 
+                           user?.wallets?.polygon?.address || 
+                           user?.wallets?.base?.address || 
+                           user?.wallets?.arbitrum?.address || 
+                           user?.wallets?.optimism?.address;
+      
+      // Only auto-connect MetaMask if user has no EVM address
+      if (!hasEVMAddress && !metaMaskConnected) {
+        toast.loading('Connecting to MetaMask...');
+        const connected = await connectMetaMask();
+        if (!connected) {
+          throw new Error('Failed to connect to MetaMask');
+        }
+      }
+      
       toast.loading('Adding EVM address to your profile...');
       
       // Use the new addEVM function from AuthContext
