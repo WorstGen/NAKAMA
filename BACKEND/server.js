@@ -722,16 +722,22 @@ app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
       return res.status(400).json({ error: 'This endpoint requires an EVM address' });
     }
 
-    // Find the current user by their Solana address (they must be authenticated with Solana first)
+    // Find the user by the EVM address they're authenticating with
+    // This is safe because the signature verification ensures they own the EVM address
     const user = await User.findOne({
       $or: [
-        { walletAddress: { $exists: true, $ne: null } }, // Legacy Solana address
-        { 'wallets.solana.address': { $exists: true, $ne: null } } // New multi-chain Solana address
+        { walletAddress: walletAddress },
+        { 'wallets.solana.address': walletAddress },
+        { 'wallets.ethereum.address': walletAddress },
+        { 'wallets.polygon.address': walletAddress },
+        { 'wallets.arbitrum.address': walletAddress },
+        { 'wallets.optimism.address': walletAddress },
+        { 'wallets.base.address': walletAddress }
       ]
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'No Solana user found. Please authenticate with Solana first.' });
+      return res.status(404).json({ error: 'User not found. Please authenticate first.' });
     }
 
     // Check if user already has this EVM address
