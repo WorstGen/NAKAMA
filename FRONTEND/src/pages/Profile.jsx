@@ -338,7 +338,7 @@ export const Profile = () => {
             <h3 className="text-white dark:text-white font-medium">Registered Wallet Addresses</h3>
             <div className="space-y-3">
               {/* Solana Address */}
-              {connectedChains.solana?.address && (
+              {user?.wallets?.solana?.address && (
                 <div className="bg-white/5 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <div 
@@ -350,31 +350,33 @@ export const Profile = () => {
                     </p>
                   </div>
                   <p className="text-white dark:text-white font-mono text-sm break-all">
-                    {connectedChains.solana.address}
+                    {user.wallets.solana.address}
                   </p>
                 </div>
               )}
 
-              {/* EVM Address (if any EVM chain is connected) */}
+              {/* EVM Address (if any EVM address is registered) */}
               {(() => {
-                const evmChains = ['ethereum', 'polygon', 'arbitrum', 'optimism', 'base'];
-                const connectedEVMChain = evmChains.find(chainId => connectedChains[chainId]?.address);
+                const evmAddress = user?.wallets?.ethereum?.address || 
+                                 user?.wallets?.polygon?.address || 
+                                 user?.wallets?.arbitrum?.address || 
+                                 user?.wallets?.optimism?.address || 
+                                 user?.wallets?.base?.address;
                 
-                if (connectedEVMChain) {
-                  const chainConfig = phantomChains[connectedEVMChain];
+                if (evmAddress) {
                   return (
                     <div className="bg-white/5 rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <div 
                           className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: chainConfig?.color || '#627EEA' }}
+                          style={{ backgroundColor: '#627EEA' }}
                         ></div>
                         <p className="text-white dark:text-white/60 text-sm font-medium">
                           EVM Multi-Chain (ETH, Base, Polygon, etc.)
                         </p>
                       </div>
                       <p className="text-white dark:text-white font-mono text-sm break-all">
-                        {connectedChains[connectedEVMChain].address}
+                        {evmAddress}
                       </p>
                       <p className="text-white/60 text-xs mt-1">
                         This address works across all EVM chains (Ethereum, Base, Polygon, Arbitrum, Optimism) - they are interchangeable
