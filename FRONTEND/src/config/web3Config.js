@@ -1,13 +1,13 @@
 // Web3Modal and Wagmi Configuration for Multi-Chain Support
 import { EthereumClient, w3mConnectors, w3mProvider } from '@web3modal/ethereum';
 import { configureChains, createConfig } from 'wagmi';
-import { mainnet, polygon, arbitrum, optimism, base } from 'wagmi/chains';
+import { mainnet, polygon, arbitrum, optimism, base, bsc } from 'wagmi/chains';
 
 // Get projectId from https://cloud.walletconnect.com
 const projectId = process.env.REACT_APP_WALLETCONNECT_PROJECT_ID || 'your-project-id';
 
 // Define the chains we support
-export const supportedChains = [mainnet, polygon, arbitrum, optimism, base];
+export const supportedChains = [mainnet, polygon, arbitrum, optimism, base, bsc];
 
 // Configure chains
 const { chains, publicClient } = configureChains(
@@ -98,6 +98,21 @@ export const chainConfig = {
     tokens: [
       { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' }
+    ]
+  },
+  bsc: {
+    id: 56,
+    name: 'BNB Smart Chain',
+    symbol: 'BNB',
+    decimals: 18,
+    blockExplorer: 'https://bscscan.com',
+    rpcUrl: 'https://bsc-dataseed1.binance.org',
+    color: '#F3BA2F',
+    tokens: [
+      { symbol: 'BNB', name: 'BNB', decimals: 18, isNative: true },
+      { symbol: 'USDT', name: 'Tether USD', decimals: 18, address: '0x55d398326f99059fF775485246999027B3197955' },
+      { symbol: 'USDC', name: 'USD Coin', decimals: 18, address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d' },
+      { symbol: 'BUSD', name: 'Binance USD', decimals: 18, address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56' }
     ]
   },
   solana: {
