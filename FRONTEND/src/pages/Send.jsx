@@ -178,18 +178,20 @@ export const Send = () => {
             throw new Error('No EVM accounts connected');
           }
 
-          // Sign the transaction
-          const signedTransaction = await window.ethereum.request({
-            method: 'eth_signTransaction',
+          // Send the transaction directly (eth_sendTransaction handles signing)
+          const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
             params: [prepared.transaction]
           });
+          
+          console.log('Transaction sent, hash:', txHash);
 
-          // Step 3: Submit signed transaction
+          // Step 3: Record the transaction (already sent to blockchain)
           toast.dismiss();
-          toast.loading('Submitting transaction...');
+          toast.loading('Recording transaction...');
           
           const result = await submitTransactionMutation.mutateAsync({
-            signedTransaction: signedTransaction,
+            signedTransaction: txHash, // Use the transaction hash instead
             recipientUsername: formData.recipient,
             amount: parseFloat(formData.amount),
             token: formData.token,
@@ -220,7 +222,13 @@ export const Send = () => {
       if (error.error === 'Too many requests from this IP, please try again later') {
         toast.error('Too many requests. Please wait a moment before trying again.');
       } else if (error.error?.includes('does not have a') || (error.error?.includes('No') && error.error?.includes('address found'))) {
-        toast.error('Recipient does not have the required wallet address for this chain.');
+        const availableChains = error.availableChains || [];
+        const requestedChain = error.requestedChain || selectedChain;
+        if (availableChains.length > 0) {
+          toast.error(`Recipient does not have a ${requestedChain} address. Available chains: ${availableChains.join(', ')}`);
+        } else {
+          toast.error('Recipient does not have the required wallet address for this chain.');
+        }
       } else {
         toast.error(error.error || 'Transaction failed');
       }
