@@ -351,8 +351,8 @@ const UserSchema = new mongoose.Schema({
   // Multi-chain wallet support
   wallets: {
     solana: {
-      address: { type: String, required: true },
-      isPrimary: { type: Boolean, default: true }
+      address: { type: String },
+      isPrimary: { type: Boolean, default: false }
     },
     ethereum: {
       address: { type: String },
@@ -1066,21 +1066,30 @@ app.post('/api/profile',
 
         // Add wallet to the appropriate chain
         if (isSolanaAddress) {
-          updateData['wallets.solana.address'] = walletAddress;
+          updateData['wallets.solana.address'] = actualWalletAddress;
           updateData['wallets.solana.isPrimary'] = true;
+          // Ensure EVM chains exist (set to null if not present)
+          if (!user.wallets?.ethereum?.address) updateData['wallets.ethereum.address'] = null;
+          if (!user.wallets?.polygon?.address) updateData['wallets.polygon.address'] = null;
+          if (!user.wallets?.arbitrum?.address) updateData['wallets.arbitrum.address'] = null;
+          if (!user.wallets?.optimism?.address) updateData['wallets.optimism.address'] = null;
+          if (!user.wallets?.base?.address) updateData['wallets.base.address'] = null;
+          if (!user.wallets?.bsc?.address) updateData['wallets.bsc.address'] = null;
         } else if (isEVMAddress) {
           // For EVM addresses, add to all EVM chains since they use the same address
-          updateData['wallets.ethereum.address'] = walletAddress;
-          updateData['wallets.polygon.address'] = walletAddress;
-          updateData['wallets.arbitrum.address'] = walletAddress;
-          updateData['wallets.optimism.address'] = walletAddress;
-          updateData['wallets.base.address'] = walletAddress;
-          updateData['wallets.bsc.address'] = walletAddress;
+          updateData['wallets.ethereum.address'] = actualWalletAddress;
+          updateData['wallets.polygon.address'] = actualWalletAddress;
+          updateData['wallets.arbitrum.address'] = actualWalletAddress;
+          updateData['wallets.optimism.address'] = actualWalletAddress;
+          updateData['wallets.base.address'] = actualWalletAddress;
+          updateData['wallets.bsc.address'] = actualWalletAddress;
+          // Ensure Solana exists (set to null if not present)
+          if (!user.wallets?.solana?.address) updateData['wallets.solana.address'] = null;
           // Mark the first EVM chain as primary if no other EVM chain is primary
-          if (!user.wallets?.ethereum?.isPrimary && 
-              !user.wallets?.polygon?.isPrimary && 
-              !user.wallets?.arbitrum?.isPrimary && 
-              !user.wallets?.optimism?.isPrimary && 
+          if (!user.wallets?.ethereum?.isPrimary &&
+              !user.wallets?.polygon?.isPrimary &&
+              !user.wallets?.arbitrum?.isPrimary &&
+              !user.wallets?.optimism?.isPrimary &&
               !user.wallets?.base?.isPrimary) {
             updateData['wallets.ethereum.isPrimary'] = true;
           }
@@ -1102,10 +1111,20 @@ app.post('/api/profile',
         
         // Create new user
         const wallets = {};
+
         if (isSolanaAddress) {
+          // Solana user - set Solana as primary
           wallets.solana = { address: actualWalletAddress, isPrimary: true };
+          // Set EVM chains to null since this is a Solana-only user
+          wallets.ethereum = { address: null, isPrimary: false };
+          wallets.polygon = { address: null, isPrimary: false };
+          wallets.arbitrum = { address: null, isPrimary: false };
+          wallets.optimism = { address: null, isPrimary: false };
+          wallets.base = { address: null, isPrimary: false };
+          wallets.bsc = { address: null, isPrimary: false };
         } else if (isEVMAddress) {
-          // For EVM addresses, add to all EVM chains since they use the same address
+          // EVM user - set EVM chains as primary, Solana as null
+          wallets.solana = { address: null, isPrimary: false };
           wallets.ethereum = { address: actualWalletAddress, isPrimary: true };
           wallets.polygon = { address: actualWalletAddress, isPrimary: false };
           wallets.arbitrum = { address: actualWalletAddress, isPrimary: false };
@@ -1114,6 +1133,8 @@ app.post('/api/profile',
           wallets.bsc = { address: actualWalletAddress, isPrimary: false };
         }
 
+        console.log('🆕 Creating user with wallets:', JSON.stringify(wallets, null, 2));
+
         user = await User.create({
           walletAddress: actualWalletAddress, // Set legacy field for both Solana and EVM for backward compatibility
           username: username.toLowerCase(),
@@ -1121,6 +1142,8 @@ app.post('/api/profile',
           wallets,
           createdAt: new Date()
         });
+
+        console.log('✅ User created successfully:', user.username);
       }
 
       // Audit log profile update
