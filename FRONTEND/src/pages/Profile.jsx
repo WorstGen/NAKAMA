@@ -147,7 +147,20 @@ export const Profile = () => {
     setLoading(true);
 
     try {
-      const result = await api.updateProfile(formData);
+      // For new users (WalletConnect), include wallet address in profile creation
+      let profileData = { ...formData };
+
+      if (!user && walletConnectConnected && walletConnectAddress) {
+        // Include the WalletConnect address for profile creation
+        profileData.walletAddress = walletConnectAddress;
+        profileData.walletType = 'walletconnect';
+      } else if (!user && connectedChains.solana?.address) {
+        // Include Solana address for profile creation
+        profileData.walletAddress = connectedChains.solana.address;
+        profileData.walletType = 'solana';
+      }
+
+      const result = await api.updateProfile(profileData);
       setUser(result.user);
 
       // Transfer temporary image settings to permanent storage
@@ -166,7 +179,21 @@ export const Profile = () => {
         navigate('/dashboard');
       }, 1500);
     } catch (error) {
-      toast.error(error.error || 'Failed to update profile');
+      console.error('Profile creation error:', error);
+
+      // Provide more specific error messages
+      let errorMessage = 'Failed to create profile';
+      if (error.message?.includes('signature')) {
+        errorMessage = 'Authentication failed. Please reconnect your wallet.';
+      } else if (error.message?.includes('username')) {
+        errorMessage = 'Username is already taken. Please choose a different one.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Authentication expired. Please reconnect your wallet.';
+      } else if (error.response?.status === 400) {
+        errorMessage = 'Invalid profile data. Please check your information.';
+      }
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
