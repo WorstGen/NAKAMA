@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useWeb3Modal } from '@web3modal/react';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 import toast from 'react-hot-toast';
 
 const WalletConnectContext = createContext();
@@ -14,9 +14,8 @@ export const useWalletConnect = () => {
 };
 
 export const WalletConnectProvider = ({ children }) => {
-  const { open, close } = useWeb3Modal();
+  const { open } = useWeb3Modal();
   const { address, isConnected } = useAccount();
-  const { connect, connectors, error, isLoading } = useConnect();
   const { disconnect } = useDisconnect();
   
   const [isConnecting, setIsConnecting] = useState(false);
