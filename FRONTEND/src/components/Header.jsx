@@ -185,8 +185,16 @@ export const Header = () => {
 
           {/* Wallet Selector Modal */}
           {showWalletSelector && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-20" style={{ zIndex: 999999 }}>
-              <div className="bg-gray-900 rounded-lg p-6 w-96 max-h-[70vh] overflow-y-auto shadow-2xl" style={{ zIndex: 1000000 }}>
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" 
+              style={{ zIndex: 9999999 }}
+              onClick={() => setShowWalletSelector(false)}
+            >
+              <div 
+                className="bg-gray-900 rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl" 
+                style={{ zIndex: 9999999 }}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold text-white">Choose Wallet</h3>
                   <button
