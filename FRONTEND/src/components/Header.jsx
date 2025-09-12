@@ -185,8 +185,8 @@ export const Header = () => {
 
           {/* Wallet Selector Modal */}
           {showWalletSelector && (
-            <div className="fixed inset-0 bg-black bg-opacity-50" style={{ zIndex: 999999 }}>
-              <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-gray-900 rounded-lg p-6 w-96 max-h-[70vh] overflow-y-auto" style={{ zIndex: 999999 }}>
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-20" style={{ zIndex: 999999 }}>
+              <div className="bg-gray-900 rounded-lg p-6 w-96 max-h-[70vh] overflow-y-auto shadow-2xl" style={{ zIndex: 1000000 }}>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold text-white">Choose Wallet</h3>
                   <button
