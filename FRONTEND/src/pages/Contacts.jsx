@@ -13,7 +13,7 @@ import {
 import { Link } from 'react-router-dom';
 
 export const Contacts = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [searchUsername, setSearchUsername] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searching, setSearching] = useState(false);
@@ -74,19 +74,10 @@ export const Contacts = () => {
     }
   };
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-white text-lg">
-          {!isAuthenticated ? 'Please connect your wallet first.' : 'Please create your profile first.'}
-        </p>
-        {!isAuthenticated ? (
-          <p className="text-gray-400 mt-2">Connect your wallet to get started.</p>
-        ) : (
-          <Link to="/profile" className="text-orange-400 hover:text-orange-300 mt-2 inline-block">
-            Create Profile →
-          </Link>
-        )}
+        <p className="text-white text-lg">Please connect your wallet first.</p>
       </div>
     );
   }
