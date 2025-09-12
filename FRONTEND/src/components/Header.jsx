@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useWalletConnect } from '../contexts/WalletConnectContext';
 import GradientProfileImage from './GradientProfileImage';
 import Logo from './Logo';
 import toast from 'react-hot-toast';
@@ -17,13 +16,7 @@ export const Header = () => {
     phantomChains,
     switchToChain
   } = usePhantomMultiChain();
-  const { user, authenticate, connectWalletConnect } = useAuth();
-  const { 
-    isConnecting: walletConnectConnecting, 
-    isConnected: walletConnectConnected,
-    address: walletConnectAddress,
-    disconnect: disconnectWalletConnect
-  } = useWalletConnect();
+  const { user, authenticate } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
@@ -64,22 +57,6 @@ export const Header = () => {
     }
   };
 
-  const handleConnectWalletConnect = async () => {
-    try {
-      setConnecting(true);
-      setShowWalletSelector(false);
-      
-      const success = await connectWalletConnect();
-      if (success) {
-        toast.success('Wallet connected successfully!');
-      }
-    } catch (error) {
-      console.error('WalletConnect connection error:', error);
-      toast.error(`Failed to connect wallet: ${error.message}`);
-    } finally {
-      setConnecting(false);
-    }
-  };
 
   // Create portal root on mount
   useEffect(() => {
@@ -227,23 +204,6 @@ export const Header = () => {
                     )}
                   </button>
 
-                  {/* WalletConnect Option */}
-                  <button
-                    onClick={handleConnectWalletConnect}
-                    disabled={connecting || walletConnectConnecting}
-                    className="w-full flex items-center justify-center space-x-3 p-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors"
-                  >
-                    {walletConnectConnecting ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                    ) : (
-                      <>
-                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                          <span className="text-blue-600 font-bold text-sm">W</span>
-                        </div>
-                        <span className="font-medium">Connect with WalletConnect</span>
-                      </>
-                    )}
-                  </button>
 
                 </div>
               </div>
@@ -365,11 +325,6 @@ export const Header = () => {
                           // Disconnect from Phantom (Solana + EVM)
                           await disconnectAllChains();
 
-                          // Disconnect from WalletConnect
-                          if (walletConnectConnected) {
-                            console.log('🔌 Disconnecting from WalletConnect...');
-                            disconnectWalletConnect();
-                          }
 
                           console.log('✅ All wallets disconnected');
                         } catch (error) {
@@ -404,17 +359,6 @@ export const Header = () => {
                             });
                           }
 
-                          // Add WalletConnect if connected
-                          if (walletConnectConnected && walletConnectAddress) {
-                            allChains.push({
-                              id: 'walletconnect',
-                              name: 'WC',
-                              fullName: 'WalletConnect',
-                              color: '#3b99fc',
-                              address: walletConnectAddress,
-                              isActive: false
-                            });
-                          }
 
                           // Add other connected chains from PhantomMultiChain
                           Object.entries(connectedChains).forEach(([chainId, chain]) => {
