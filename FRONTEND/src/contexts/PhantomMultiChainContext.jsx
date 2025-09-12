@@ -29,7 +29,18 @@ export const phantomChains = {
     tokens: [
       { symbol: 'SOL', name: 'Solana', decimals: 9, isNative: true },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
-      { symbol: 'USDT', name: 'Tether USD', decimals: 6, mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' }
+      { symbol: 'USDT', name: 'Tether USD', decimals: 6, mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' },
+      { symbol: 'wPOND', name: 'wPOND', decimals: 3, mint: '3JgFwoYV74f6LwWjQWnr3YDPFnmBdwQfNyubv99jqUoq' },
+      { symbol: 'DEAL', name: 'DEAL', decimals: 9, mint: 'EdhCrv9wh2dVy7LwA4kZ3pvBRhSXzhPrYeVqX7VcsmbS' },
+      { symbol: 'CHILLDEV', name: 'CHILLDEV', decimals: 6, mint: '9oVBh2BFFhXyv3P8EmQRdNEi6QvqHSRhRnhPnst3pump' },
+      { symbol: 'SKULL', name: 'SKULL', decimals: 6, mint: '3X36yhq35MJnt2JjwodeFDfv2MFPb99RC53yUyNrpump' },
+      { symbol: 'BBL', name: 'BBL', decimals: 9, mint: 'GangK9z6ebVdonVRAbMwsQzy2ougUAK5x1GQ7Uf7daos' },
+      { symbol: 'GARDEN', name: 'GARDEN', decimals: 6, mint: 'Fs9GkAtXRwADRtqtUjSufyYXcQjLgWvNbvijQdn6pump' },
+      { symbol: 'DEMPLAR', name: 'DEMPLAR', decimals: 6, mint: '4kU3B6hvnMEWNZadKWkQatky8fBgDLt7R9HwoysVpump' },
+      { symbol: 'Pepe', name: 'Pepe', decimals: 6, mint: 'B5WTLaRwaUQpKk7ir1wniNB6m5o8GgMrimhKMYan2R6B' },
+      { symbol: 'On', name: 'On', decimals: 6, mint: '9N4MMNdYM8CAt9jav7nmet63WYRsJmH5HXobyBrPpump' },
+      { symbol: 'pondSOL', name: 'pondSOL', decimals: 9, mint: 'Ep83qXdvJbofEgpPqphGRq4eMnpjBVUGPYz32QyrWaaC' },
+      { symbol: 'omSOL', name: 'omSOL', decimals: 9, mint: '514edCqN6tsuxA15TvSnBZT968guNvvaxuAyJrccNcRs' }
     ]
   },
   ethereum: {
