@@ -33,9 +33,6 @@ export const Landing = () => {
     <div style={containerStyle}>
       <div className="text-center">
         <div className="mb-8">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg" style={{ color: '#ffffff' }}>
-            <span className="drop-shadow-lg" style={{ color: '#fb923c' }}>NAKAMA</span>
-          </h1>
           <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow-md px-4" style={{ color: '#e5e7eb' }}>
             Connect with friends to make secure SOL and SPL token transfers using only a username.
             Build your on chain social network with unique usernames and profiles.
@@ -98,7 +95,7 @@ export const Landing = () => {
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-blue-400">✅</span>
-              <span>Cross-chain support (coming soon)</span>
+              <span>Multi-chain compatibility</span>
             </div>
           </div>
         </div>
