@@ -184,15 +184,15 @@ export const Header = () => {
           </div>
 
           {/* Wallet Selector Modal */}
-          {showWalletSelector && (
-            <div 
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-24 px-4" 
-              style={{ zIndex: 9999999 }}
+          {showWalletSelector && createPortal(
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+              style={{ zIndex: 2147483647 }}
               onClick={() => setShowWalletSelector(false)}
             >
-              <div 
-                className="bg-gray-900 rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl" 
-                style={{ zIndex: 9999999 }}
+              <div
+                className="bg-gray-900 rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl"
+                style={{ zIndex: 2147483647 }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex justify-between items-center mb-4">
@@ -247,7 +247,8 @@ export const Header = () => {
 
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
           {/* Universal Navigation Menu - Portal Rendered */}
