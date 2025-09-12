@@ -34,9 +34,22 @@ export const Send = () => {
       // Solana is connected if user is authenticated (they connected with Solana)
       return !!user;
     } else {
-      // For EVM chains, check both PhantomMultiChain and WalletConnect
-      return connectedChains[chainName]?.isConnected || 
-             (walletConnectConnected && walletConnectAddress);
+      // For EVM chains, check PhantomMultiChain first
+      if (connectedChains[chainName]?.isConnected) {
+        return true;
+      }
+      
+      // For WalletConnect, we can only be sure it supports the chain if:
+      // 1. WalletConnect is connected AND
+      // 2. The user has registered an EVM address (meaning they can use EVM chains)
+      const hasEVMAddress = user?.wallets?.ethereum?.address || 
+                           user?.wallets?.polygon?.address || 
+                           user?.wallets?.arbitrum?.address || 
+                           user?.wallets?.optimism?.address || 
+                           user?.wallets?.base?.address ||
+                           user?.wallets?.bsc?.address;
+      
+      return walletConnectConnected && walletConnectAddress && hasEVMAddress;
     }
   };
   
@@ -94,21 +107,34 @@ export const Send = () => {
       if (chainName === 'solana') {
         await switchToChain(chainName);
       } else {
-        // For EVM chains, prioritize WalletConnect if already connected
-        if (walletConnectConnected && walletConnectAddress) {
-          console.log('Using existing WalletConnect connection for EVM chain');
-          toast.success(`Switched to ${phantomChains[chainName]?.name} via WalletConnect`);
-          // Don't call switchToChain as it will try Phantom EVM and cause popup
-        } else if (!connectedChains[chainName]?.isConnected) {
+        // For EVM chains, check if we have access to this chain
+        const hasEVMAccess = connectedChains[chainName]?.isConnected || 
+                            (walletConnectConnected && walletConnectAddress && 
+                             (user?.wallets?.ethereum?.address || user?.wallets?.polygon?.address || 
+                              user?.wallets?.arbitrum?.address || user?.wallets?.optimism?.address || 
+                              user?.wallets?.base?.address || user?.wallets?.bsc?.address));
+        
+        if (hasEVMAccess) {
+          // We have access, just switch the UI
+          if (walletConnectConnected && walletConnectAddress) {
+            console.log('Using existing WalletConnect connection for EVM chain');
+            toast.success(`Switched to ${phantomChains[chainName]?.name} via WalletConnect`);
+          } else {
+            console.log('Using existing Phantom EVM connection for chain');
+            toast.success(`Switched to ${phantomChains[chainName]?.name} via Phantom`);
+          }
+        } else {
+          // No access to this chain, try to connect
           toast.loading(`Connecting to ${phantomChains[chainName]?.name}...`);
           
-          // Try Phantom EVM access only if WalletConnect is not available
+          // Try Phantom EVM access first
           if (window.ethereum) {
             try {
               await window.ethereum.request({ method: 'eth_requestAccounts' });
               console.log('Phantom EVM access granted');
               // Switch to the selected chain via Phantom
               await switchToChain(chainName);
+              toast.dismiss();
             } catch (error) {
               console.log('Phantom EVM connection failed:', error);
               
@@ -133,11 +159,6 @@ export const Send = () => {
             toast.success(`Connected to ${phantomChains[chainName]?.name} via WalletConnect`);
             return; // Don't call switchToChain for WalletConnect
           }
-          
-          toast.dismiss();
-        } else {
-          // Chain is already connected via Phantom, switch to it
-          await switchToChain(chainName);
         }
       }
       
@@ -369,10 +390,10 @@ export const Send = () => {
                 <span>
                   Connected: {selectedChain === 'solana' 
                     ? (user?.wallets?.solana?.address?.slice(0, 6) + '...' + user?.wallets?.solana?.address?.slice(-4) || 'Solana Connected')
+                    : connectedChains[selectedChain]?.isConnected && connectedChains[selectedChain]?.address
+                    ? `${connectedChains[selectedChain].address.slice(0, 6)}...${connectedChains[selectedChain].address.slice(-4)} (Phantom)`
                     : walletConnectConnected && walletConnectAddress
-                    ? `${walletConnectAddress.slice(0, 6)}...${walletConnectAddress.slice(-4)}`
-                    : connectedChains[selectedChain]?.address
-                    ? `${connectedChains[selectedChain].address.slice(0, 6)}...${connectedChains[selectedChain].address.slice(-4)}`
+                    ? `${walletConnectAddress.slice(0, 6)}...${walletConnectAddress.slice(-4)} (WalletConnect)`
                     : 'Connected'
                   }
                 </span>
