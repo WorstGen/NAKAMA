@@ -699,6 +699,7 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
 
     res.json({
       exists: true,
+      _id: user._id,
       username: user.username,
       bio: user.bio,
       profilePicture: user.profilePicture,
@@ -798,6 +799,7 @@ app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
       success: true,
       message: 'EVM address added successfully',
       user: {
+        _id: updatedUser._id,
         username: updatedUser.username,
         bio: updatedUser.bio,
         profilePicture: updatedUser.profilePicture,
@@ -958,6 +960,7 @@ app.post('/api/profile',
       res.json({
         success: true,
         user: {
+          _id: user._id,
           username: user.username,
           bio: user.bio,
           ethAddress: user.wallets?.ethereum?.address || user.ethAddress,
