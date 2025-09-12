@@ -12,6 +12,9 @@ export const usePhantomMultiChain = () => {
   return context;
 };
 
+// Define which chains Phantom actually supports
+export const phantomSupportedChains = ['solana', 'ethereum', 'base', 'polygon'];
+
 // Phantom-supported chains configuration
 export const phantomChains = {
   solana: {
@@ -22,6 +25,7 @@ export const phantomChains = {
     color: '#14F195',
     rpcUrl: 'https://api.mainnet-beta.solana.com',
     blockExplorer: 'https://explorer.solana.com',
+    phantomSupported: true,
     tokens: [
       { symbol: 'SOL', name: 'Solana', decimals: 9, isNative: true },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
@@ -36,6 +40,7 @@ export const phantomChains = {
     color: '#627EEA',
     rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/demo',
     blockExplorer: 'https://etherscan.io',
+    phantomSupported: true,
     tokens: [
       { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0xA0b86a33E6441e12e1A9fF2df3DC6F7eE2AB1Bc6' },
@@ -50,6 +55,7 @@ export const phantomChains = {
     color: '#8247E5',
     rpcUrl: 'https://polygon-rpc.com',
     blockExplorer: 'https://polygonscan.com',
+    phantomSupported: true,
     tokens: [
       { symbol: 'MATIC', name: 'Polygon', decimals: 18, isNative: true },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174' },
@@ -64,6 +70,7 @@ export const phantomChains = {
     color: '#0052FF',
     rpcUrl: 'https://mainnet.base.org',
     blockExplorer: 'https://basescan.org',
+    phantomSupported: true,
     tokens: [
       { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' }
@@ -77,6 +84,7 @@ export const phantomChains = {
     color: '#28A0F0',
     rpcUrl: 'https://arb1.arbitrum.io/rpc',
     blockExplorer: 'https://arbiscan.io',
+    phantomSupported: false,
     tokens: [
       { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' }
@@ -90,6 +98,7 @@ export const phantomChains = {
     color: '#FF0420',
     rpcUrl: 'https://mainnet.optimism.io',
     blockExplorer: 'https://optimistic.etherscan.io',
+    phantomSupported: false,
     tokens: [
       { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true },
       { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' }
@@ -103,6 +112,7 @@ export const phantomChains = {
     color: '#F3BA2F',
     rpcUrl: 'https://bsc-dataseed1.binance.org',
     blockExplorer: 'https://bscscan.com',
+    phantomSupported: false,
     tokens: [
       { symbol: 'BNB', name: 'BNB', decimals: 18, isNative: true },
       { symbol: 'USDT', name: 'Tether USD', decimals: 18, address: '0x55d398326f99059fF775485246999027B3197955' },
@@ -277,10 +287,17 @@ export const PhantomMultiChainProvider = ({ children }) => {
         return;
       }
 
-      // For EVM chains, request chain switch
+      // For EVM chains, check if Phantom supports it
       if (window.ethereum && phantomChains[chainName]) {
         const chainConfig = phantomChains[chainName];
         console.log('🔄 EVM chain config:', chainConfig);
+        
+        // Check if Phantom supports this chain
+        if (!chainConfig.phantomSupported) {
+          console.log(`🔄 ${chainName} not supported by Phantom, chain will need WalletConnect`);
+          toast.error(`${chainConfig.name} is not yet supported by Phantom. Please use WalletConnect for this chain.`);
+          throw new Error(`${chainConfig.name} not supported by Phantom wallet`);
+        }
         
         // Convert decimal to hex properly
         const chainIdDecimal = chainName === 'ethereum' ? 1 : 
@@ -433,7 +450,19 @@ export const PhantomMultiChainProvider = ({ children }) => {
       
       // Disconnect from Solana
       if (window.solana && window.solana.disconnect) {
+        console.log('🔌 Disconnecting from Solana...');
         await window.solana.disconnect();
+      }
+      
+      // Disconnect from EVM chains by clearing permissions
+      if (window.ethereum) {
+        try {
+          console.log('🔌 Clearing EVM permissions...');
+          // Note: There's no standard way to "disconnect" from EVM
+          // We just clear our local state and rely on wallet UI for full disconnect
+        } catch (error) {
+          console.log('EVM disconnect not supported:', error);
+        }
       }
       
       // Clear connected chains

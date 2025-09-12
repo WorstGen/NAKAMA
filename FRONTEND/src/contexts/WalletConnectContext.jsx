@@ -104,9 +104,25 @@ export const WalletConnectProvider = ({ children }) => {
   // Disconnect from WalletConnect
   const disconnectWallet = useCallback(() => {
     try {
+      console.log('🔌 Disconnecting WalletConnect...');
       disconnect();
       setChainId(null);
-      console.log('WalletConnect disconnected');
+      
+      // Clear any cached connection state
+      if (typeof window !== 'undefined') {
+        // Clear localStorage entries that might persist WalletConnect state
+        try {
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('wc@2') || key.startsWith('wagmi') || key.includes('walletconnect')) {
+              localStorage.removeItem(key);
+            }
+          });
+        } catch (error) {
+          console.log('Could not clear localStorage:', error);
+        }
+      }
+      
+      console.log('✅ WalletConnect disconnected');
       toast.success('Wallet disconnected');
     } catch (error) {
       console.error('WalletConnect disconnect error:', error);
