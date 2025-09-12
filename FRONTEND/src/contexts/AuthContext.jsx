@@ -527,7 +527,7 @@ export const AuthProvider = ({ children }) => {
   }, [user, setUser]);
 
   // WalletConnect connection functions
-  const connectWalletConnect = useCallback(async () => {
+  const connectWalletConnectAuth = useCallback(async () => {
     try {
       const success = await connectWalletConnect();
       if (success) {
@@ -551,7 +551,7 @@ export const AuthProvider = ({ children }) => {
     authenticate,
     logout,
     addEVM,
-    connectWalletConnect,
+    connectWalletConnect: connectWalletConnectAuth,
     activeWalletType,
     isAuthenticated: !!user && !!authToken // Simplified: only authenticated if we have both user and token
   };
