@@ -17,8 +17,8 @@ export const Header = () => {
     phantomChains,
     switchToChain
   } = usePhantomMultiChain();
-  const { isConnected: metaMaskConnected, connect: connectMetaMask, isConnecting: metaMaskConnecting } = useMetaMask();
-  const { user, authenticate, activeWalletType } = useAuth();
+  const { connect: connectMetaMask, isConnecting: metaMaskConnecting } = useMetaMask();
+  const { user, authenticate } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
