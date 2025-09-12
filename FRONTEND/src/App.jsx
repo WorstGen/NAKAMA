@@ -56,8 +56,14 @@ function App() {
           themeMode="dark"
           themeVariables={{
             '--w3m-accent-color': '#3b82f6',
-            '--w3m-background-color': '#1f2937'
+            '--w3m-background-color': '#1f2937',
+            '--w3m-z-index': '9999',
+            '--w3m-overlay-backdrop-filter': 'blur(4px)'
           }}
+          defaultChain={1}
+          enableAccountView={true}
+          enableExplorer={false}
+          enableNetworkView={true}
         />
       </WagmiConfig>
     </QueryClientProvider>

@@ -20,6 +20,39 @@
   backdrop-filter: blur(10px) !important;
 }
 
+/* WalletConnect Web3Modal positioning fixes */
+w3m-modal {
+  z-index: 9999 !important;
+}
+
+w3m-modal::part(overlay) {
+  backdrop-filter: blur(4px) !important;
+  z-index: 9999 !important;
+}
+
+w3m-modal::part(container) {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 10000 !important;
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+}
+
+/* Ensure WalletConnect modal appears above everything */
+.w3m-modal,
+.w3m-overlay {
+  z-index: 9999 !important;
+  position: fixed !important;
+}
+
+.w3m-modal {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
 .wallet-adapter-modal-wrapper {
   background: rgba(0, 0, 0, 0.8) !important;
 }
