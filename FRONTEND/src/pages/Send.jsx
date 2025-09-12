@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'react-query';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useWalletConnect } from '../contexts/WalletConnectContext';
 import { Transaction } from '@solana/web3.js';
@@ -352,19 +352,10 @@ export const Send = () => {
     }
   };
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-white text-lg">
-          {!isAuthenticated ? 'Please connect your wallet first.' : 'Please create your profile first.'}
-        </p>
-        {!isAuthenticated ? (
-          <p className="text-gray-400 mt-2">Connect your wallet to get started.</p>
-        ) : (
-          <Link to="/profile" className="text-orange-400 hover:text-orange-300 mt-2 inline-block">
-            Create Profile →
-          </Link>
-        )}
+        <p className="text-white text-lg">Please connect your wallet first.</p>
       </div>
     );
   }
