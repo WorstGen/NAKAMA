@@ -1238,7 +1238,7 @@ app.post('/api/transactions/prepare',
     body('recipientUsername').isLength({ min: 3, max: 20 }).matches(/^[a-zA-Z0-9_]+$/),
     body('amount').isNumeric().isFloat({ min: 0.000000001 }),
     body('token').isIn([
-      'SOL', 'USDC', 'USDT', 'ETH', 'MATIC', 'DAI',
+      'SOL', 'USDC', 'USDT', 'ETH', 'POL', 'MATIC', 'DAI',
       'wPOND', 'DEAL', 'CHILLDEV', 'SKULL', 'BBL', 'GARDEN', 'DEMPLAR', 'Pepe', 'On', 'pondSOL', 'omSOL',
       'PORK', 'PNDC'
     ]),
