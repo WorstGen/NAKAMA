@@ -481,6 +481,8 @@ export const AuthProvider = ({ children }) => {
       });
 
       // Call the add EVM endpoint with user ID
+      console.log('🔍 Calling addEVM with user ID:', user._id);
+      console.log('🔍 User object:', user);
       const response = await api.addEVM(user._id);
       
       if (response.success) {
