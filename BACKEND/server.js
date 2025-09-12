@@ -1099,7 +1099,7 @@ app.post('/api/profile',
         }
 
         user = await User.create({
-          walletAddress: isSolanaAddress ? walletAddress : null, // Keep legacy field for Solana
+          walletAddress: walletAddress, // Set legacy field for both Solana and EVM for backward compatibility
           username: username.toLowerCase(),
           bio,
           wallets,
@@ -1171,9 +1171,26 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
       size: req.file.size
     });
 
-    // Get user info for unique ID
-    const user = await User.findOne({ walletAddress: req.walletAddress });
+    // Get user info for unique ID - support both legacy and new wallet fields
+    let user = await User.findOne({ walletAddress: req.walletAddress });
+
+    // If not found with legacy field, try multi-chain wallets
     if (!user) {
+      user = await User.findOne({
+        $or: [
+          { 'wallets.solana.address': req.walletAddress },
+          { 'wallets.ethereum.address': req.walletAddress },
+          { 'wallets.polygon.address': req.walletAddress },
+          { 'wallets.arbitrum.address': req.walletAddress },
+          { 'wallets.optimism.address': req.walletAddress },
+          { 'wallets.base.address': req.walletAddress },
+          { 'wallets.bsc.address': req.walletAddress }
+        ]
+      });
+    }
+
+    if (!user) {
+      console.log('User not found for wallet address:', req.walletAddress);
       return res.status(404).json({ error: 'User not found' });
     }
 
@@ -1945,8 +1962,24 @@ app.post('/api/oauth/authorize', verifyWallet, async (req, res) => {
 
     // In production, validate clientId and redirectUri
     
-    const user = await User.findOne({ walletAddress: req.walletAddress });
-    
+    // Support both legacy and new wallet fields
+    let user = await User.findOne({ walletAddress: req.walletAddress });
+
+    // If not found with legacy field, try multi-chain wallets
+    if (!user) {
+      user = await User.findOne({
+        $or: [
+          { 'wallets.solana.address': req.walletAddress },
+          { 'wallets.ethereum.address': req.walletAddress },
+          { 'wallets.polygon.address': req.walletAddress },
+          { 'wallets.arbitrum.address': req.walletAddress },
+          { 'wallets.optimism.address': req.walletAddress },
+          { 'wallets.base.address': req.walletAddress },
+          { 'wallets.bsc.address': req.walletAddress }
+        ]
+      });
+    }
+
     if (!user) {
       return res.status(404).json({ error: 'User profile not found' });
     }
