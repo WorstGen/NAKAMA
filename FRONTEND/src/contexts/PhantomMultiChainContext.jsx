@@ -458,11 +458,9 @@ export const PhantomMultiChainProvider = ({ children }) => {
     // This prevents re-detecting EVM accounts after disconnect
     if (connected || (window.solana && window.solana.isConnected && window.solana.publicKey)) {
       getConnectedChains().then(setConnectedChains);
-    } else if (Object.keys(connectedChains).length > 0) {
-      // If we have chains but no Solana connection, keep them (EVM-only user)
-      // This allows EVM chains to remain available for EVM-only accounts
-      console.log('🔗 Keeping existing EVM chains for EVM-only account');
     }
+    // Note: We don't check Object.keys(connectedChains).length here to avoid
+    // dependency issues. EVM-only accounts will be handled by the disconnect logic.
   }, [connected, getConnectedChains]);
 
   // Disconnect from all chains
