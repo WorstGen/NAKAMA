@@ -460,44 +460,74 @@ export const AuthProvider = ({ children }) => {
       throw new Error('No user authenticated. Please connect with Solana first.');
     }
 
-    if (!window.ethereum) {
-      throw new Error('Ethereum wallet not found');
-    }
-
     try {
-      // Connect to EVM wallet
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      
-      // Switch to Ethereum mainnet
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x1' }]
-      });
+      let evmAddress = null;
+      let signMessage = null;
 
-      // Get the EVM address
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No EVM account connected');
+      // Priority 1: Check if WalletConnect is connected
+      if (walletConnectConnected && walletConnectAddress) {
+        console.log('Using WalletConnect for EVM registration');
+        evmAddress = walletConnectAddress;
+        signMessage = walletConnectSignMessage();
+      } 
+      // Priority 2: Use window.ethereum (Phantom EVM or other injected wallets)
+      else if (window.ethereum) {
+        console.log('Using window.ethereum for EVM registration');
+        
+        // Connect to EVM wallet
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        
+        // Try to switch to Ethereum mainnet (optional, don't fail if it doesn't work)
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0x1' }]
+          });
+        } catch (switchError) {
+          console.log('Could not switch to Ethereum mainnet:', switchError);
+        }
+
+        // Get the EVM address
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No EVM account connected');
+        }
+
+        evmAddress = accounts[0];
+        signMessage = async (message) => {
+          const messageHex = '0x' + Buffer.from(message).toString('hex');
+          return await window.ethereum.request({
+            method: 'personal_sign',
+            params: [messageHex, evmAddress]
+          });
+        };
+      } else {
+        throw new Error('No EVM wallet available. Please connect WalletConnect or Phantom with EVM support.');
       }
 
-      const evmAddress = accounts[0];
       console.log('EVM address for registration:', evmAddress);
 
       // Sign a message with the EVM address
       const message = `Add EVM address to NAKAMA profile: ${Date.now()}`;
-      const messageHex = '0x' + Buffer.from(message).toString('hex');
       
-      const signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [messageHex, evmAddress]
-      });
+      const signature = await signMessage(Buffer.from(message));
+      console.log('Raw signature:', signature);
 
       // Convert signature to base58 for backend compatibility
-      const hexString = signature.slice(2);
-      const signatureArray = new Uint8Array(
-        hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
-      );
-      const encodedSignature = bs58.encode(signatureArray);
+      let encodedSignature;
+      if (typeof signature === 'string' && signature.startsWith('0x')) {
+        // Hex signature (from window.ethereum)
+        const hexString = signature.slice(2);
+        const signatureArray = new Uint8Array(
+          hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+        );
+        encodedSignature = bs58.encode(signatureArray);
+      } else {
+        // WalletConnect or other format
+        encodedSignature = signature;
+      }
+
+      console.log('Encoded signature:', encodedSignature);
 
       // Set auth headers for EVM registration
       api.setAuthHeaders({
@@ -524,7 +554,7 @@ export const AuthProvider = ({ children }) => {
       toast.error(error.message || 'Failed to add EVM address');
       throw error;
     }
-  }, [user, setUser]);
+  }, [user, setUser, walletConnectConnected, walletConnectAddress, walletConnectSignMessage]);
 
   // WalletConnect connection functions
   const connectWalletConnectAuth = useCallback(async () => {
