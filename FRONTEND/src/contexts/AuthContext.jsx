@@ -445,17 +445,30 @@ export const AuthProvider = ({ children }) => {
     console.log('User logged out');
   };
 
+  // Trigger authentication when connections are detected
+  useEffect(() => {
+    const shouldTriggerAuth =
+      (walletConnectConnected && walletConnectAddress && !api.hasAuthHeaders()) ||
+      (connected && !api.hasAuthHeaders()) ||
+      (isAnyChainConnected && !api.hasAuthHeaders());
+
+    if (shouldTriggerAuth && !loading) {
+      console.log('🔐 Auto-triggering authentication - WalletConnect:', walletConnectConnected, 'Phantom:', connected || isAnyChainConnected);
+      authenticate();
+    }
+  }, [walletConnectConnected, walletConnectAddress, connected, isAnyChainConnected, authenticate, loading]);
+
   useEffect(() => {
     // Check for direct Solana connection
     const directSolanaConnected = window.solana && window.solana.isConnected && window.solana.publicKey;
-    
+
     // Use both old and new context for compatibility, plus direct Solana check
     const isConnected = connected || isAnyChainConnected || directSolanaConnected;
     const activeWallet = getActiveWallet();
     const hasPublicKey = publicKey || activeWallet?.address || directSolanaConnected;
-    
+
     console.log('🔐 Auth useEffect - connected:', connected, 'isAnyChainConnected:', isAnyChainConnected, 'directSolanaConnected:', directSolanaConnected, 'hasPublicKey:', hasPublicKey);
-    
+
     // Only logout if no connection at all AND no user AND no auth headers
     if (!isConnected && !hasPublicKey && !user && !api.hasAuthHeaders()) {
       console.log('🔐 Logging out - no connection, no user, no auth headers');
