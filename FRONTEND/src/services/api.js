@@ -166,13 +166,6 @@ class ApiService {
     console.log('🔍 Sending data:', { userId });
     return this.request('POST', '/api/profile/add-evm', { userId });
   }
-
-  // Add wallet address (Solana or other chains) to current user
-  addWallet = async (chain, address) => {
-    console.log('🔍 API addWallet called with chain:', chain, 'address:', address);
-    console.log('🔍 Sending data:', { chain, address });
-    return this.request('POST', '/api/profile/add-wallet', { chain, address });
-  }
 }
 
 export const api = new ApiService();
