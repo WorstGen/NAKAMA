@@ -363,10 +363,12 @@ export const AuthProvider = ({ children }) => {
         } else {
           // This is a Solana address without a profile
           setUser(null);
+          setAuthToken('authenticated'); // Set auth token even for new users
           toast.success('Welcome! Please create your profile to get started.');
         }
       } else {
         setUser(profile);
+        setAuthToken('authenticated'); // Set auth token to indicate successful authentication
         toast.success(`Welcome back, @${profile.username}!`);
       }
 
