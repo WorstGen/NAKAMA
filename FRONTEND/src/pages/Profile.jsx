@@ -11,7 +11,6 @@ export const Profile = () => {
   const { user, setUser, isAuthenticated, addEVM } = useAuth();
   const { 
     isConnected: walletConnectConnected, 
-    address: walletConnectAddress, 
     connect: connectWalletConnect 
   } = useWalletConnect();
   const { classes } = useTheme();
