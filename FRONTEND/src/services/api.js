@@ -161,8 +161,8 @@ class ApiService {
   }
 
   // Add EVM address to current user
-  addEVM = async () => {
-    return this.request('POST', '/api/profile/add-evm');
+  addEVM = async (userId) => {
+    return this.request('POST', '/api/profile/add-evm', { userId });
   }
 }
 
