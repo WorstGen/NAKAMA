@@ -28,36 +28,47 @@ export const WalletConnectProvider = ({ children }) => {
 
   // Connect to WalletConnect
   const connectWallet = useCallback(async () => {
-    if (!isWalletConnectAvailable()) {
-      toast.error(
-        <div>
-          <div className="font-semibold">No wallet detected</div>
-          <div className="text-sm mt-1">Please install a compatible wallet to continue.</div>
-        </div>,
-        { duration: 5000 }
-      );
-      return false;
+    // Check if already connected
+    if (isConnected && address) {
+      console.log('WalletConnect already connected:', address);
+      return true;
     }
 
     setIsConnecting(true);
     try {
-      // Open WalletConnect modal
-      await open();
+      console.log('Opening WalletConnect modal...');
       
-      // Wait for connection
+      // Open WalletConnect modal with better error handling
+      try {
+        await open();
+      } catch (openError) {
+        console.error('Failed to open WalletConnect modal:', openError);
+        throw new Error('Failed to open wallet selection modal. Please try again.');
+      }
+      
+      // Wait for connection with shorter polling interval
       let attempts = 0;
-      const maxAttempts = 30; // 30 seconds timeout
+      const maxAttempts = 60; // 60 seconds timeout
       
+      console.log('Waiting for wallet connection...');
       while (!isConnected && attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         attempts++;
+        
+        // Log progress every 10 seconds
+        if (attempts % 10 === 0) {
+          console.log(`Still waiting for connection... (${attempts}/${maxAttempts})`);
+        }
       }
       
       if (isConnected && address) {
-        // Get chain ID
+        // Get chain ID if possible
         try {
-          const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-          setChainId(chainId);
+          if (window.ethereum) {
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            setChainId(chainId);
+            console.log('Connected to chain:', chainId);
+          }
         } catch (error) {
           console.log('Could not get chain ID:', error);
         }
@@ -66,13 +77,20 @@ export const WalletConnectProvider = ({ children }) => {
         toast.success('Wallet connected successfully!');
         return true;
       } else {
-        toast.error('Wallet connection failed or was cancelled');
+        console.log('Connection timeout or cancelled');
+        toast.error('Wallet connection timed out or was cancelled. Please try again.');
         return false;
       }
     } catch (error) {
       console.error('WalletConnect connection error:', error);
-      if (error.message?.includes('User rejected')) {
+      
+      // Provide specific error messages
+      if (error.message?.includes('User rejected') || error.message?.includes('rejected')) {
         toast.error('Wallet connection rejected by user');
+      } else if (error.message?.includes('timeout')) {
+        toast.error('Connection timed out. Please try again.');
+      } else if (error.message?.includes('modal')) {
+        toast.error('Failed to open wallet modal. Please refresh and try again.');
       } else {
         toast.error(`Failed to connect wallet: ${error.message || 'Unknown error'}`);
       }
