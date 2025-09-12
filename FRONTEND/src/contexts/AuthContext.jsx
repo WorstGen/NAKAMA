@@ -480,8 +480,8 @@ export const AuthProvider = ({ children }) => {
         'X-Public-Key': evmAddress
       });
 
-      // Call the add EVM endpoint
-      const response = await api.addEVM();
+      // Call the add EVM endpoint with user ID
+      const response = await api.addEVM(user._id);
       
       if (response.success) {
         // Update user state with new EVM address
