@@ -986,14 +986,21 @@ app.post('/api/profile',
       .customSanitizer(sanitizeInput)
   ],
   async (req, res) => {
+    console.log('🎯 PROFILE CREATION REQUEST RECEIVED!');
+    console.log('Request body:', req.body);
+    console.log('Authenticated wallet:', req.walletAddress);
+
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        console.log('❌ Validation errors:', errors.array());
         return res.status(400).json({ errors: errors.array() });
       }
 
       const { username, bio } = req.body;
       const walletAddress = req.walletAddress;
+
+      console.log('📝 Processing profile creation for:', { username, walletAddress });
 
       // Determine if this is a Solana or EVM address
       const isSolanaAddress = walletAddress.length === 44;
@@ -1114,6 +1121,8 @@ app.post('/api/profile',
         changes: { username, bio: bio ? 'updated' : 'not provided', walletAddress }
       });
 
+      console.log('✅ Profile creation successful for user:', user.username);
+
       res.json({
         success: true,
         user: {
@@ -1126,6 +1135,9 @@ app.post('/api/profile',
         }
       });
     } catch (error) {
+      console.error('❌ Profile creation error:', error);
+      console.error('Error details:', error.message);
+      console.error('Stack trace:', error.stack);
       res.status(500).json({ error: 'Failed to save profile' });
     }
   }
