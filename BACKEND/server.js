@@ -735,6 +735,7 @@ app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
     }
 
     console.log(`Adding EVM address ${walletAddress} to user ${user.username} (ID: ${user._id})`);
+    console.log(`Current user wallets:`, JSON.stringify(user.wallets, null, 2));
 
     // Check if user already has this EVM address
     const hasThisEVMAddress = user.wallets?.ethereum?.address === walletAddress ||
@@ -744,6 +745,7 @@ app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
                             user.wallets?.base?.address === walletAddress;
 
     if (hasThisEVMAddress) {
+      console.log(`❌ User ${user.username} already has this EVM address: ${walletAddress}`);
       return res.status(400).json({ error: 'EVM address already registered to this user' });
     }
 
@@ -755,8 +757,11 @@ app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
                             user.wallets?.base?.address;
 
     if (hasAnyEVMAddress) {
+      console.log(`❌ User ${user.username} already has an EVM address:`, hasAnyEVMAddress);
       return res.status(400).json({ error: 'User already has an EVM address registered' });
     }
+
+    console.log(`✅ User ${user.username} is eligible for EVM address registration`);
 
     // Add EVM address to all EVM chains
     const updateData = {
@@ -769,13 +774,21 @@ app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
       updatedAt: new Date()
     };
 
+    console.log(`🔄 Updating user with data:`, JSON.stringify(updateData, null, 2));
+    
     const updatedUser = await User.findOneAndUpdate(
       { _id: user._id },
       updateData,
       { new: true }
     );
 
-    console.log(`Successfully added EVM address ${walletAddress} to user ${updatedUser.username}`);
+    if (!updatedUser) {
+      console.error(`❌ Failed to update user ${user.username} with EVM address ${walletAddress}`);
+      return res.status(500).json({ error: 'Failed to update user profile' });
+    }
+
+    console.log(`✅ Successfully added EVM address ${walletAddress} to user ${updatedUser.username}`);
+    console.log(`Updated user wallets:`, JSON.stringify(updatedUser.wallets, null, 2));
 
     res.json({
       success: true,
@@ -789,7 +802,7 @@ app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Add EVM address error:', error);
+    console.error('❌ Add EVM address error:', error);
     res.status(500).json({ error: 'Failed to add EVM address' });
   }
 });
