@@ -1,6 +1,5 @@
 import React from 'react';
 import { useQuery } from 'react-query';
-import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth, useTheme } from '../contexts/AuthContext';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
@@ -81,19 +80,10 @@ export const Transactions = () => {
     return blockchainConfig[blockchain] || { name: 'Unknown', color: '#666', explorer: 'https://explorer.solana.com/tx/' };
   };
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-white text-lg">
-          {!isAuthenticated ? 'Please connect your wallet first.' : 'Please create your profile first.'}
-        </p>
-        {!isAuthenticated ? (
-          <p className="text-gray-400 mt-2">Connect your wallet to get started.</p>
-        ) : (
-          <Link to="/profile" className="text-orange-400 hover:text-orange-300 mt-2 inline-block">
-            Create Profile →
-          </Link>
-        )}
+        <p className="text-white text-lg">Please connect your wallet first.</p>
       </div>
     );
   }
