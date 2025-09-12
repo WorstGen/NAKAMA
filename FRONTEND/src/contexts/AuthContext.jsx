@@ -363,17 +363,7 @@ export const AuthProvider = ({ children }) => {
           }
           
           // If still no profile found, this is a new EVM address
-          console.log('New EVM address detected - user needs to create profile');
           setUser(null);
-
-          // For new EVM users, set authenticated state so they can access profile creation
-          setAuthToken('authenticated');
-
-          // Show helpful message for new EVM users
-          toast.success('EVM wallet connected! Please create your profile to get started.', {
-            duration: 5000,
-          });
-
           return; // Exit early, don't clear auth headers
         } else {
           // This is a Solana address without a profile
@@ -445,30 +435,17 @@ export const AuthProvider = ({ children }) => {
     console.log('User logged out');
   };
 
-  // Trigger authentication when connections are detected
-  useEffect(() => {
-    const shouldTriggerAuth =
-      (walletConnectConnected && walletConnectAddress && !api.hasAuthHeaders()) ||
-      (connected && !api.hasAuthHeaders()) ||
-      (isAnyChainConnected && !api.hasAuthHeaders());
-
-    if (shouldTriggerAuth && !loading) {
-      console.log('🔐 Auto-triggering authentication - WalletConnect:', walletConnectConnected, 'Phantom:', connected || isAnyChainConnected);
-      authenticate();
-    }
-  }, [walletConnectConnected, walletConnectAddress, connected, isAnyChainConnected, authenticate, loading]);
-
   useEffect(() => {
     // Check for direct Solana connection
     const directSolanaConnected = window.solana && window.solana.isConnected && window.solana.publicKey;
-
+    
     // Use both old and new context for compatibility, plus direct Solana check
     const isConnected = connected || isAnyChainConnected || directSolanaConnected;
     const activeWallet = getActiveWallet();
     const hasPublicKey = publicKey || activeWallet?.address || directSolanaConnected;
-
+    
     console.log('🔐 Auth useEffect - connected:', connected, 'isAnyChainConnected:', isAnyChainConnected, 'directSolanaConnected:', directSolanaConnected, 'hasPublicKey:', hasPublicKey);
-
+    
     // Only logout if no connection at all AND no user AND no auth headers
     if (!isConnected && !hasPublicKey && !user && !api.hasAuthHeaders()) {
       console.log('🔐 Logging out - no connection, no user, no auth headers');
@@ -606,7 +583,7 @@ export const AuthProvider = ({ children }) => {
     addEVM,
     connectWalletConnect: connectWalletConnectAuth,
     activeWalletType,
-    isAuthenticated: !!authToken // Authenticated if we have auth token (even without user profile yet)
+    isAuthenticated: !!user && !!authToken // Simplified: only authenticated if we have both user and token
   };
 
   return (
