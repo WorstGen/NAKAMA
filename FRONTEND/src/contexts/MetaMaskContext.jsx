@@ -104,25 +104,10 @@ export const MetaMaskProvider = ({ children }) => {
     }
   }, []);
 
-  // Check connection status on mount
+  // Check connection status on mount - DISABLED to prevent auto-connection
   useEffect(() => {
-    const checkConnection = async () => {
-      if (isMetaMaskInstalled()) {
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts.length > 0) {
-            setAccount(accounts[0]);
-            setIsConnected(true);
-            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-            setChainId(chainId);
-          }
-        } catch (error) {
-          console.error('Error checking MetaMask connection:', error);
-        }
-      }
-    };
-
-    checkConnection();
+    // Removed automatic connection check to prevent unwanted MetaMask connections
+    // Users must explicitly choose to connect via the wallet selector
 
     // Listen for account changes
     if (isMetaMaskInstalled()) {
