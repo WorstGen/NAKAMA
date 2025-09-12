@@ -79,8 +79,7 @@ export const AuthProvider = ({ children }) => {
   const { 
     isConnected: walletConnectConnected, 
     address: walletConnectAddress, 
-    getSignMessage: walletConnectSignMessage,
-    connect: connectWalletConnect 
+    getSignMessage: walletConnectSignMessage
   } = useWalletConnect();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -419,7 +418,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [getActiveWallet, lastAuthAttempt, publicKey, walletConnectConnected, walletConnectAddress, walletConnectSignMessage]);
+  }, [getActiveWallet, lastAuthAttempt, publicKey, walletConnectConnected, walletConnectAddress]);
 
   const logout = () => {
     setUser(null);
