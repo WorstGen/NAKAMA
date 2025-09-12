@@ -22,10 +22,34 @@ export const MetaMaskProvider = ({ children }) => {
     return typeof window !== 'undefined' && window.ethereum && window.ethereum.isMetaMask;
   };
 
+  // Check if any Ethereum provider is available
+  const isEthereumProviderAvailable = () => {
+    return typeof window !== 'undefined' && window.ethereum;
+  };
+
   // Connect to MetaMask
   const connect = useCallback(async () => {
+    // Check if any Ethereum provider is available
+    if (!isEthereumProviderAvailable()) {
+      toast.error(
+        <div>
+          <div className="font-semibold">No Ethereum wallet detected</div>
+          <div className="text-sm mt-1">Please install MetaMask or another Ethereum wallet to continue.</div>
+        </div>,
+        { duration: 5000 }
+      );
+      return false;
+    }
+
+    // Check if it's specifically MetaMask
     if (!isMetaMaskInstalled()) {
-      toast.error('MetaMask is not installed. Please install MetaMask to continue.');
+      toast.error(
+        <div>
+          <div className="font-semibold">MetaMask not detected</div>
+          <div className="text-sm mt-1">Please install MetaMask browser extension to continue.</div>
+        </div>,
+        { duration: 5000 }
+      );
       return false;
     }
 
@@ -47,7 +71,7 @@ export const MetaMaskProvider = ({ children }) => {
         toast.success('MetaMask connected successfully!');
         return true;
       } else {
-        toast.error('No MetaMask accounts found');
+        toast.error('No MetaMask accounts found. Please create an account in MetaMask.');
         return false;
       }
     } catch (error) {
@@ -57,7 +81,13 @@ export const MetaMaskProvider = ({ children }) => {
       } else if (error.code === -32002) {
         toast.error('MetaMask connection request already pending. Please check MetaMask.');
       } else if (error.message?.includes('Requested resource not available')) {
-        toast.error('MetaMask is not available. Please make sure MetaMask is installed and unlocked.');
+        toast.error(
+          <div>
+            <div className="font-semibold">MetaMask not available</div>
+            <div className="text-sm mt-1">Please make sure MetaMask is installed, unlocked, and refresh the page.</div>
+          </div>,
+          { duration: 5000 }
+        );
       } else {
         toast.error(`Failed to connect to MetaMask: ${error.message || 'Unknown error'}`);
       }

@@ -76,7 +76,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const { publicKey, connected } = useWallet();
   const { getActiveWallet, isAnyChainConnected } = usePhantomMultiChain();
-  const { isConnected: metaMaskConnected, account: metaMaskAccount, signMessage: metaMaskSignMessage } = useMetaMask();
+  const { isConnected: metaMaskConnected, account: metaMaskAccount, signMessage: metaMaskSignMessage, connect: metaMaskConnect } = useMetaMask();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [authToken, setAuthToken] = useState(null);
@@ -127,16 +127,9 @@ export const AuthProvider = ({ children }) => {
       activeSignMessage = window.solana.signMessage;
       setActiveWalletType('phantom');
     }
-    // Priority 2: MetaMask connection
-    else if (metaMaskConnected && metaMaskAccount) {
-      console.log('Using MetaMask connection for authentication');
-      activePublicKey = metaMaskAccount;
-      activeSignMessage = metaMaskSignMessage;
-      setActiveWalletType('metamask');
-    }
-    // Priority 3: EVM connection via Phantom
+    // Priority 2: EVM connection via Phantom (prefer Phantom for EVM too)
     else if ((isEVMChain || hasEVMAddress) && window.ethereum) {
-      console.log('Using EVM connection for authentication');
+      console.log('Using EVM connection via Phantom for authentication');
       // For EVM, we need to get the address and use personal_sign
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
       if (accounts && accounts.length > 0) {
@@ -151,6 +144,13 @@ export const AuthProvider = ({ children }) => {
         };
         setActiveWalletType('phantom');
       }
+    }
+    // Priority 3: MetaMask connection (only when explicitly chosen)
+    else if (metaMaskConnected && metaMaskAccount) {
+      console.log('Using MetaMask connection for authentication');
+      activePublicKey = metaMaskAccount;
+      activeSignMessage = metaMaskSignMessage;
+      setActiveWalletType('metamask');
     }
     // Priority 4: Fall back to PhantomMultiChain context
     else {
@@ -524,7 +524,8 @@ export const AuthProvider = ({ children }) => {
   // MetaMask connection functions
   const connectMetaMask = useCallback(async () => {
     try {
-      const success = await window.metaMask?.connect();
+      // Use the MetaMask context's connect function
+      const success = await metaMaskConnect();
       if (success) {
         // Trigger authentication after successful connection
         await authenticate();
@@ -536,7 +537,7 @@ export const AuthProvider = ({ children }) => {
       toast.error('Failed to connect MetaMask');
       return false;
     }
-  }, [authenticate]);
+  }, [metaMaskConnect, authenticate]);
 
   const value = {
     user,
