@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
+import { useMetaMask } from '../contexts/MetaMaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import GradientProfileImage from './GradientProfileImage';
 import Logo from './Logo';
@@ -16,16 +17,23 @@ export const Header = () => {
     phantomChains,
     switchToChain
   } = usePhantomMultiChain();
-  const { user, authenticate } = useAuth();
+  const { isConnected: metaMaskConnected, connect: connectMetaMask, isConnecting: metaMaskConnecting } = useMetaMask();
+  const { user, authenticate, activeWalletType } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [portalRoot, setPortalRoot] = useState(null);
 
   const isActive = (path) => location.pathname === path;
 
-  const handleConnectWallet = async () => {
+  const handleConnectWallet = () => {
+    setShowWalletSelector(true);
+  };
+
+  const handleConnectPhantom = async () => {
     try {
       setConnecting(true);
+      setShowWalletSelector(false);
       
       if (window.solana && window.solana.isPhantom) {
         const response = await window.solana.connect();
@@ -46,6 +54,23 @@ export const Header = () => {
     } catch (error) {
       console.error('Connection failed:', error);
       toast.error(`Failed to connect: ${error.message}`);
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleConnectMetaMask = async () => {
+    try {
+      setConnecting(true);
+      setShowWalletSelector(false);
+      
+      const success = await connectMetaMask();
+      if (success) {
+        toast.success('MetaMask connected successfully!');
+      }
+    } catch (error) {
+      console.error('MetaMask connection error:', error);
+      toast.error(`Failed to connect MetaMask: ${error.message}`);
     } finally {
       setConnecting(false);
     }
@@ -152,6 +177,61 @@ export const Header = () => {
               </button>
             )}
           </div>
+
+          {/* Wallet Selector Modal */}
+          {showWalletSelector && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-semibold text-white">Choose Wallet</h3>
+                  <button
+                    onClick={() => setShowWalletSelector(false)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="space-y-3">
+                  {/* Phantom Wallet Option */}
+                  <button
+                    onClick={handleConnectPhantom}
+                    disabled={connecting}
+                    className="w-full flex items-center justify-center space-x-3 p-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors"
+                  >
+                    {connecting ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    ) : (
+                      <>
+                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                          <span className="text-purple-600 font-bold text-sm">P</span>
+                        </div>
+                        <span className="font-medium">Connect with Phantom</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* MetaMask Wallet Option */}
+                  <button
+                    onClick={handleConnectMetaMask}
+                    disabled={connecting || metaMaskConnecting}
+                    className="w-full flex items-center justify-center space-x-3 p-4 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-800 text-white rounded-lg transition-colors"
+                  >
+                    {metaMaskConnecting ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    ) : (
+                      <>
+                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                          <span className="text-orange-600 font-bold text-sm">M</span>
+                        </div>
+                        <span className="font-medium">Connect with MetaMask</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Universal Navigation Menu - Portal Rendered */}
           {portalRoot && user && mobileMenuOpen && createPortal(
