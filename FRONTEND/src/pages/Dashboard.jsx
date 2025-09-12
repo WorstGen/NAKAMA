@@ -36,6 +36,7 @@ export const Dashboard = () => {
     if (user?.wallets?.arbitrum?.address) myAddresses.push(user.wallets.arbitrum.address);
     if (user?.wallets?.optimism?.address) myAddresses.push(user.wallets.optimism.address);
     if (user?.wallets?.base?.address) myAddresses.push(user.wallets.base.address);
+    if (user?.wallets?.bsc?.address) myAddresses.push(user.wallets.bsc.address);
     
     // Fallback to connected chains if user wallets not available
     if (myAddresses.length === 0) {

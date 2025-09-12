@@ -51,6 +51,7 @@ export const Transactions = () => {
     if (user?.wallets?.arbitrum?.address) myAddresses.push(user.wallets.arbitrum.address);
     if (user?.wallets?.optimism?.address) myAddresses.push(user.wallets.optimism.address);
     if (user?.wallets?.base?.address) myAddresses.push(user.wallets.base.address);
+    if (user?.wallets?.bsc?.address) myAddresses.push(user.wallets.bsc.address);
     
     // Fallback to connected chains if user wallets not available
     if (myAddresses.length === 0) {
@@ -72,7 +73,8 @@ export const Transactions = () => {
       polygon: { name: 'Polygon', color: '#8247E5', explorer: 'https://polygonscan.com/tx/' },
       base: { name: 'Base', color: '#0052FF', explorer: 'https://basescan.org/tx/' },
       arbitrum: { name: 'Arbitrum', color: '#28A0F0', explorer: 'https://arbiscan.io/tx/' },
-      optimism: { name: 'Optimism', color: '#FF0420', explorer: 'https://optimistic.etherscan.io/tx/' }
+      optimism: { name: 'Optimism', color: '#FF0420', explorer: 'https://optimistic.etherscan.io/tx/' },
+      bsc: { name: 'BNB Smart Chain', color: '#F3BA2F', explorer: 'https://bscscan.com/tx/' }
     };
     
     return blockchainConfig[blockchain] || { name: 'Unknown', color: '#666', explorer: 'https://explorer.solana.com/tx/' };
