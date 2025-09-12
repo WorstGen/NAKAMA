@@ -145,6 +145,12 @@ const EVM_CHAINS = {
     chainId: 10,
     name: 'Optimism',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }
+  },
+  bsc: {
+    rpcUrl: 'https://bsc-dataseed1.binance.org',
+    chainId: 56,
+    name: 'BNB Smart Chain',
+    nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 }
   }
 };
 
@@ -376,7 +382,7 @@ const UserSchema = new mongoose.Schema({
   
   // User preferences
   preferences: {
-    defaultChain: { type: String, enum: ['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base'], default: 'solana' },
+    defaultChain: { type: String, enum: ['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base', 'bsc'], default: 'solana' },
     defaultToken: { type: String, default: 'SOL' }
   },
   
@@ -406,7 +412,7 @@ const TransactionSchema = new mongoose.Schema({
   // Multi-chain support
   blockchain: { 
     type: String, 
-    enum: ['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base'], 
+    enum: ['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base', 'bsc'], 
     default: 'solana',
     index: true 
   },
@@ -606,7 +612,8 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
             { 'wallets.polygon.address': walletAddress },
             { 'wallets.arbitrum.address': walletAddress },
             { 'wallets.optimism.address': walletAddress },
-            { 'wallets.base.address': walletAddress }
+            { 'wallets.base.address': walletAddress },
+            { 'wallets.bsc.address': walletAddress }
           ]
         });
         
@@ -618,7 +625,8 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
               { 'wallets.polygon.address': { $exists: true, $ne: null } },
               { 'wallets.arbitrum.address': { $exists: true, $ne: null } },
               { 'wallets.optimism.address': { $exists: true, $ne: null } },
-              { 'wallets.base.address': { $exists: true, $ne: null } }
+              { 'wallets.base.address': { $exists: true, $ne: null } },
+              { 'wallets.bsc.address': { $exists: true, $ne: null } }
             ]
           });
           
@@ -660,7 +668,8 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
                              user.wallets.polygon?.address || 
                              user.wallets.arbitrum?.address || 
                              user.wallets.optimism?.address || 
-                             user.wallets.base?.address;
+                             user.wallets.base?.address ||
+                             user.wallets.bsc?.address;
         
         if (!hasEVMAddress) {
           // Register this EVM address to all EVM chains
@@ -669,6 +678,7 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
           updateData['wallets.arbitrum.address'] = walletAddress;
           updateData['wallets.optimism.address'] = walletAddress;
           updateData['wallets.base.address'] = walletAddress;
+          updateData['wallets.bsc.address'] = walletAddress;
           updateData['wallets.ethereum.isPrimary'] = true;
           needsUpdate = true;
         } else if (hasEVMAddress && hasEVMAddress.toLowerCase() !== walletAddress.toLowerCase()) {
@@ -678,6 +688,7 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
           updateData['wallets.arbitrum.address'] = walletAddress;
           updateData['wallets.optimism.address'] = walletAddress;
           updateData['wallets.base.address'] = walletAddress;
+          updateData['wallets.bsc.address'] = walletAddress;
           needsUpdate = true;
         }
       } else if (!isEVMAddress) {
@@ -784,6 +795,7 @@ app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
       'wallets.arbitrum.address': walletAddress,
       'wallets.optimism.address': walletAddress,
       'wallets.base.address': walletAddress,
+      'wallets.bsc.address': walletAddress,
       'wallets.ethereum.isPrimary': true,
       updatedAt: new Date()
     };
@@ -913,6 +925,7 @@ app.post('/api/profile',
           updateData['wallets.arbitrum.address'] = walletAddress;
           updateData['wallets.optimism.address'] = walletAddress;
           updateData['wallets.base.address'] = walletAddress;
+          updateData['wallets.bsc.address'] = walletAddress;
           // Mark the first EVM chain as primary if no other EVM chain is primary
           if (!user.wallets?.ethereum?.isPrimary && 
               !user.wallets?.polygon?.isPrimary && 
@@ -948,6 +961,7 @@ app.post('/api/profile',
           wallets.arbitrum = { address: walletAddress, isPrimary: false };
           wallets.optimism = { address: walletAddress, isPrimary: false };
           wallets.base = { address: walletAddress, isPrimary: false };
+          wallets.bsc = { address: walletAddress, isPrimary: false };
         }
 
         user = await User.create({
@@ -1229,7 +1243,7 @@ app.post('/api/transactions/prepare',
       'PORK', 'PNDC'
     ]),
     body('memo').optional().isLength({ max: 280 }),
-    body('chain').optional().isIn(['solana', 'ethereum', 'polygon', 'base', 'arbitrum', 'optimism'])
+    body('chain').optional().isIn(['solana', 'ethereum', 'polygon', 'base', 'arbitrum', 'optimism', 'bsc'])
   ],
   async (req, res) => {
     try {
@@ -1270,7 +1284,8 @@ app.post('/api/transactions/prepare',
               { 'wallets.polygon.address': req.walletAddress },
               { 'wallets.arbitrum.address': req.walletAddress },
               { 'wallets.optimism.address': req.walletAddress },
-              { 'wallets.base.address': req.walletAddress }
+              { 'wallets.base.address': req.walletAddress },
+              { 'wallets.bsc.address': req.walletAddress }
             ]
           });
           
@@ -1299,7 +1314,8 @@ app.post('/api/transactions/prepare',
               { 'wallets.polygon.address': req.walletAddress },
               { 'wallets.arbitrum.address': req.walletAddress },
               { 'wallets.optimism.address': req.walletAddress },
-              { 'wallets.base.address': req.walletAddress }
+              { 'wallets.base.address': req.walletAddress },
+              { 'wallets.bsc.address': req.walletAddress }
             ]
           });
           
@@ -1541,7 +1557,7 @@ app.post('/api/transactions/submit',
   verifyWallet,
   [
     body('signedTransaction').isString(),
-    body('chain').optional().isIn(['solana', 'ethereum', 'polygon', 'base', 'arbitrum', 'optimism'])
+    body('chain').optional().isIn(['solana', 'ethereum', 'polygon', 'base', 'arbitrum', 'optimism', 'bsc'])
   ],
   async (req, res) => {
     try {
@@ -1575,7 +1591,8 @@ app.post('/api/transactions/submit',
               { 'wallets.polygon.address': req.walletAddress },
               { 'wallets.arbitrum.address': req.walletAddress },
               { 'wallets.optimism.address': req.walletAddress },
-              { 'wallets.base.address': req.walletAddress }
+              { 'wallets.base.address': req.walletAddress },
+              { 'wallets.bsc.address': req.walletAddress }
             ]
           });
           
@@ -1609,7 +1626,8 @@ app.post('/api/transactions/submit',
               { 'wallets.polygon.address': req.walletAddress },
               { 'wallets.arbitrum.address': req.walletAddress },
               { 'wallets.optimism.address': req.walletAddress },
-              { 'wallets.base.address': req.walletAddress }
+              { 'wallets.base.address': req.walletAddress },
+              { 'wallets.bsc.address': req.walletAddress }
             ]
           });
           
@@ -1685,7 +1703,8 @@ app.post('/api/transactions/submit',
           polygon: `https://polygonscan.com/tx/${signature}`,
           base: `https://basescan.org/tx/${signature}`,
           arbitrum: `https://arbiscan.io/tx/${signature}`,
-          optimism: `https://optimistic.etherscan.io/tx/${signature}`
+          optimism: `https://optimistic.etherscan.io/tx/${signature}`,
+          bsc: `https://bscscan.com/tx/${signature}`
         };
         explorerUrl = explorerUrls[targetChain] || `https://etherscan.io/tx/${signature}`;
       }
@@ -1749,7 +1768,8 @@ app.get('/api/transactions', verifyWallet, async (req, res) => {
         { 'wallets.polygon.address': req.walletAddress },
         { 'wallets.arbitrum.address': req.walletAddress },
         { 'wallets.optimism.address': req.walletAddress },
-        { 'wallets.base.address': req.walletAddress }
+        { 'wallets.base.address': req.walletAddress },
+        { 'wallets.bsc.address': req.walletAddress }
       ]
     });
     
@@ -1762,6 +1782,7 @@ app.get('/api/transactions', verifyWallet, async (req, res) => {
       if (user.wallets?.arbitrum?.address) userWalletAddresses.push(user.wallets.arbitrum.address);
       if (user.wallets?.optimism?.address) userWalletAddresses.push(user.wallets.optimism.address);
       if (user.wallets?.base?.address) userWalletAddresses.push(user.wallets.base.address);
+      if (user.wallets?.bsc?.address) userWalletAddresses.push(user.wallets.bsc.address);
     }
     
     // Remove duplicates
