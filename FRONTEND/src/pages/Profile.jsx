@@ -181,7 +181,7 @@ export const Profile = () => {
       toast.loading('Adding EVM address to your profile...');
       
       // Use the new addEVM function from AuthContext
-      await addEVM();
+      await addEVM(user._id);
       
       console.log('EVM address successfully added!');
       toast.success('EVM address added successfully!');
