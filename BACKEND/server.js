@@ -714,6 +714,10 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
 
 // Add EVM address to current user's profile
 app.post('/api/profile/add-evm', verifyWallet, async (req, res) => {
+  console.log('🚀 EVM Registration endpoint hit!');
+  console.log('Request body:', req.body);
+  console.log('Request headers:', req.headers);
+  
   try {
     const walletAddress = req.walletAddress;
     const { userId } = req.body; // Get user ID from request body
