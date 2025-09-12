@@ -28,14 +28,14 @@ export const Send = () => {
   const { classes } = useTheme();
   const currentColors = classes; // Always dark colors now
   
-  // Helper function to determine if a chain is connected
+  // Helper function to determine if a chain is connected or available
   const isChainConnected = (chainName) => {
     if (chainName === 'solana') {
       // Solana is connected if user is authenticated (they connected with Solana)
       return !!user;
     } else {
       // For EVM chains, check PhantomMultiChain first
-      if (connectedChains[chainName]?.isConnected) {
+      if (connectedChains[chainName]?.isConnected || connectedChains[chainName]?.isAvailable) {
         return true;
       }
       
@@ -109,16 +109,26 @@ export const Send = () => {
       } else {
         // For EVM chains, check if we have access to this chain
         const hasEVMAccess = connectedChains[chainName]?.isConnected || 
+                            connectedChains[chainName]?.isAvailable ||
                             (walletConnectConnected && walletConnectAddress && 
                              (user?.wallets?.ethereum?.address || user?.wallets?.polygon?.address || 
                               user?.wallets?.arbitrum?.address || user?.wallets?.optimism?.address || 
                               user?.wallets?.base?.address || user?.wallets?.bsc?.address));
         
         if (hasEVMAccess) {
-          // We have access, just switch the UI
+          // We have access, switch the chain
           if (walletConnectConnected && walletConnectAddress) {
             console.log('Using existing WalletConnect connection for EVM chain');
             toast.success(`Switched to ${phantomChains[chainName]?.name} via WalletConnect`);
+          } else if (connectedChains[chainName]?.isAvailable || connectedChains[chainName]?.isConnected) {
+            console.log('Using existing Phantom EVM connection for chain, switching...');
+            try {
+              await switchToChain(chainName);
+              toast.success(`Switched to ${phantomChains[chainName]?.name} via Phantom`);
+            } catch (error) {
+              console.log('Chain switch failed:', error);
+              throw error;
+            }
           } else {
             console.log('Using existing Phantom EVM connection for chain');
             toast.success(`Switched to ${phantomChains[chainName]?.name} via Phantom`);
