@@ -186,7 +186,7 @@ export const Header = () => {
           {/* Wallet Selector Modal */}
           {showWalletSelector && (
             <div 
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" 
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-24 px-4" 
               style={{ zIndex: 9999999 }}
               onClick={() => setShowWalletSelector(false)}
             >
