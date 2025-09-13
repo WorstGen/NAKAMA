@@ -24,7 +24,7 @@ import './App.css';
 const queryClient = new QueryClient();
 
 function App() {
-  console.log('🚀 NAKAMA App is rendering!');
+  // console.log('🚀 NAKAMA App is rendering!');
 
   return (
     <QueryClientProvider client={queryClient}>
