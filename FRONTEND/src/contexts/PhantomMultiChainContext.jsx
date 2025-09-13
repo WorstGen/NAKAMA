@@ -149,7 +149,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
 
   // Get all connected chains from Phantom
   const getConnectedChains = useCallback(async () => {
-    console.log('🔗 getConnectedChains called - isPhantomAvailable:', isPhantomAvailable(), 'connected:', connected);
+    // console.log('🔗 getConnectedChains called - isPhantomAvailable:', isPhantomAvailable(), 'connected:', connected);
     
     if (!isPhantomAvailable()) {
       console.log('🔗 Returning empty chains - Phantom not available');
@@ -179,7 +179,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
           const chainId = await window.ethereum.request({ method: 'eth_chainId' });
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
           
-          console.log('🔗 EVM chainId:', chainId, 'accounts:', accounts);
+          // console.log('🔗 EVM chainId:', chainId, 'accounts:', accounts);
           
           if (accounts.length > 0) {
             const chainIdHex = parseInt(chainId, 16);
@@ -296,8 +296,8 @@ export const PhantomMultiChainProvider = ({ children }) => {
 
   // Switch to a specific chain
   const switchToChain = useCallback(async (chainName) => {
-    console.log('🔄 switchToChain called with:', chainName);
-    console.log('🔄 isPhantomAvailable:', isPhantomAvailable());
+    // console.log('🔄 switchToChain called with:', chainName);
+    // console.log('🔄 isPhantomAvailable:', isPhantomAvailable());
     
     if (!isPhantomAvailable()) {
       throw new Error('Phantom wallet not found');
@@ -351,7 +351,7 @@ export const PhantomMultiChainProvider = ({ children }) => {
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: chainIdHex }],
           });
-          console.log('🔄 Chain switch successful');
+          // console.log('🔄 Chain switch successful');
           setActiveChain(chainName);
           
           // Update connected chains after switching

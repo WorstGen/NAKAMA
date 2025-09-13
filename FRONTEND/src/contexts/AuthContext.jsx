@@ -17,7 +17,7 @@ export const useTheme = () => {
     console.error('🎨 useTheme: ThemeContext not found! Make sure ThemeProvider is wrapping the component.');
     throw new Error('useTheme must be used within a ThemeProvider');
   }
-  console.log('🎨 useTheme: context found, isDark:', context.isDark);
+  // console.log('🎨 useTheme: context found, isDark:', context.isDark);
   return context;
 };
 
@@ -436,7 +436,7 @@ export const AuthProvider = ({ children }) => {
     const activeWallet = getActiveWallet();
     const hasPublicKey = publicKey || activeWallet?.address || directSolanaConnected;
     
-    console.log('🔐 Auth useEffect - connected:', connected, 'isAnyChainConnected:', isAnyChainConnected, 'directSolanaConnected:', directSolanaConnected, 'hasPublicKey:', hasPublicKey);
+    // console.log('🔐 Auth useEffect - connected:', connected, 'isAnyChainConnected:', isAnyChainConnected, 'directSolanaConnected:', directSolanaConnected, 'hasPublicKey:', hasPublicKey);
     
     // Only logout if no connection at all AND no user AND no auth headers
     if (!isConnected && !hasPublicKey && !user && !api.hasAuthHeaders()) {
