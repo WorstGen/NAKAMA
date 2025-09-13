@@ -49,8 +49,6 @@
 
     // Main embed function
     async embed(username, containerId, options = {}) {
-      console.log(`NAKAMA Widget: Embedding profile for ${username} in container ${containerId}`);
-      
       const container = document.getElementById(containerId);
       if (!container) {
         console.error(`NAKAMA Widget: Container with id "${containerId}" not found`);
@@ -59,16 +57,13 @@
 
       try {
         const profile = await this.getProfile(username);
-        console.log(`NAKAMA Widget: Profile data for ${username}:`, profile);
         
         if (!profile) {
-          console.log(`NAKAMA Widget: No profile found for ${username}`);
           container.innerHTML = this.renderError(`User "${username}" not found`);
           return;
         }
 
         const widgetOptions = { ...this.options, ...options };
-        console.log(`NAKAMA Widget: Rendering profile with options:`, widgetOptions);
         container.innerHTML = this.renderProfile(profile, widgetOptions);
         
         // Add click handler for profile links
@@ -93,7 +88,6 @@
       }
 
       try {
-        console.log(`NAKAMA Widget: Fetching profile for ${username}`);
         const response = await fetch(`${NAKAMA_API_BASE}/api/public/profile/${username}`);
         
         if (!response.ok) {
@@ -102,7 +96,6 @@
         }
         
         const data = await response.json();
-        console.log(`NAKAMA Widget: API response for ${username}:`, data);
         
         if (data.found) {
           this.cache.set(username, data);

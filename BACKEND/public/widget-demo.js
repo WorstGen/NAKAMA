@@ -49,7 +49,7 @@ async function initDemo() {
                     <li>API is not accessible</li>
                     <li>Network connection issue</li>
                 </ul>
-                <button onclick="tryNextUser()" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                <button class="try-next-user-btn" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
                     Try Different User
                 </button>
                 <div style="margin-top: 20px; font-size: 14px; color: #888;">
@@ -69,14 +69,14 @@ function tryNextUser() {
 function setTheme(theme) {
     currentTheme = theme;
     document.querySelectorAll('.theme-toggle button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    document.querySelector(`[data-theme="${theme}"]`).classList.add('active');
     initDemo();
 }
 
 function setSize(size) {
     currentSize = size;
     document.querySelectorAll('.size-toggle button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    document.querySelector(`[data-size="${size}"]`).classList.add('active');
     initDemo();
 }
 
@@ -127,7 +127,7 @@ async function testCustomUser() {
                 <div style="color: #666; margin-bottom: 20px;">
                     This user might not exist on NAKAMA or might not have a public profile.
                 </div>
-                <button onclick="initDemo()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                <button class="back-to-demo-btn" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
                     Back to Demo
                 </button>
             </div>
@@ -135,8 +135,55 @@ async function testCustomUser() {
     }
 }
 
+// Setup event listeners
+function setupEventListeners() {
+    // Theme toggle buttons
+    document.querySelectorAll('[data-theme]').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const theme = e.target.getAttribute('data-theme');
+            setTheme(theme);
+        });
+    });
+    
+    // Size toggle buttons
+    document.querySelectorAll('[data-size]').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const size = e.target.getAttribute('data-size');
+            setSize(size);
+        });
+    });
+    
+    // Test user button
+    const testUserBtn = document.getElementById('test-user-btn');
+    if (testUserBtn) {
+        testUserBtn.addEventListener('click', testCustomUser);
+    }
+    
+    // Enter key on username input
+    const testUsernameInput = document.getElementById('test-username');
+    if (testUsernameInput) {
+        testUsernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                testCustomUser();
+            }
+        });
+    }
+    
+    // Event delegation for dynamically created buttons
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('try-next-user-btn')) {
+            tryNextUser();
+        } else if (e.target.classList.contains('back-to-demo-btn')) {
+            initDemo();
+        }
+    });
+}
+
 // Initialize demo when page loads
 document.addEventListener('DOMContentLoaded', () => {
+    // Setup event listeners first
+    setupEventListeners();
+    
     // Wait a bit for the NAKAMA script to load
     setTimeout(() => {
         if (testNAKAMA()) {

@@ -140,14 +140,14 @@
             <p>Try different themes and sizes:</p>
             
             <div class="theme-toggle">
-                <button class="active" onclick="setTheme('dark')">Dark Theme</button>
-                <button onclick="setTheme('light')">Light Theme</button>
+                <button class="active" data-theme="dark">Dark Theme</button>
+                <button data-theme="light">Light Theme</button>
             </div>
             
             <div class="size-toggle">
-                <button onclick="setSize('small')">Small</button>
-                <button class="active" onclick="setSize('medium')">Medium</button>
-                <button onclick="setSize('large')">Large</button>
+                <button data-size="small">Small</button>
+                <button class="active" data-size="medium">Medium</button>
+                <button data-size="large">Large</button>
             </div>
             
             <div class="widget-container" id="demo-widget">
@@ -160,7 +160,7 @@
                 <div style="display: flex; gap: 10px; align-items: center; margin: 15px 0;">
                     <input type="text" id="test-username" placeholder="Enter username" 
                            style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
-                    <button onclick="testCustomUser()" 
+                    <button id="test-user-btn" 
                             style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
                         Test User
                     </button>
