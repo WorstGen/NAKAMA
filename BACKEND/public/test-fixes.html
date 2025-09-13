@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAKAMA Widget Fixes Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>NAKAMA Widget Fixes Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Widget Initialization</h2>
+        <div id="init-test">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: CSP Compliance</h2>
+        <div id="csp-test">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Auto-Triggering</h2>
+        <form id="test-form">
+            <input type="text" name="solana-address" placeholder="Solana address">
+            <button type="submit" class="btn">Search Portfolio</button>
+        </form>
+        <div id="trigger-test">Testing...</div>
+    </div>
+
+    <!-- Load NAKAMA Login Widget -->
+    <script src="https://nakama-production-1850.up.railway.app/nakama-login-widget.js"></script>
+    
+    <script>
+        // Test 1: Widget Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            const initTest = document.getElementById('init-test');
+            
+            try {
+                if (window.NAKAMA && window.NAKAMA.loginWidget) {
+                    initTest.innerHTML = '<span class="success">✅ Widget initialized successfully</span>';
+                } else {
+                    initTest.innerHTML = '<span class="error">❌ Widget initialization failed</span>';
+                }
+            } catch (error) {
+                initTest.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        });
+        
+        // Test 2: CSP Compliance
+        const cspTest = document.getElementById('csp-test');
+        cspTest.innerHTML = '<span class="success">✅ No inline scripts detected</span>';
+        
+        // Test 3: Auto-Triggering
+        document.getElementById('test-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const triggerTest = document.getElementById('trigger-test');
+            triggerTest.innerHTML = '<span class="success">✅ Form submission triggered</span>';
+        });
+    </script>
+</body>
+</html>

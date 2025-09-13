@@ -243,12 +243,12 @@ NAKAMA.stopWatching(watcher);
                     <div class="form-group">
                         <label>Solana Address</label>
                         <input type="text" name="solana-address" placeholder="Enter Solana wallet address">
-                        <button class="btn" onclick="simulateSearch('solana')">Search Portfolio</button>
+                        <button class="btn" data-action="simulate-search" data-chain="solana">Search Portfolio</button>
                     </div>
                     <div class="form-group">
                         <label>SOL Wallet</label>
                         <input type="text" name="sol-wallet" placeholder="Enter SOL wallet">
-                        <button class="btn" onclick="simulateAnalyze('solana')">Analyze Data</button>
+                        <button class="btn" data-action="simulate-analyze" data-chain="solana">Analyze Data</button>
                     </div>
                 </div>
             </div>
@@ -259,12 +259,12 @@ NAKAMA.stopWatching(watcher);
                     <div class="form-group">
                         <label>Ethereum Address</label>
                         <input type="text" name="ethereum-address" placeholder="Enter Ethereum wallet address">
-                        <button class="btn" onclick="simulateSearch('ethereum')">Search Portfolio</button>
+                        <button class="btn" data-action="simulate-search" data-chain="ethereum">Search Portfolio</button>
                     </div>
                     <div class="form-group">
                         <label>ETH Wallet</label>
                         <input type="text" name="eth-wallet" placeholder="Enter ETH wallet">
-                        <button class="btn" onclick="simulateAnalyze('ethereum')">Analyze Data</button>
+                        <button class="btn" data-action="simulate-analyze" data-chain="ethereum">Analyze Data</button>
                     </div>
                 </div>
             </div>
@@ -337,10 +337,10 @@ NAKAMA.loginWidget.options = {
             <h2>🔧 Manual Population</h2>
             <p>Test the wallet input population functionality:</p>
             
-            <button class="btn" onclick="populateInputs()">Populate All Inputs</button>
-            <button class="btn btn-secondary" onclick="clearInputs()">Clear All Inputs</button>
-            <button class="btn btn-secondary" onclick="startWatching()">Start Watching</button>
-            <button class="btn btn-secondary" onclick="stopWatching()">Stop Watching</button>
+            <button class="btn" data-action="populate-inputs">Populate All Inputs</button>
+            <button class="btn btn-secondary" data-action="clear-inputs">Clear All Inputs</button>
+            <button class="btn btn-secondary" data-action="start-watching">Start Watching</button>
+            <button class="btn btn-secondary" data-action="stop-watching">Stop Watching</button>
             
             <div class="status-info">
                 <h4>Status</h4>
@@ -399,116 +399,6 @@ NAKAMA.populateInputs({
     <!-- Load NAKAMA Login Widget -->
     <script src="https://nakama-production-1850.up.railway.app/nakama-login-widget.js"></script>
     
-    <script>
-        let watcher = null;
-        
-        // Update status display
-        function updateStatus() {
-            const user = NAKAMA.getUser();
-            const wallets = NAKAMA.getWallets();
-            const statusDisplay = document.getElementById('status-display');
-            const walletDisplay = document.getElementById('wallet-display');
-            
-            if (user) {
-                statusDisplay.innerHTML = `
-                    <p><span class="populated-indicator populated-true"></span>Connected as @${user.displayName || user.username}</p>
-                    <p>Wallet addresses are ready to be populated!</p>
-                `;
-                
-                const connectedWallets = Object.entries(wallets)
-                    .filter(([chain, wallet]) => wallet !== null)
-                    .map(([chain, wallet]) => `
-                        <div class="wallet-info">
-                            <h4>${chain.charAt(0).toUpperCase() + chain.slice(1)}</h4>
-                            <div class="wallet-address">${wallet.address}</div>
-                        </div>
-                    `).join('');
-                
-                walletDisplay.innerHTML = connectedWallets || '<p>No wallets connected</p>';
-            } else {
-                statusDisplay.innerHTML = `
-                    <p><span class="populated-indicator populated-false"></span>Not connected</p>
-                    <p>Connect your wallet to populate inputs automatically!</p>
-                `;
-                walletDisplay.innerHTML = '<p>No wallets connected</p>';
-            }
-        }
-        
-        // Populate inputs manually
-        function populateInputs() {
-            const count = NAKAMA.populateInputs();
-            if (count > 0) {
-                console.log(`Populated ${count} inputs`);
-            } else {
-                console.log('No inputs found to populate');
-            }
-        }
-        
-        // Clear all inputs
-        function clearInputs() {
-            const inputs = document.querySelectorAll('input[data-nakama-populated="true"]');
-            inputs.forEach(input => {
-                input.value = '';
-                input.style.borderLeft = '';
-                input.title = '';
-                input.removeAttribute('data-nakama-populated');
-                input.removeAttribute('data-nakama-chain');
-            });
-            console.log(`Cleared ${inputs.length} inputs`);
-        }
-        
-        // Start watching for inputs
-        function startWatching() {
-            if (watcher) {
-                NAKAMA.stopWatching(watcher);
-            }
-            watcher = NAKAMA.watchInputs({
-                interval: 1000,
-                maxAttempts: 60
-            });
-            console.log('Started watching for wallet inputs');
-        }
-        
-        // Stop watching
-        function stopWatching() {
-            if (watcher) {
-                NAKAMA.stopWatching(watcher);
-                watcher = null;
-                console.log('Stopped watching for wallet inputs');
-            }
-        }
-        
-        // Update status every second
-        setInterval(updateStatus, 1000);
-        
-        // Initial update
-        updateStatus();
-        
-        // Simulate search functionality
-        function simulateSearch(chain) {
-            console.log(`Simulating ${chain} portfolio search...`);
-            alert(`🔍 Searching ${chain} portfolio...\n\nThis would normally:\n- Fetch wallet data\n- Load transaction history\n- Display portfolio value\n- Show token holdings`);
-        }
-        
-        // Simulate analyze functionality
-        function simulateAnalyze(chain) {
-            console.log(`Simulating ${chain} data analysis...`);
-            alert(`📊 Analyzing ${chain} data...\n\nThis would normally:\n- Analyze transaction patterns\n- Calculate profit/loss\n- Generate insights\n- Create charts`);
-        }
-        
-        // Auto-populate inputs when user connects
-        document.addEventListener('DOMContentLoaded', () => {
-            // Watch for user connection changes
-            setInterval(() => {
-                const user = NAKAMA.getUser();
-                if (user) {
-                    // Auto-populate inputs when user connects
-                    setTimeout(() => {
-                        populateInputs();
-                    }, 1000);
-                }
-            }, 2000);
-        });
-    </script>
+    <script src="wallet-inputs-demo.js"></script>
 </body>
 </html>

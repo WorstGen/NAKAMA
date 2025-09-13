@@ -435,6 +435,11 @@
       }
     }
 
+    // Connect method for external API
+    async connect() {
+      return await this.connectSolana();
+    }
+
     // Connect to Solana
     async connectSolana() {
       const response = await window.solana.connect();
