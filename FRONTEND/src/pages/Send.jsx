@@ -453,21 +453,23 @@ export const Send = () => {
                 <div className="max-h-40 overflow-y-auto">
                   <p className="text-white/60 text-sm mb-2">Or select from contacts:</p>
                   <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {contacts.contacts.map((contact) => (
-                      <button
-                        key={contact.username}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, recipient: contact.username })}
-                        className={`w-full text-left px-3 py-2 rounded transition-colors ${
-                          formData.recipient === contact.username 
-                            ? 'bg-purple-500/20 border border-purple-400 text-white' 
-                            : 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600'
-                        }`}
-                      >
-                        <span className="text-white">@{contact.username}</span>
-                        {contact.bio && <span className="text-white/60 text-sm ml-2">{contact.bio}</span>}
-                      </button>
-                    ))}
+                    {contacts.contacts.map((contact) => {
+                      const displayName = contact.displayName || contact.username;
+                      return (
+                        <button
+                          key={contact.username}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, recipient: contact.username })}
+                          className={`w-full text-left px-3 py-2 rounded transition-colors ${
+                            formData.recipient === contact.username 
+                              ? 'bg-purple-500/20 border border-purple-400 text-white' 
+                              : 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600'
+                          }`}
+                        >
+                          <span className="text-white">@{displayName}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
