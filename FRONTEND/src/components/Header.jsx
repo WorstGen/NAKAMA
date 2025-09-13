@@ -11,17 +11,12 @@ import toast from 'react-hot-toast';
 export const Header = () => {
   const location = useLocation();
   const { 
-    disconnectAllChains,
     activeChain,
     connectedChains,
     phantomChains,
     switchToChain
   } = usePhantomMultiChain();
   const { user, authenticate, logout } = useAuth();
-  const { 
-    isConnected: walletConnectConnected,
-    disconnect: disconnectWalletConnect
-  } = useWalletConnect();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [portalRoot, setPortalRoot] = useState(null);
