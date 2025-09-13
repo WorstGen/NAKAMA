@@ -50,7 +50,7 @@ const ProfileImage = ({
   };
 
   const handleImageLoad = () => {
-    console.log(`✅ Image loaded successfully for ${username}`);
+    // console.log(`✅ Image loaded successfully for ${username}`);
     setImageError(false);
     setIsLoading(false);
     if (onLoad) onLoad();
