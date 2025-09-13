@@ -8,6 +8,7 @@ import { api } from '../services/api';
 import { useAuth, useTheme } from '../contexts/AuthContext';
 import { phantomChains } from '../contexts/PhantomMultiChainContext';
 import { getTokensByChain } from '../config/web3Config';
+import { formatTokenAmount } from '../utils/formatUtils';
 import toast from 'react-hot-toast';
 import { PaperAirplaneIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 
@@ -557,7 +558,7 @@ export const Send = () => {
                 </div>
                 
                 <p className="text-white/80">
-                  Send <span className="font-semibold text-white">{formData.amount} {formData.token}</span>
+                  Send <span className="font-semibold text-white">{formatTokenAmount(formData.amount, formData.token)}</span>
                 </p>
                 
                 <p className="text-white/80">

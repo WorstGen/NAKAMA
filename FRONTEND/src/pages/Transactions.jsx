@@ -3,6 +3,7 @@ import { useQuery } from 'react-query';
 import { api } from '../services/api';
 import { useAuth, useTheme } from '../contexts/AuthContext';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
+import { formatTokenAmount } from '../utils/formatUtils';
 import { ClockIcon, CheckCircleIcon, XCircleIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
 
 export const Transactions = () => {
@@ -118,7 +119,7 @@ export const Transactions = () => {
                       <div>
                         <div className="flex items-center space-x-2">
                           <p className="text-white font-semibold">
-                            {type === 'sent' ? 'Sent' : 'Received'} {tx.amount} {tx.token}
+                            {type === 'sent' ? 'Sent' : 'Received'} {formatTokenAmount(tx.amount, tx.token)}
                           </p>
                           <div className="flex items-center space-x-1">
                             {getStatusIcon(tx.status)}

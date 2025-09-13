@@ -3,6 +3,7 @@ import { useAuth, useTheme } from '../contexts/AuthContext';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
+import { formatTokenAmount } from '../utils/formatUtils';
 import { Link } from 'react-router-dom';
 import ProfileImage from '../components/ProfileImage';
 import {
@@ -157,7 +158,7 @@ export const Dashboard = () => {
               <div key={tx.signature} className="flex items-center justify-between py-2">
                 <div>
                   <p className={`text-white font-medium`}>
-                    {tx.amount} {tx.token}
+                    {formatTokenAmount(tx.amount, tx.token)}
                   </p>
                   <p className="text-gray-400 text-sm">
                     {type === 'sent' ? 'To' : 'From'}: @{type === 'sent' ? tx.toUsername : tx.fromUsername || 'Unknown'}
