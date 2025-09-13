@@ -103,26 +103,26 @@ export const AuthProvider = ({ children }) => {
     // Check for wallet connections - prioritize based on active chain
     let activePublicKey, activeSignMessage;
     
-    console.log('🔐 Checking wallet connections...');
-    console.log('window.solana exists:', !!window.solana);
-    console.log('window.solana.isConnected:', window.solana?.isConnected);
-    console.log('window.solana.publicKey:', !!window.solana?.publicKey);
-    console.log('window.ethereum exists:', !!window.ethereum);
+    // console.log('🔐 Checking wallet connections...');
+    // console.log('window.solana exists:', !!window.solana);
+    // console.log('window.solana.isConnected:', window.solana?.isConnected);
+    // console.log('window.solana.publicKey:', !!window.solana?.publicKey);
+    // console.log('window.ethereum exists:', !!window.ethereum);
     
     // Check wallet connections
     const activeWallet = getActiveWallet();
     const isEVMChain = activeWallet?.address?.startsWith('0x');
     
-    console.log('🔐 Active wallet:', activeWallet);
-    console.log('🔐 WalletConnect connected:', walletConnectConnected);
-    console.log('🔐 WalletConnect address:', walletConnectAddress);
-    console.log('🔐 Is EVM chain:', isEVMChain);
-    console.log('🔐 Active chain address:', activeWallet?.address);
+    // console.log('🔐 Active wallet:', activeWallet);
+    // console.log('🔐 WalletConnect connected:', walletConnectConnected);
+    // console.log('🔐 WalletConnect address:', walletConnectAddress);
+    // console.log('🔐 Is EVM chain:', isEVMChain);
+    // console.log('🔐 Active chain address:', activeWallet?.address);
     
     // Also check if we have an EVM address in the publicKey (fallback detection)
     const hasEVMAddress = publicKey && typeof publicKey === 'string' && publicKey.startsWith('0x');
-    console.log('🔐 Has EVM address in publicKey:', hasEVMAddress);
-    console.log('🔐 PublicKey value:', publicKey);
+    // console.log('🔐 Has EVM address in publicKey:', hasEVMAddress);
+    // console.log('🔐 PublicKey value:', publicKey);
     
     // Priority 1: Direct Solana connection (always prefer Solana)
     if (window.solana && window.solana.isConnected && window.solana.publicKey) {
@@ -165,11 +165,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     setLoading(true);
-    console.log('Starting authentication process...');
+    // console.log('Starting authentication process...');
 
     try {
       // Validate wallet is properly configured
-      console.log('Validating wallet configuration...');
+      // console.log('Validating wallet configuration...');
 
       // Check if wallet is connected and has a valid address format
       const address = activePublicKey.toString();
@@ -177,17 +177,17 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid wallet address format');
       }
 
-      console.log('Setting up wallet authentication...');
+      // console.log('Setting up wallet authentication...');
 
       const message = `Sign this message to authenticate with SolConnect: ${Date.now()}`;
-      console.log('Message to sign:', message);
-      console.log('Message length:', message.length);
+      // console.log('Message to sign:', message);
+      // console.log('Message length:', message.length);
 
       let signature;
       try {
         const messageBytes = new TextEncoder().encode(message);
-        console.log('Message bytes:', messageBytes);
-        console.log('Message bytes length:', messageBytes.length);
+        // console.log('Message bytes:', messageBytes);
+        // console.log('Message bytes length:', messageBytes.length);
 
         // Try different approaches for Solana signing
         let signPromise;
@@ -210,7 +210,7 @@ export const AuthProvider = ({ children }) => {
         );
 
         signature = await Promise.race([signPromise, timeoutPromise]);
-        console.log('Raw signature received:', signature);
+        // console.log('Raw signature received:', signature);
 
       } catch (signError) {
         console.error('Wallet signing failed:', signError);
@@ -232,7 +232,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('No signature received from wallet');
       }
 
-      console.log('Signature type:', typeof signature);
+      // console.log('Signature type:', typeof signature);
 
       // Handle different signature formats
       let signatureArray;
@@ -241,16 +241,16 @@ export const AuthProvider = ({ children }) => {
       if (typeof signature === 'object' && signature.signature) {
         // New format: {signature: Uint8Array, publicKey: string}
         signatureArray = signature.signature;
-        console.log('Using new signature format');
+        // console.log('Using new signature format');
 
         // Convert raw signature bytes to base58 (backend expects this)
         encodedSignature = bs58.encode(signatureArray);
-        console.log('Converted signature to base58:', encodedSignature);
-        console.log('Signature formats available:', {
-          hex: !!signature.signatureHex,
-          base64: !!signature.signatureBase64,
-          base58: !!encodedSignature
-        });
+        // console.log('Converted signature to base58:', encodedSignature);
+        // console.log('Signature formats available:', {
+        //   hex: !!signature.signatureHex,
+        //   base64: !!signature.signatureBase64,
+        //   base58: !!encodedSignature
+        // });
       } else if (typeof signature === 'string' && signature.startsWith('0x')) {
         // EVM hex signature format
         console.log('Using EVM hex signature format');
@@ -274,7 +274,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid signature format - expected Uint8Array');
       }
 
-      console.log('Signature as array:', signatureArray);
+      // console.log('Signature as array:', signatureArray);
 
       // Validate signature length
       // Solana signatures are 64 bytes (Ed25519), EVM signatures are 65 bytes (64 + recovery ID)
@@ -283,7 +283,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       // We now always encode with bs58 for backend compatibility
-      console.log('Final signature (base58 encoded):', encodedSignature);
+      // console.log('Final signature (base58 encoded):', encodedSignature);
 
       console.log('Public key:', activePublicKey.toString());
 
@@ -302,7 +302,7 @@ export const AuthProvider = ({ children }) => {
 
       for (let retryCount = 0; retryCount < maxRetries; retryCount++) {
         try {
-          console.log(`Profile fetch attempt ${retryCount + 1}/${maxRetries}`);
+          // console.log(`Profile fetch attempt ${retryCount + 1}/${maxRetries}`);
           profile = await api.getProfile();
           break; // Success, exit retry loop
         } catch (profileError) {
@@ -326,7 +326,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      console.log('Profile fetch result:', profile);
+      // console.log('Profile fetch result:', profile);
 
       // Handle profile not found for EVM addresses
       if (!profile.exists) {
