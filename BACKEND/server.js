@@ -123,10 +123,10 @@ const EVM_CHAINS = {
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }
   },
   polygon: {
-    rpcUrl: 'https://polygon.llamarpc.com',
+    rpcUrl: 'https://polygon-rpc.com',
     chainId: 137,
     name: 'Polygon',
-    nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 }
+    nativeCurrency: { name: 'Polygon Ecosystem Token', symbol: 'POL', decimals: 18 }
   },
   base: {
     rpcUrl: 'https://base.llamarpc.com',
@@ -1529,8 +1529,8 @@ app.post('/api/transactions/prepare',
         
         let transactionData;
 
-        if (token === chainConfig.nativeCurrency.symbol) {
-          // Native token transfer (ETH, MATIC, etc.)
+        if (token === chainConfig.nativeCurrency.symbol || (targetChain === 'polygon' && token === 'MATIC')) {
+          // Native token transfer (ETH, POL, MATIC, etc.)
           const value = ethers.parseEther(amount.toString());
           
           // Get gas price and nonce
