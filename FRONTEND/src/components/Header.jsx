@@ -27,7 +27,7 @@ export const Header = () => {
       setConnecting(true);
       
       if (window.solana && window.solana.isPhantom) {
-        const response = await window.solana.connect();
+        await window.solana.connect();
         // console.log('Connected to Solana:', response.publicKey.toString());
         toast.success('Connected to Solana!');
         
