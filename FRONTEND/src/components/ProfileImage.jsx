@@ -37,7 +37,7 @@ const ProfileImage = ({
     if (sanitizedSrc) {
       setImageError(false);
       setIsLoading(true);
-      console.log(`ProfileImage src for ${username}:`, sanitizedSrc);
+      // console.log(`ProfileImage src for ${username}:`, sanitizedSrc);
     }
   }, [sanitizedSrc, username]);
 
@@ -95,7 +95,7 @@ const ProfileImage = ({
   }
 
   // Debug Cloudinary configuration
-  console.log('ProfileImage using sanitized URL:', sanitizedSrc);
+  // console.log('ProfileImage using sanitized URL:', sanitizedSrc);
   
   // Remove test image - it might be interfering with the actual image
 
@@ -117,7 +117,7 @@ const ProfileImage = ({
             handleImageError();
           }}
           onLoad={(e) => {
-            console.log('✅ IMG TAG LOADED for', username, ':', e.target?.currentSrc);
+            // console.log('✅ IMG TAG LOADED for', username, ':', e.target?.currentSrc);
             handleImageLoad();
           }}
         />
