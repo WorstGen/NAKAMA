@@ -1118,7 +1118,34 @@ app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
   }
 });
 
-// Search users by username
+// Public endpoint for widget to get user profiles
+app.get('/api/public/profile/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    
+    const user = await User.findOne({ username: username.toLowerCase() });
+    
+    if (!user) {
+      return res.json({ found: false });
+    }
+
+    res.json({
+      found: true,
+      username: user.username,
+      displayName: user.displayName,
+      walletAddress: user.walletAddress,
+      bio: user.bio,
+      profilePicture: user.profilePicture,
+      isVerified: user.isVerified,
+      wallets: user.wallets || {}
+    });
+  } catch (error) {
+    console.error('Public profile search error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Search users by username (authenticated)
 app.get('/api/users/search/:username', verifyWallet, async (req, res) => {
   try {
     const { username } = req.params;
