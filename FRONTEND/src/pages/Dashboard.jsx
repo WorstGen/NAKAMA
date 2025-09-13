@@ -75,7 +75,7 @@ export const Dashboard = () => {
       {/* Welcome Section */}
       <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-4 md:p-6 mb-6 md:mb-8 shadow-2xl border`}>
         <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-lg">
-          Welcome back, @{user.username}!
+          Welcome back, @{user.displayName || user.username}!
         </h1>
         <p className="text-gray-200 drop-shadow-md text-sm md:text-base">
           Manage your contacts and send transactions securely.
