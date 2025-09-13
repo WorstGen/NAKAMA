@@ -17,7 +17,7 @@ export const Header = () => {
     phantomChains,
     switchToChain
   } = usePhantomMultiChain();
-  const { user, authenticate } = useAuth();
+  const { user, authenticate, logout } = useAuth();
   const { 
     isConnected: walletConnectConnected,
     disconnect: disconnectWalletConnect
@@ -348,25 +348,15 @@ export const Header = () => {
                   {/* Quick Disconnect - Below Active Chains */}
                   <div className="mt-4 pt-3 border-t border-gray-700/50">
                     <button
-                      onClick={async () => {
+                      onClick={() => {
                         try {
                           setMobileMenuOpen(false);
-                          console.log('🔌 Disconnecting from all wallets...');
+                          console.log('🚪 Disconnecting user...');
 
-                          // Disconnect from Phantom (Solana + EVM)
-                          await disconnectAllChains();
+                          // Instant logout - clear user state immediately
+                          logout();
 
-                          // Disconnect from WalletConnect if connected
-                          if (walletConnectConnected) {
-                            console.log('🔌 Disconnecting from WalletConnect...');
-                            disconnectWalletConnect();
-                          }
-
-                          console.log('✅ All wallets disconnected');
-                          
-                          // Refresh the page to ensure complete state reset
-                          console.log('🔄 Refreshing page to complete disconnection...');
-                          window.location.reload();
+                          console.log('✅ User disconnected successfully');
                         } catch (error) {
                           console.error('❌ Disconnection failed:', error);
                           alert(`Disconnection failed: ${error.message}`);
