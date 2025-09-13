@@ -1145,6 +1145,44 @@ app.get('/api/public/profile/:username', async (req, res) => {
   }
 });
 
+// Public endpoint to find user by wallet address
+app.get('/api/public/profile/by-wallet/:walletAddress', async (req, res) => {
+  try {
+    const { walletAddress } = req.params;
+    
+    const user = await User.findOne({ 
+      $or: [
+        { walletAddress: walletAddress },
+        { 'wallets.solana.address': walletAddress },
+        { 'wallets.ethereum.address': walletAddress },
+        { 'wallets.polygon.address': walletAddress },
+        { 'wallets.arbitrum.address': walletAddress },
+        { 'wallets.optimism.address': walletAddress },
+        { 'wallets.base.address': walletAddress },
+        { 'wallets.bsc.address': walletAddress }
+      ]
+    });
+    
+    if (!user) {
+      return res.json({ found: false });
+    }
+
+    res.json({
+      found: true,
+      username: user.username,
+      displayName: user.displayName,
+      walletAddress: user.walletAddress,
+      bio: user.bio,
+      profilePicture: user.profilePicture,
+      isVerified: user.isVerified,
+      wallets: user.wallets || {}
+    });
+  } catch (error) {
+    console.error('Public profile by wallet search error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Search users by username (authenticated)
 app.get('/api/users/search/:username', verifyWallet, async (req, res) => {
   try {
