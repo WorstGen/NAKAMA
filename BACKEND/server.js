@@ -722,6 +722,7 @@ app.get('/api/profile', verifyWallet, async (req, res) => {
       exists: true,
       _id: user._id,
       username: user.username,
+      displayName: user.displayName,
       bio: user.bio,
       profilePicture: user.profilePicture,
       ethAddress: user.wallets?.ethereum?.address || user.ethAddress,
