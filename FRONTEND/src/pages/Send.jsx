@@ -195,10 +195,20 @@ export const Send = () => {
       return;
     }
     
-    const activeWallet = getActiveWallet();
-    if (!activeWallet || !activeWallet.signMessage) {
-      toast.error('Wallet not connected properly');
-      return;
+    // Check wallet connection based on selected chain
+    if (selectedChain === 'solana') {
+      // For Solana, check if user is authenticated and has Solana wallet
+      if (!isAuthenticated || !user?.wallets?.solana?.address) {
+        toast.error('Solana wallet not connected properly');
+        return;
+      }
+    } else {
+      // For EVM chains, check active wallet
+      const activeWallet = getActiveWallet();
+      if (!activeWallet || !activeWallet.signMessage) {
+        toast.error('Wallet not connected properly');
+        return;
+      }
     }
 
     try {
@@ -416,8 +426,8 @@ export const Send = () => {
             )}
             
             {/* Transaction note */}
-            <div className="mt-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <p className="text-green-300 text-sm">
+            <div className="mt-2 p-3 bg-gradient-to-r from-orange-500/10 to-blue-500/10 border border-orange-500/20 rounded-lg">
+              <p className="text-orange-300 text-sm">
                 💡 <strong>Note:</strong> Transactions are processed on the selected network. 
                 Choose your preferred chain to send tokens on that specific network.
               </p>
