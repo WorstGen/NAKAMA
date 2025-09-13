@@ -345,6 +345,7 @@ const UserSchema = new mongoose.Schema({
   // Legacy field - keep for backward compatibility (Solana wallet)
   walletAddress: { type: String, required: true, unique: true, index: true },
   username: { type: String, required: true, unique: true, lowercase: true, index: true },
+  displayName: { type: String, required: true }, // User's preferred capitalization
   bio: { type: String, maxLength: 500 },
   profilePicture: { type: String },
   
@@ -859,6 +860,7 @@ app.post('/api/profile',
       }
 
       const { username, bio } = req.body;
+      const displayName = username; // Use the username as display name with original capitalization
       const walletAddress = req.walletAddress;
 
       // Determine if this is a Solana or EVM address
@@ -910,6 +912,7 @@ app.post('/api/profile',
         // Update existing user - add new wallet if not already present
         const updateData = {
           username: username.toLowerCase(),
+          displayName: displayName,
           bio,
           updatedAt: new Date()
         };
@@ -967,6 +970,7 @@ app.post('/api/profile',
         user = await User.create({
           walletAddress: isSolanaAddress ? walletAddress : null, // Keep legacy field for Solana
           username: username.toLowerCase(),
+          displayName: displayName,
           bio,
           wallets,
           createdAt: new Date()
@@ -985,6 +989,7 @@ app.post('/api/profile',
         user: {
           _id: user._id,
           username: user.username,
+          displayName: user.displayName,
           bio: user.bio,
           ethAddress: user.wallets?.ethereum?.address || user.ethAddress,
           profilePicture: user.profilePicture,
@@ -1119,6 +1124,7 @@ app.get('/api/users/search/:username', verifyWallet, async (req, res) => {
     res.json({
       found: true,
       username: user.username,
+      displayName: user.displayName,
       walletAddress: user.walletAddress,
       bio: user.bio,
       profilePicture: user.profilePicture,
@@ -1140,6 +1146,7 @@ app.get('/api/contacts', verifyWallet, async (req, res) => {
         const user = await User.findOne({ username: contact.contactUsername });
         return {
           username: contact.contactUsername,
+          displayName: user?.displayName || contact.contactUsername,
           walletAddress: contact.contactAddress,
           bio: user?.bio,
           profilePicture: user?.profilePicture,
