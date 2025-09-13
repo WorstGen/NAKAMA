@@ -131,16 +131,18 @@ export const Dashboard = () => {
         <div className={`bg-gray-800 border-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 shadow-xl border`}>
           <h3 className={`text-white font-semibold text-base md:text-lg mb-3 md:mb-4`}>Recent Contacts</h3>
           {contacts?.contacts?.slice(0, 5).map((contact) => (
-            <div key={contact.username} className="flex items-center space-x-3 py-2">
-              <ProfileImage
-                src={contact.profilePicture || null}
-                username={contact.displayName || contact.username}
-                size="sm"
-                className="shadow-md"
-              />
-              <div>
+            <div key={contact.username} className="flex items-start space-x-3 py-2">
+              <div className="flex-shrink-0">
+                <ProfileImage
+                  src={contact.profilePicture || null}
+                  username={contact.displayName || contact.username}
+                  size="sm"
+                  className="shadow-md"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
                 <p className={`text-white font-medium`}>@{contact.displayName || contact.username}</p>
-                <p className="text-gray-400 text-sm">{contact.bio || 'No bio available'}</p>
+                <p className="text-gray-400 text-sm break-words">{contact.bio || 'No bio available'}</p>
               </div>
             </div>
           )) || <p className={`text-gray-400`}>No contacts yet</p>}
