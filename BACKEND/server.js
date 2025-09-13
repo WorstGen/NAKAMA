@@ -1398,6 +1398,26 @@ app.post('/api/transactions/prepare',
         // SOL transfer
         const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
         
+        // Check SOL balance
+        try {
+          const balance = await connection.getBalance(fromPubkey);
+          
+          if (balance < lamports) {
+            return res.status(400).json({ 
+              error: `Insufficient SOL balance. You have ${(balance / LAMPORTS_PER_SOL).toFixed(6)} SOL but trying to send ${amount} SOL`,
+              currentBalance: balance / LAMPORTS_PER_SOL,
+              requestedAmount: amount,
+              token: 'SOL'
+            });
+          }
+        } catch (balanceError) {
+          console.error('SOL balance check error:', balanceError);
+          return res.status(400).json({ 
+            error: 'Unable to verify SOL balance. Please ensure you have sufficient SOL.',
+            token: 'SOL'
+          });
+        }
+        
         transaction = new Transaction().add(
           SystemProgram.transfer({
             fromPubkey,
@@ -1435,6 +1455,24 @@ app.post('/api/transactions/prepare',
         // Get or create associated token accounts
         const fromTokenAccount = await getAssociatedTokenAddress(mint, fromPubkey);
         const toTokenAccount = await getAssociatedTokenAddress(mint, toPubkey);
+        
+        // Check if sender has the token account
+        try {
+          const senderTokenAccountInfo = await connection.getAccountInfo(fromTokenAccount);
+          if (!senderTokenAccountInfo) {
+            return res.status(400).json({ 
+              error: `You don't have any ${token} tokens. Please acquire some ${token} first.`,
+              token,
+              requiredToken: token
+            });
+          }
+        } catch (balanceError) {
+          console.error('Balance check error:', balanceError);
+          return res.status(400).json({ 
+            error: `Unable to verify ${token} balance. Please ensure you have sufficient ${token} tokens.`,
+            token
+          });
+        }
 
         // Create SPL token transfer instruction
         const transferInstruction = createTransferInstruction(
