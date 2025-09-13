@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAKAMA Widget - Wallet Input Population Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        
+        .demo-header {
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            color: white;
+        }
+        
+        .demo-logo {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 20px 40px;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-group input[data-nakama-populated="true"] {
+            border-left: 3px solid #10b981;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .code-block {
+            background: #1a1a1a;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 10px 10px 10px 0;
+        }
+        
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .status-info {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        
+        .wallet-info {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        
+        .wallet-info h4 {
+            margin-top: 0;
+            color: #0c4a6e;
+        }
+        
+        .wallet-address {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            color: #0c4a6e;
+            word-break: break-all;
+            background: rgba(14, 165, 233, 0.1);
+            padding: 8px;
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+        
+        .example-form {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .example-form h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .populated-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .populated-true {
+            background: #10b981;
+        }
+        
+        .populated-false {
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Demo Header with NAKAMA Login Widget -->
+    <header class="demo-header">
+        <div class="demo-logo">Data Site Demo</div>
+        <nav>
+            <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">Portfolio</a>
+            <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">Analytics</a>
+            <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">Reports</a>
+        </nav>
+        <!-- NAKAMA Login Widget will be injected here -->
+    </header>
+
+    <div class="container">
+        <h1>🔍 Wallet Input Population Demo</h1>
+        
+        <div class="demo-section">
+            <h2>📖 How It Works</h2>
+            <p>NAKAMA automatically detects and populates wallet address inputs on your site using the user's registered addresses.</p>
+            
+            <div class="code-block">
+// Basic usage - auto-populate all detected wallet inputs
+NAKAMA.populateInputs();
+
+// Advanced usage with custom options
+NAKAMA.populateInputs({
+  selectors: {
+    solana: ['input[name="solana-wallet"]'],
+    ethereum: ['input[name="eth-address"]']
+  },
+  chainPriority: ['solana', 'ethereum', 'polygon'],
+  autoDetect: true
+});
+
+// Watch for new inputs (useful for dynamic content)
+const watcher = NAKAMA.watchInputs({
+  interval: 1000,
+  maxAttempts: 60
+});
+
+// Stop watching
+NAKAMA.stopWatching(watcher);
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎯 Auto-Detection Examples</h2>
+            <p>The widget automatically detects inputs with these patterns:</p>
+            
+            <div class="example-form">
+                <h3>Solana Wallet Inputs</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Solana Address</label>
+                        <input type="text" name="solana-address" placeholder="Enter Solana wallet address">
+                        <button class="btn" onclick="simulateSearch('solana')">Search Portfolio</button>
+                    </div>
+                    <div class="form-group">
+                        <label>SOL Wallet</label>
+                        <input type="text" name="sol-wallet" placeholder="Enter SOL wallet">
+                        <button class="btn" onclick="simulateAnalyze('solana')">Analyze Data</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="example-form">
+                <h3>Ethereum Wallet Inputs</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ethereum Address</label>
+                        <input type="text" name="ethereum-address" placeholder="Enter Ethereum wallet address">
+                        <button class="btn" onclick="simulateSearch('ethereum')">Search Portfolio</button>
+                    </div>
+                    <div class="form-group">
+                        <label>ETH Wallet</label>
+                        <input type="text" name="eth-wallet" placeholder="Enter ETH wallet">
+                        <button class="btn" onclick="simulateAnalyze('ethereum')">Analyze Data</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="example-form">
+                <h3>Polygon Wallet Inputs</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Polygon Address</label>
+                        <input type="text" name="polygon-address" placeholder="Enter Polygon wallet address">
+                    </div>
+                    <div class="form-group">
+                        <label>MATIC Wallet</label>
+                        <input type="text" name="matic-wallet" placeholder="Enter MATIC wallet">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="example-form">
+                <h3>Other Chains</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Arbitrum Address</label>
+                        <input type="text" name="arbitrum-address" placeholder="Enter Arbitrum wallet address">
+                    </div>
+                    <div class="form-group">
+                        <label>Optimism Address</label>
+                        <input type="text" name="optimism-address" placeholder="Enter Optimism wallet address">
+                    </div>
+                    <div class="form-group">
+                        <label>Base Address</label>
+                        <input type="text" name="base-address" placeholder="Enter Base wallet address">
+                    </div>
+                    <div class="form-group">
+                        <label>BNB Chain Address</label>
+                        <input type="text" name="bsc-address" placeholder="Enter BNB Chain wallet address">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>⚡ Auto-Triggering</h2>
+            <p>The widget automatically triggers form submissions and button clicks after populating inputs:</p>
+            
+            <div class="code-block">
+// Configure auto-triggering
+NAKAMA.loginWidget.options = {
+  autoTrigger: true,        // Enable auto-triggering (default: true)
+  autoTriggerDelay: 500     // Delay before triggering (default: 500ms)
+};
+
+// The widget will automatically:
+// 1. Populate wallet address inputs
+// 2. Wait for the configured delay
+// 3. Look for submit buttons or forms
+// 4. Click buttons or submit forms automatically
+            </div>
+            
+            <h3>What Gets Triggered:</h3>
+            <ul>
+                <li><strong>Form Submissions:</strong> Submit buttons in forms containing wallet inputs</li>
+                <li><strong>Nearby Buttons:</strong> Action buttons near the populated inputs</li>
+                <li><strong>Common Actions:</strong> Buttons with "search", "analyze", "load", "fetch" text</li>
+                <li><strong>Wallet-Related:</strong> Buttons mentioning "wallet", "address", "portfolio"</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h2>🔧 Manual Population</h2>
+            <p>Test the wallet input population functionality:</p>
+            
+            <button class="btn" onclick="populateInputs()">Populate All Inputs</button>
+            <button class="btn btn-secondary" onclick="clearInputs()">Clear All Inputs</button>
+            <button class="btn btn-secondary" onclick="startWatching()">Start Watching</button>
+            <button class="btn btn-secondary" onclick="stopWatching()">Stop Watching</button>
+            
+            <div class="status-info">
+                <h4>Status</h4>
+                <div id="status-display">
+                    <p><span class="populated-indicator populated-false"></span>Not connected</p>
+                    <p>Connect your wallet to populate inputs automatically!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📊 Current Wallet Addresses</h2>
+            <div id="wallet-display">
+                <p>No wallets connected</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎯 Integration Examples</h2>
+            
+            <h3>Portfolio Tracker</h3>
+            <div class="code-block">
+// Auto-populate portfolio wallet inputs
+NAKAMA.populateInputs({
+  selectors: {
+    solana: ['#portfolio-solana-wallet'],
+    ethereum: ['#portfolio-eth-wallet'],
+    polygon: ['#portfolio-polygon-wallet']
+  }
+});
+            </div>
+            
+            <h3>Analytics Dashboard</h3>
+            <div class="code-block">
+// Watch for dynamically loaded wallet inputs
+const watcher = NAKAMA.watchInputs({
+  interval: 500,
+  maxAttempts: 120
+});
+            </div>
+            
+            <h3>Custom Selectors</h3>
+            <div class="code-block">
+// Use custom selectors for your specific form
+NAKAMA.populateInputs({
+  selectors: {
+    solana: ['.my-solana-input', '#custom-sol-field'],
+    ethereum: ['.my-eth-input', '#custom-eth-field']
+  },
+  chainPriority: ['ethereum', 'solana'] // Prioritize Ethereum first
+});
+            </div>
+        </div>
+    </div>
+
+    <!-- Load NAKAMA Login Widget -->
+    <script src="https://nakama-production-1850.up.railway.app/nakama-login-widget.js"></script>
+    
+    <script>
+        let watcher = null;
+        
+        // Update status display
+        function updateStatus() {
+            const user = NAKAMA.getUser();
+            const wallets = NAKAMA.getWallets();
+            const statusDisplay = document.getElementById('status-display');
+            const walletDisplay = document.getElementById('wallet-display');
+            
+            if (user) {
+                statusDisplay.innerHTML = `
+                    <p><span class="populated-indicator populated-true"></span>Connected as @${user.displayName || user.username}</p>
+                    <p>Wallet addresses are ready to be populated!</p>
+                `;
+                
+                const connectedWallets = Object.entries(wallets)
+                    .filter(([chain, wallet]) => wallet !== null)
+                    .map(([chain, wallet]) => `
+                        <div class="wallet-info">
+                            <h4>${chain.charAt(0).toUpperCase() + chain.slice(1)}</h4>
+                            <div class="wallet-address">${wallet.address}</div>
+                        </div>
+                    `).join('');
+                
+                walletDisplay.innerHTML = connectedWallets || '<p>No wallets connected</p>';
+            } else {
+                statusDisplay.innerHTML = `
+                    <p><span class="populated-indicator populated-false"></span>Not connected</p>
+                    <p>Connect your wallet to populate inputs automatically!</p>
+                `;
+                walletDisplay.innerHTML = '<p>No wallets connected</p>';
+            }
+        }
+        
+        // Populate inputs manually
+        function populateInputs() {
+            const count = NAKAMA.populateInputs();
+            if (count > 0) {
+                console.log(`Populated ${count} inputs`);
+            } else {
+                console.log('No inputs found to populate');
+            }
+        }
+        
+        // Clear all inputs
+        function clearInputs() {
+            const inputs = document.querySelectorAll('input[data-nakama-populated="true"]');
+            inputs.forEach(input => {
+                input.value = '';
+                input.style.borderLeft = '';
+                input.title = '';
+                input.removeAttribute('data-nakama-populated');
+                input.removeAttribute('data-nakama-chain');
+            });
+            console.log(`Cleared ${inputs.length} inputs`);
+        }
+        
+        // Start watching for inputs
+        function startWatching() {
+            if (watcher) {
+                NAKAMA.stopWatching(watcher);
+            }
+            watcher = NAKAMA.watchInputs({
+                interval: 1000,
+                maxAttempts: 60
+            });
+            console.log('Started watching for wallet inputs');
+        }
+        
+        // Stop watching
+        function stopWatching() {
+            if (watcher) {
+                NAKAMA.stopWatching(watcher);
+                watcher = null;
+                console.log('Stopped watching for wallet inputs');
+            }
+        }
+        
+        // Update status every second
+        setInterval(updateStatus, 1000);
+        
+        // Initial update
+        updateStatus();
+        
+        // Simulate search functionality
+        function simulateSearch(chain) {
+            console.log(`Simulating ${chain} portfolio search...`);
+            alert(`🔍 Searching ${chain} portfolio...\n\nThis would normally:\n- Fetch wallet data\n- Load transaction history\n- Display portfolio value\n- Show token holdings`);
+        }
+        
+        // Simulate analyze functionality
+        function simulateAnalyze(chain) {
+            console.log(`Simulating ${chain} data analysis...`);
+            alert(`📊 Analyzing ${chain} data...\n\nThis would normally:\n- Analyze transaction patterns\n- Calculate profit/loss\n- Generate insights\n- Create charts`);
+        }
+        
+        // Auto-populate inputs when user connects
+        document.addEventListener('DOMContentLoaded', () => {
+            // Watch for user connection changes
+            setInterval(() => {
+                const user = NAKAMA.getUser();
+                if (user) {
+                    // Auto-populate inputs when user connects
+                    setTimeout(() => {
+                        populateInputs();
+                    }, 1000);
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

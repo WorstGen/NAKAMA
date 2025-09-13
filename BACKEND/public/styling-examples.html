@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAKAMA Widget - Styling Examples</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        
+        .example-section {
+            margin: 40px 0;
+            padding: 20px;
+        }
+        
+        .example-header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .example-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .example-description {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Example 1: Dark Theme */
+        .dark-header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            border: 1px solid #333;
+        }
+        
+        /* Example 2: Light Theme */
+        .light-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            color: #333;
+            border: 1px solid #e9ecef;
+        }
+        
+        /* Example 3: Brand Colors */
+        .brand-header {
+            background: linear-gradient(135deg, #ff6b35 0%, #4ecdc4 100%);
+            color: white;
+            border: 1px solid #ff6b35;
+        }
+        
+        /* Example 4: Minimal */
+        .minimal-header {
+            background: transparent;
+            color: #333;
+            border: 2px solid #333;
+        }
+        
+        /* Example 5: Corporate */
+        .corporate-header {
+            background: #1e3a8a;
+            color: white;
+            border: 1px solid #1e40af;
+        }
+        
+        .code-block {
+            background: #1a1a1a;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; margin: 40px 0; color: #333;">NAKAMA Widget - Adaptive Styling Examples</h1>
+    
+    <div class="example-section">
+        <div class="example-description">
+            <h2>1. Dark Theme Header</h2>
+            <p>The widget adapts to dark backgrounds and light text, maintaining the same visual hierarchy.</p>
+        </div>
+        <div class="example-header dark-header">
+            <div class="example-title">Dark Site</div>
+            <nav>
+                <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">Home</a>
+                <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">About</a>
+                <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">Contact</a>
+            </nav>
+            <!-- NAKAMA widget will be injected here -->
+        </div>
+    </div>
+    
+    <div class="example-section">
+        <div class="example-description">
+            <h2>2. Light Theme Header</h2>
+            <p>The widget adapts to light backgrounds and dark text, using appropriate contrast.</p>
+        </div>
+        <div class="example-header light-header">
+            <div class="example-title">Light Site</div>
+            <nav>
+                <a href="#" style="color: #333; text-decoration: none; margin-left: 20px;">Home</a>
+                <a href="#" style="color: #333; text-decoration: none; margin-left: 20px;">About</a>
+                <a href="#" style="color: #333; text-decoration: none; margin-left: 20px;">Contact</a>
+            </nav>
+            <!-- NAKAMA widget will be injected here -->
+        </div>
+    </div>
+    
+    <div class="example-section">
+        <div class="example-description">
+            <h2>3. Brand Colors Header</h2>
+            <p>The widget picks up brand colors and uses them for buttons and accents.</p>
+        </div>
+        <div class="example-header brand-header">
+            <div class="example-title">Brand Site</div>
+            <nav>
+                <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">Home</a>
+                <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">About</a>
+                <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">Contact</a>
+            </nav>
+            <!-- NAKAMA widget will be injected here -->
+        </div>
+    </div>
+    
+    <div class="example-section">
+        <div class="example-description">
+            <h2>4. Minimal Header</h2>
+            <p>The widget adapts to minimal designs with transparent backgrounds.</p>
+        </div>
+        <div class="example-header minimal-header">
+            <div class="example-title">Minimal Site</div>
+            <nav>
+                <a href="#" style="color: #333; text-decoration: none; margin-left: 20px;">Home</a>
+                <a href="#" style="color: #333; text-decoration: none; margin-left: 20px;">About</a>
+                <a href="#" style="color: #333; text-decoration: none; margin-left: 20px;">Contact</a>
+            </nav>
+            <!-- NAKAMA widget will be injected here -->
+        </div>
+    </div>
+    
+    <div class="example-section">
+        <div class="example-description">
+            <h2>5. Corporate Header</h2>
+            <p>The widget adapts to corporate blue themes and professional styling.</p>
+        </div>
+        <div class="example-header corporate-header">
+            <div class="example-title">Corporate Site</div>
+            <nav>
+                <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">Home</a>
+                <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">About</a>
+                <a href="#" style="color: white; text-decoration: none; margin-left: 20px;">Contact</a>
+            </nav>
+            <!-- NAKAMA widget will be injected here -->
+        </div>
+    </div>
+    
+    <div class="example-section">
+        <div class="example-description">
+            <h2>🎨 How It Works</h2>
+            <p>The NAKAMA widget automatically detects your header's styling and adapts accordingly:</p>
+            
+            <div class="code-block">
+// The widget detects these properties from your header:
+- Background color
+- Text color  
+- Border color
+- Border radius
+- Padding
+- Font family
+- Font size
+
+// And applies them to the widget using CSS custom properties:
+:root {
+  --nakama-primary: detected-button-color;
+  --nakama-text: detected-text-color;
+  --nakama-profile-bg: detected-background-color;
+  --nakama-font-family: detected-font-family;
+  // ... and more
+}
+            </div>
+            
+            <p><strong>Result:</strong> The widget seamlessly blends with your site's design while maintaining its functionality.</p>
+        </div>
+    </div>
+
+    <!-- Load NAKAMA Login Widget -->
+    <script src="https://nakama-production-1850.up.railway.app/nakama-login-widget.js"></script>
+    
+    <script>
+        // Configure widget for each example
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait for widget to load
+            setTimeout(() => {
+                if (window.NAKAMA && window.NAKAMA.loginWidget) {
+                    // The widget will automatically adapt to each header's styling
+                    console.log('NAKAMA Login Widget loaded and adapting to host styles');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
