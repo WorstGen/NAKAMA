@@ -119,7 +119,7 @@ export const Header = () => {
                 {/* Profile Picture with Gradient Chain Outline */}
                 <GradientProfileImage
                   src={user?.profilePicture || null}
-                  username={user?.username || 'User'}
+                  username={user?.displayName || user?.username || 'User'}
                   size="sm"
                   activeChain={activeChain}
                 />
@@ -127,7 +127,7 @@ export const Header = () => {
                 {/* User Info */}
                 <div className="flex flex-col items-center">
                   <div className="text-xs font-bold text-white text-center leading-tight">
-                    @{user?.username || 'User'}
+                    @{user?.displayName || user?.username || 'User'}
                   </div>
                   <div className="text-xs text-gray-400 text-center">
                     {activeChain ? phantomChains[activeChain]?.name || 'Solana' : 'Solana'}
