@@ -32,7 +32,7 @@ export const Profile = () => {
   useEffect(() => {
     if (user) {
       setFormData({
-        username: user.username || '',
+        username: user.displayName || user.username || '',
         bio: user.bio || ''
       });
     }

@@ -134,12 +134,12 @@ export const Dashboard = () => {
             <div key={contact.username} className="flex items-center space-x-3 py-2">
               <ProfileImage
                 src={contact.profilePicture || null}
-                username={contact.username}
+                username={contact.displayName || contact.username}
                 size="sm"
                 className="shadow-md"
               />
               <div>
-                <p className={`text-white font-medium`}>@{contact.username}</p>
+                <p className={`text-white font-medium`}>@{contact.displayName || contact.username}</p>
                 <p className="text-gray-400 text-sm">{contact.bio || 'No bio available'}</p>
               </div>
             </div>

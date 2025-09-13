@@ -162,11 +162,11 @@ export const Contacts = () => {
                   <div className="flex items-center space-x-4">
                     <ProfileImage
                       src={contact.profilePicture || null}
-                      username={contact.username}
+                      username={contact.displayName || contact.username}
                       size="md"
                     />
                     <div>
-                      <p className="text-white font-semibold">@{contact.username}</p>
+                      <p className="text-white font-semibold">@{contact.displayName || contact.username}</p>
                       <p className="text-white/60 text-sm">{contact.bio}</p>
                       <p className="text-white/40 text-xs font-mono">{contact.walletAddress.slice(0, 8)}...{contact.walletAddress.slice(-8)}</p>
                       {contact.isVerified && (
