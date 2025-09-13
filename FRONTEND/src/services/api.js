@@ -1,9 +1,12 @@
 import axios from 'axios';
 
-// Fix the base URL to use your Railway backend directly
+// Use environment variable for API URL
 const BASE_URL = process.env.REACT_APP_API_URL || 'https://nakama-production-1850.up.railway.app';
 
-console.log('API Base URL:', BASE_URL); // Debug log to verify URL
+// Only log in development
+if (process.env.NODE_ENV === 'development') {
+  console.log('API Base URL:', BASE_URL);
+}
 
 class ApiService {
   constructor() {
@@ -21,8 +24,11 @@ class ApiService {
     // Add request interceptor for debugging
     this.client.interceptors.request.use(
       (config) => {
-        console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
-        console.log('Request headers:', config.headers);
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+          console.log('Request headers:', config.headers);
+        }
         return config;
       },
       (error) => {
@@ -34,7 +40,10 @@ class ApiService {
     // Add response interceptor for debugging
     this.client.interceptors.response.use(
       (response) => {
-        console.log(`API Response: ${response.status} ${response.config.url}`);
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`API Response: ${response.status} ${response.config.url}`);
+        }
         return response;
       },
       (error) => {
@@ -162,8 +171,11 @@ class ApiService {
 
   // Add EVM address to current user
   addEVM = async (userId) => {
-    console.log('🔍 API addEVM called with userId:', userId);
-    console.log('🔍 Sending data:', { userId });
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 API addEVM called with userId:', userId);
+      console.log('🔍 Sending data:', { userId });
+    }
     return this.request('POST', '/api/profile/add-evm', { userId });
   }
 }
