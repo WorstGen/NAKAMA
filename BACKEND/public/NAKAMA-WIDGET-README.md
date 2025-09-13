@@ -257,6 +257,11 @@ try {
 - Verify the container element exists
 - Check browser console for errors
 
+**Content Security Policy (CSP) errors:**
+- If you see "Refused to execute inline script" errors, avoid inline JavaScript
+- Use external script files instead of inline `<script>` tags
+- The demo page uses external scripts to avoid CSP issues
+
 **Profile not found:**
 - Verify the username exists on NAKAMA
 - Check for typos in the username
