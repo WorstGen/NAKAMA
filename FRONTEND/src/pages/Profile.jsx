@@ -31,8 +31,11 @@ export const Profile = () => {
   // Load user data when component mounts or user changes
   useEffect(() => {
     if (user) {
+      console.log('🔄 Loading user data into form:', user);
+      const displayUsername = user.displayName || user.username || '';
+      console.log('📝 Setting form username to:', displayUsername);
       setFormData({
-        username: user.displayName || user.username || '',
+        username: displayUsername,
         bio: user.bio || ''
       });
     }
@@ -126,8 +129,14 @@ export const Profile = () => {
     setLoading(true);
 
     try {
+      console.log('🔄 Submitting profile update with data:', formData);
       const result = await api.updateProfile(formData);
+      console.log('✅ Profile update response:', result);
+      
+      // Update user state with the new data
       setUser(result.user);
+      console.log('✅ User state updated:', result.user);
+      
       toast.success(user ? 'Profile updated successfully!' : 'Profile created successfully!');
 
       // Redirect to dashboard after successful profile creation/update
@@ -135,6 +144,7 @@ export const Profile = () => {
         navigate('/dashboard');
       }, 1500);
     } catch (error) {
+      console.error('❌ Profile update failed:', error);
       toast.error(error.error || 'Failed to update profile');
     } finally {
       setLoading(false);
