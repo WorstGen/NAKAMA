@@ -345,7 +345,7 @@ const UserSchema = new mongoose.Schema({
   // Legacy field - keep for backward compatibility (Solana wallet)
   walletAddress: { type: String, required: true, unique: true, index: true },
   username: { type: String, required: true, unique: true, lowercase: true, index: true },
-  displayName: { type: String, required: true }, // User's preferred capitalization
+  displayName: { type: String }, // User's preferred capitalization (optional)
   bio: { type: String, maxLength: 500 },
   profilePicture: { type: String },
   
@@ -860,7 +860,7 @@ app.post('/api/profile',
       }
 
       const { username, bio } = req.body;
-      const displayName = username; // Use the username as display name with original capitalization
+      const displayName = username; // Store exactly as user typed it
       const walletAddress = req.walletAddress;
 
       // Determine if this is a Solana or EVM address
