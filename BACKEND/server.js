@@ -95,7 +95,7 @@ const testSignature = () => {
     const publicKeyBytes = new PublicKey(publicKey).toBytes();
 
     const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
-    console.log('Test signature verification result:', isValid);
+    // Test signature verification completed
     return isValid;
   } catch (error) {
     console.error('Test signature verification error:', error);
@@ -103,8 +103,7 @@ const testSignature = () => {
   }
 };
 
-// Run test on startup
-console.log('Testing signature verification...');
+// Run test on startup (silent)
 testSignature();
 
 const app = express();
@@ -514,14 +513,8 @@ const verifyWallet = async (req, res, next) => {
     const message = req.headers['x-message'] || req.headers['X-Message'] || req.headers.message || req.headers.Message;
     const publicKey = req.headers['x-public-key'] || req.headers['X-Public-Key'] || req.headers.publickey || req.headers.publicKey || req.headers.PublicKey;
 
-    console.log('Backend Auth Debug:');
-    console.log('Received signature:', signature);
-    console.log('Received message:', message);
-    console.log('Received publickey:', publicKey);
-    console.log('All headers:', Object.keys(req.headers));
 
     if (!signature || !message || !publicKey) {
-      console.log('Missing authentication headers');
       return res.status(401).json({ error: 'Missing authentication headers' });
     }
 
@@ -530,35 +523,27 @@ const verifyWallet = async (req, res, next) => {
     const isEVMAddress = publicKey.length === 42 && publicKey.startsWith('0x');
 
     if (!isSolanaAddress && !isEVMAddress) {
-      console.log('Invalid wallet address format');
       return res.status(401).json({ error: 'Invalid wallet address format' });
     }
 
     const messageBytes = new TextEncoder().encode(message);
-    console.log('Message bytes:', messageBytes);
 
     const signatureBytes = bs58.decode(signature);
-    console.log('Decoded signature bytes:', signatureBytes);
-    console.log('Signature length:', signatureBytes.length);
 
     let isValid = false;
 
     if (isSolanaAddress) {
       // Solana signature verification (64 bytes)
       if (signatureBytes.length !== 64) {
-        console.log('Invalid Solana signature length:', signatureBytes.length);
         return res.status(401).json({ error: 'Invalid Solana signature length' });
       }
 
     const publicKeyBytes = new PublicKey(publicKey).toBytes();
-    console.log('Public key bytes:', publicKeyBytes);
 
       isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
-      console.log('Solana signature verification result:', isValid);
     } else if (isEVMAddress) {
       // EVM signature verification (65 bytes)
       if (signatureBytes.length !== 65) {
-        console.log('Invalid EVM signature length:', signatureBytes.length);
         return res.status(401).json({ error: 'Invalid EVM signature length' });
       }
 
@@ -566,15 +551,12 @@ const verifyWallet = async (req, res, next) => {
       // In production, you might want to use a proper ECDSA verification library
       // For now, we'll accept the signature if it's the right length and format
       isValid = true;
-      console.log('EVM signature accepted (length validation only)');
     }
 
     if (!isValid) {
-      console.log('Signature verification failed');
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
-    console.log('Authentication successful for:', publicKey);
     req.walletAddress = publicKey;
     next();
   } catch (error) {
@@ -1012,9 +994,6 @@ app.post('/api/profile',
 
 // Upload profile picture
 app.post('/api/profile/picture', verifyWallet, (req, res, next) => {
-  console.log('Profile picture upload request received');
-  console.log('Request headers:', req.headers);
-  console.log('Wallet address from auth:', req.walletAddress);
 
   // Handle multer errors
   upload.single('profilePicture')(req, res, (err) => {
