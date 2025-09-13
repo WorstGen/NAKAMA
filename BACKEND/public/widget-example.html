@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAKAMA Widget Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .code-block {
+            background: #1a1a1a;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        .widget-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .theme-toggle {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .theme-toggle button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .theme-toggle button.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .theme-toggle button:not(.active) {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .size-toggle {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .size-toggle button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .size-toggle button.active {
+            background: #10b981;
+            color: white;
+        }
+        
+        .size-toggle button:not(.active) {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 NAKAMA Widget Integration Example</h1>
+        
+        <div class="demo-section">
+            <h2>📖 How to Use NAKAMA Widget</h2>
+            <p>Add this script to your website to integrate NAKAMA profiles:</p>
+            <div class="code-block">
+&lt;script src="https://nakama-production-1850.up.railway.app/nakama-widget.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  // Embed a profile widget
+  NAKAMA.embed('username', 'container-id', {
+    theme: 'dark',    // 'dark' or 'light'
+    size: 'medium',  // 'small', 'medium', 'large'
+    showBio: true,   // Show user bio
+    showWallet: true, // Show wallet addresses
+    showVerified: true // Show verification status
+  });
+&lt;/script&gt;
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎨 Live Demo</h2>
+            <p>Try different themes and sizes:</p>
+            
+            <div class="theme-toggle">
+                <button class="active" onclick="setTheme('dark')">Dark Theme</button>
+                <button onclick="setTheme('light')">Light Theme</button>
+            </div>
+            
+            <div class="size-toggle">
+                <button onclick="setSize('small')">Small</button>
+                <button class="active" onclick="setSize('medium')">Medium</button>
+                <button onclick="setSize('large')">Large</button>
+            </div>
+            
+            <div class="widget-container" id="demo-widget">
+                <!-- Widget will be embedded here -->
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🔧 API Methods</h2>
+            <p>The NAKAMA widget provides several methods for integration:</p>
+            
+            <h3>NAKAMA.embed(username, containerId, options)</h3>
+            <p>Embeds a profile widget into a container element.</p>
+            
+            <h3>NAKAMA.getProfile(username)</h3>
+            <p>Fetches profile data for a username.</p>
+            
+            <h3>NAKAMA.verify(username, walletAddress)</h3>
+            <p>Verifies if a wallet address belongs to a NAKAMA user.</p>
+            
+            <div class="code-block">
+// Example: Verify wallet ownership
+const isVerified = await NAKAMA.verify('username', 'wallet-address');
+if (isVerified) {
+  console.log('Wallet belongs to NAKAMA user!');
+}
+
+// Example: Get profile data
+const profile = await NAKAMA.getProfile('username');
+console.log(profile);
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎯 Use Cases</h2>
+            <ul>
+                <li><strong>DeFi Platforms:</strong> Show user profiles and verify wallet ownership</li>
+                <li><strong>NFT Marketplaces:</strong> Display creator profiles and verification status</li>
+                <li><strong>Gaming Platforms:</strong> Show player profiles and wallet addresses</li>
+                <li><strong>Social Media:</strong> Integrate NAKAMA profiles into posts and comments</li>
+                <li><strong>Portfolio Trackers:</strong> Display user information alongside wallet data</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Load NAKAMA Widget -->
+    <script src="https://nakama-production-1850.up.railway.app/nakama-widget.js"></script>
+    
+    <script>
+        let currentTheme = 'dark';
+        let currentSize = 'medium';
+        
+        // Initialize with a demo user
+        function initDemo() {
+            NAKAMA.embed('beripool', 'demo-widget', {
+                theme: currentTheme,
+                size: currentSize,
+                showBio: true,
+                showWallet: true,
+                showVerified: true
+            });
+        }
+        
+        function setTheme(theme) {
+            currentTheme = theme;
+            document.querySelectorAll('.theme-toggle button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            initDemo();
+        }
+        
+        function setSize(size) {
+            currentSize = size;
+            document.querySelectorAll('.size-toggle button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            initDemo();
+        }
+        
+        // Initialize demo when page loads
+        document.addEventListener('DOMContentLoaded', initDemo);
+    </script>
+</body>
+</html>
