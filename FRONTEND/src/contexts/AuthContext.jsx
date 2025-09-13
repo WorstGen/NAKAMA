@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }) => {
     
     // Priority 1: Direct Solana connection (always prefer Solana)
     if (window.solana && window.solana.isConnected && window.solana.publicKey) {
-      console.log('Using direct Solana connection');
+      // console.log('Using direct Solana connection');
       activePublicKey = window.solana.publicKey;
       activeSignMessage = window.solana.signMessage;
       setActiveWalletType('phantom');
@@ -285,7 +285,7 @@ export const AuthProvider = ({ children }) => {
       // We now always encode with bs58 for backend compatibility
       // console.log('Final signature (base58 encoded):', encodedSignature);
 
-      console.log('Public key:', activePublicKey.toString());
+      // console.log('Public key:', activePublicKey.toString());
 
       // Set auth headers to match backend expectations
       api.setAuthHeaders({
@@ -294,7 +294,7 @@ export const AuthProvider = ({ children }) => {
         'X-Public-Key': activePublicKey.toString()
       });
 
-      console.log('Auth headers set successfully');
+      // console.log('Auth headers set successfully');
 
       // Try to fetch user profile with retry logic
       let profile;
