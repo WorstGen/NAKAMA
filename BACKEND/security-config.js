@@ -1,25 +1,25 @@
 // Security Configuration for NAKAMA Backend
 module.exports = {
-  // Rate Limiting Configuration
+  // Rate Limiting Configuration - Much more lenient for better UX
   rateLimits: {
     general: {
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 100, // requests per window
+      max: 2000, // requests per window (was 100)
       message: 'Too many requests from this IP, please try again later'
     },
     strict: {
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 10, // requests per window
+      max: 500, // requests per window (was 10)
       message: 'Too many requests from this IP, please try again later'
     },
     auth: {
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 5, // requests per window
+      max: 50, // requests per window (was 5)
       message: 'Too many authentication attempts, please try again later'
     },
     upload: {
       windowMs: 60 * 60 * 1000, // 1 hour
-      max: 10, // uploads per hour
+      max: 100, // uploads per hour (was 10)
       message: 'Too many uploads, please try again later'
     }
   },

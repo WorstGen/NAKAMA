@@ -167,10 +167,10 @@ Object.entries(EVM_CHAINS).forEach(([chainName, config]) => {
   }
 });
 
-// Rate limiting - More generous for better user experience
+// Rate limiting - Very generous for better user experience
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs (was 100)
+  max: 5000, // limit each IP to 5000 requests per windowMs (was 1000)
   message: 'Too many requests from this IP, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -330,10 +330,10 @@ app.use(express.static('public'));
 // Apply different rate limits for different endpoints
 app.use('/api/', limiter);
 
-// Stricter rate limiting for sensitive endpoints
-const strictLimiter = createRateLimit(15 * 60 * 1000, 10, 'Too many requests from this IP, please try again later');
-const authLimiter = createRateLimit(15 * 60 * 1000, 5, 'Too many authentication attempts, please try again later');
-const uploadLimiter = createRateLimit(60 * 60 * 1000, 10, 'Too many uploads, please try again later');
+// More lenient rate limiting for sensitive endpoints
+const strictLimiter = createRateLimit(15 * 60 * 1000, 500, 'Too many requests from this IP, please try again later');
+const authLimiter = createRateLimit(15 * 60 * 1000, 50, 'Too many authentication attempts, please try again later');
+const uploadLimiter = createRateLimit(60 * 60 * 1000, 100, 'Too many uploads, please try again later');
 
 // Apply specific rate limits
 app.use('/api/profile', strictLimiter);
@@ -862,6 +862,8 @@ app.post('/api/profile',
       const { username, bio } = req.body;
       const displayName = username; // Store exactly as user typed it
       const walletAddress = req.walletAddress;
+      
+      console.log('🔄 Profile update request:', { username, bio, displayName, walletAddress });
 
       // Determine if this is a Solana or EVM address
       const isSolanaAddress = walletAddress.length === 44;
@@ -916,6 +918,8 @@ app.post('/api/profile',
           bio,
           updatedAt: new Date()
         };
+        
+        console.log('🔄 Updating existing user with data:', updateData);
 
         // Add wallet to the appropriate chain
         if (isSolanaAddress) {
@@ -984,7 +988,7 @@ app.post('/api/profile',
         changes: { username, bio: bio ? 'updated' : 'not provided', walletAddress }
       });
 
-      res.json({
+      const responseData = {
         success: true,
         user: {
           _id: user._id,
@@ -995,7 +999,10 @@ app.post('/api/profile',
           profilePicture: user.profilePicture,
           wallets: user.wallets || {}
         }
-      });
+      };
+      
+      console.log('✅ Profile update response:', responseData);
+      res.json(responseData);
     } catch (error) {
       res.status(500).json({ error: 'Failed to save profile' });
     }
