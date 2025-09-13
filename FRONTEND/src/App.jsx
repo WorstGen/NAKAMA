@@ -108,7 +108,7 @@ const AppContent = () => {
   }
 
   const { isDark } = themeResult;
-  console.log('🎨 AppContent: Theme working, isDark:', isDark);
+  // console.log('🎨 AppContent: Theme working, isDark:', isDark);
 
   const bgStyle = {
     backgroundColor: '#000000',
