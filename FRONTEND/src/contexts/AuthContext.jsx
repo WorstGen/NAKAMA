@@ -418,7 +418,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [getActiveWallet, lastAuthAttempt, publicKey, walletConnectConnected, walletConnectAddress]);
+  }, [getActiveWallet, lastAuthAttempt, publicKey]);
 
   const logout = () => {
     setUser(null);
