@@ -605,10 +605,14 @@ app.get('/api/debug/prices/:token', async (req, res) => {
     
     // Try Jupiter
     let jupiterPrice = null;
+    let jupiterError = null;
+    let jupiterResponse = null;
     const tokenInfo = TOKEN_CONTRACTS[token];
     if (tokenInfo && tokenInfo.address && tokenInfo.address !== '0x0000000000000000000000000000000000000000') {
       try {
         const amount = Math.pow(10, tokenInfo.decimals).toString();
+        console.log(`Jupiter request: ${tokenInfo.address} -> USDC, amount: ${amount}`);
+        
         const response = await axios.get(`https://quote-api.jup.ag/v6/quote`, {
           params: {
             inputMint: tokenInfo.address,
@@ -618,11 +622,19 @@ app.get('/api/debug/prices/:token', async (req, res) => {
           },
           timeout: 5000
         });
+        
+        jupiterResponse = response.data;
+        console.log(`Jupiter response for ${token}:`, JSON.stringify(response.data, null, 2));
+        
         if (response.data && response.data.outAmount && response.data.outAmount !== '0') {
           jupiterPrice = parseFloat(response.data.outAmount) / 1000000;
         }
       } catch (error) {
+        jupiterError = error.message;
         console.log('Jupiter debug failed:', error.message);
+        if (error.response) {
+          console.log('Jupiter error response:', error.response.data);
+        }
       }
     }
     
@@ -630,6 +642,8 @@ app.get('/api/debug/prices/:token', async (req, res) => {
       token,
       coinGecko: coinGeckoPrice,
       jupiter: jupiterPrice,
+      jupiterError,
+      jupiterResponse,
       tokenInfo: TOKEN_CONTRACTS[token]
     });
   } catch (error) {
@@ -663,16 +677,16 @@ const TOKEN_PRICE_MAPPING = {
 };
 
 // Token contract addresses and decimals for Jupiter (Solana) and 1inch (EVM)
-// Only includes tokens with verified contract addresses and liquidity
+// Only includes tokens with verified contract addresses and good liquidity
 const TOKEN_CONTRACTS = {
-  // Solana SPL tokens (for Jupiter API) - verified addresses only
+  // Solana SPL tokens (for Jupiter API) - only tokens with reliable liquidity
   'SOL': { address: 'So11111111111111111111111111111111111111112', decimals: 9 }, // Wrapped SOL
   'USDC': { address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6 },
   'USDT': { address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', decimals: 6 },
-  'wPOND': { address: 'CbNYA9n3927uX8ukL2E2xS6N2D1Z9keTfLJh5mOzEpa', decimals: 6 },
+  // 'wPOND': { address: 'CbNYA9n3927uX8ukL2E2xS6N2D1Z9keTfLJh5mOzEpa', decimals: 6 }, // Disabled - unreliable liquidity
   'DEAL': { address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', decimals: 6 },
-  'pondSOL': { address: '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs', decimals: 9 }, // Real pondSOL address
-  'omSOL': { address: 'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So', decimals: 9 }, // Real omSOL address
+  // 'pondSOL': { address: '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs', decimals: 9 }, // Disabled - unreliable liquidity
+  // 'omSOL': { address: 'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So', decimals: 9 }, // Disabled - unreliable liquidity
   
   // EVM tokens (for 1inch API) - verified addresses only
   'ETH': { address: '0x0000000000000000000000000000000000000000', decimals: 18 }, // Native ETH
@@ -713,20 +727,60 @@ const fetchJupiterPrices = async (tokens) => {
       });
       
       if (response.data && response.data.outAmount && response.data.outAmount !== '0') {
-        // Convert from USDC amount to USD price
-        // USDC has 6 decimals, so divide by 1,000,000
-        const usdPrice = parseFloat(response.data.outAmount) / 1000000;
+        // Jupiter returns the amount of USDC you get for 1 token
+        // We need to convert this to USD price
+        const usdcAmount = parseFloat(response.data.outAmount);
+        const usdPrice = usdcAmount / 1000000; // USDC has 6 decimals
         
-        // Validate price is reasonable and not zero
-        if (usdPrice > 0.000001 && usdPrice < 1000000) {
+        // Additional validation - check if the price makes sense
+        // For SOL, expect ~$100-200, for USDC expect ~$1
+        let isValidPrice = true;
+        if (token === 'SOL' && (usdPrice < 50 || usdPrice > 500)) {
+          isValidPrice = false;
+        } else if (token === 'USDC' && (usdPrice < 0.9 || usdPrice > 1.1)) {
+          isValidPrice = false;
+        } else if (token === 'USDT' && (usdPrice < 0.9 || usdPrice > 1.1)) {
+          isValidPrice = false;
+        } else if (token === 'DEAL' && (usdPrice < 0.001 || usdPrice > 100)) {
+          isValidPrice = false;
+        } else if (usdPrice <= 0 || usdPrice > 1000000) {
+          isValidPrice = false;
+        }
+        
+        // Additional check: if Jupiter price is more than 10x different from CoinGecko, reject it
+        const coinGeckoId = TOKEN_PRICE_MAPPING[token];
+        if (coinGeckoId && isValidPrice) {
+          try {
+            const cgResponse = await axios.get(`https://api.coingecko.com/api/v3/simple/price`, {
+              params: {
+                ids: coinGeckoId,
+                vs_currencies: 'usd'
+              },
+              timeout: 5000
+            });
+            if (cgResponse.data[coinGeckoId]?.usd) {
+              const cgPrice = cgResponse.data[coinGeckoId].usd;
+              const priceRatio = usdPrice / cgPrice;
+              if (priceRatio > 10 || priceRatio < 0.1) {
+                console.log(`❌ Jupiter price for ${token} too different from CoinGecko: Jupiter=$${usdPrice}, CoinGecko=$${cgPrice}, ratio=${priceRatio.toFixed(2)}`);
+                isValidPrice = false;
+              }
+            }
+          } catch (error) {
+            // If CoinGecko fails, still use Jupiter price
+            console.log(`CoinGecko validation failed for ${token}, using Jupiter price`);
+          }
+        }
+        
+        if (isValidPrice) {
           prices[token] = {
             usd: usdPrice,
             change_24h: null, // Jupiter doesn't provide 24h change
             source: 'jupiter'
           };
-          console.log(`✅ Jupiter price for ${token}: $${usdPrice.toFixed(6)}`);
+          console.log(`✅ Jupiter price for ${token}: $${usdPrice.toFixed(6)} (USDC amount: ${usdcAmount})`);
         } else {
-          console.log(`❌ Jupiter price for ${token} seems invalid: $${usdPrice}`);
+          console.log(`❌ Jupiter price for ${token} seems invalid: $${usdPrice} (USDC amount: ${usdcAmount})`);
         }
       } else {
         console.log(`❌ Jupiter returned no price data for ${token}`);
