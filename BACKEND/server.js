@@ -663,7 +663,7 @@ const TOKEN_PRICE_MAPPING = {
   'BNB': 'binancecoin',
   'PORK': 'pork',
   'PNDC': 'pndc',
-  'wPOND': 'marlin',
+  // 'wPOND': 'marlin', // Disabled - using Jupiter instead
   'DEAL': 'deal',
   'CHILLDEV': 'chilldev',
   'SKULL': 'skull',
@@ -683,7 +683,7 @@ const TOKEN_CONTRACTS = {
   'SOL': { address: 'So11111111111111111111111111111111111111112', decimals: 9 }, // Wrapped SOL
   'USDC': { address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6 },
   'USDT': { address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', decimals: 6 },
-  // 'wPOND': { address: 'CbNYA9n3927uX8ukL2E2xS6N2D1Z9keTfLJh5mOzEpa', decimals: 6 }, // Disabled - unreliable liquidity
+  'wPOND': { address: 'CbNYA9n3927uX8ukL2E2xS6N2D1Z9keTfLJh5mOzEpa', decimals: 6 }, // Re-enabled - testing Jupiter vs CoinGecko
   'DEAL': { address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', decimals: 6 },
   // 'pondSOL': { address: '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs', decimals: 9 }, // Disabled - unreliable liquidity
   // 'omSOL': { address: 'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So', decimals: 9 }, // Disabled - unreliable liquidity
@@ -743,13 +743,16 @@ const fetchJupiterPrices = async (tokens) => {
           isValidPrice = false;
         } else if (token === 'DEAL' && (usdPrice < 0.001 || usdPrice > 100)) {
           isValidPrice = false;
+        } else if (token === 'wPOND' && (usdPrice < 0.001 || usdPrice > 10)) {
+          isValidPrice = false;
         } else if (usdPrice <= 0 || usdPrice > 1000000) {
           isValidPrice = false;
         }
         
         // Additional check: if Jupiter price is more than 10x different from CoinGecko, reject it
+        // Skip this check for wPOND since we disabled CoinGecko for it
         const coinGeckoId = TOKEN_PRICE_MAPPING[token];
-        if (coinGeckoId && isValidPrice) {
+        if (coinGeckoId && isValidPrice && token !== 'wPOND') {
           try {
             const cgResponse = await axios.get(`https://api.coingecko.com/api/v3/simple/price`, {
               params: {
