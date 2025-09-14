@@ -56,8 +56,6 @@ export const Send = () => {
   
   const [selectedChain, setSelectedChain] = useState(activeChain || 'solana');
   const [availableTokens, setAvailableTokens] = useState([]);
-  const [amountMode, setAmountMode] = useState('token'); // 'token' or 'usd'
-  const [tokenPrices, setTokenPrices] = useState({});
   const [formData, setFormData] = useState({
     recipient: searchParams.get('recipient') || '',
     amount: '',
@@ -65,16 +63,6 @@ export const Send = () => {
     memo: '',
     chain: selectedChain
   });
-
-  // Fetch token prices
-  const fetchTokenPrices = async (tokens) => {
-    try {
-      const response = await api.getTokenPrices(tokens);
-      setTokenPrices(response.prices);
-    } catch (error) {
-      console.error('Failed to fetch token prices:', error);
-    }
-  };
 
   // Update available tokens when chain changes
   useEffect(() => {
@@ -89,18 +77,7 @@ export const Send = () => {
         chain: selectedChain
       }));
     }
-
-    // Fetch prices for available tokens
-    const tokenSymbols = tokens.map(t => t.symbol);
-    fetchTokenPrices(tokenSymbols);
   }, [selectedChain]);
-
-  // Fetch prices when token changes
-  useEffect(() => {
-    if (formData.token) {
-      fetchTokenPrices([formData.token]);
-    }
-  }, [formData.token]);
 
   // Initialize with active chain
   useEffect(() => {
@@ -116,53 +93,11 @@ export const Send = () => {
   const prepareTransactionMutation = useMutation(api.prepareTransaction);
   const submitTransactionMutation = useMutation(api.submitTransaction);
 
-  // Conversion functions
-  const convertToTokenAmount = (usdAmount, tokenSymbol) => {
-    const price = tokenPrices[tokenSymbol]?.usd;
-    if (!price || !usdAmount) return '';
-    return (parseFloat(usdAmount) / price).toFixed(8);
-  };
-
-  const convertToUSDAmount = (tokenAmount, tokenSymbol) => {
-    const price = tokenPrices[tokenSymbol]?.usd;
-    if (!price || !tokenAmount) return '';
-    return (parseFloat(tokenAmount) * price).toFixed(2);
-  };
-
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    
-    if (name === 'amount') {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
-    }
-  };
-
-  const handleAmountModeToggle = () => {
-    const newMode = amountMode === 'token' ? 'usd' : 'token';
-    setAmountMode(newMode);
-    
-    // Convert the current amount when switching modes
-    if (formData.amount && formData.token) {
-      let convertedAmount;
-      if (newMode === 'usd') {
-        convertedAmount = convertToUSDAmount(formData.amount, formData.token);
-      } else {
-        convertedAmount = convertToTokenAmount(formData.amount, formData.token);
-      }
-      
-      setFormData(prev => ({
-        ...prev,
-        amount: convertedAmount
-      }));
-    }
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleChainChange = async (chainName) => {
@@ -278,17 +213,11 @@ export const Send = () => {
     }
 
     try {
-      // Convert USD amount to token amount if needed
-      let finalAmount = parseFloat(formData.amount);
-      if (amountMode === 'usd' && formData.token && tokenPrices[formData.token]) {
-        finalAmount = parseFloat(convertToTokenAmount(formData.amount, formData.token));
-      }
-
       // Step 1: Prepare transaction
       toast.loading('Preparing transaction...');
       const prepared = await prepareTransactionMutation.mutateAsync({
         recipientUsername: formData.recipient,
-        amount: finalAmount,
+        amount: parseFloat(formData.amount),
         token: formData.token,
         memo: formData.memo,
         chain: selectedChain
@@ -311,7 +240,7 @@ export const Send = () => {
           const result = await submitTransactionMutation.mutateAsync({
             signedTransaction: signedTransactionBase64,
             recipientUsername: formData.recipient,
-            amount: finalAmount,
+            amount: parseFloat(formData.amount),
             token: formData.token,
             memo: formData.memo,
             chain: 'solana'
@@ -395,7 +324,7 @@ export const Send = () => {
         const result = await submitTransactionMutation.mutateAsync({
           signedTransaction: txHash, // Use the transaction hash instead
           recipientUsername: formData.recipient,
-          amount: finalAmount,
+          amount: parseFloat(formData.amount),
           token: formData.token,
           memo: formData.memo,
           chain: prepared.chain
@@ -550,70 +479,20 @@ export const Send = () => {
 
           {/* Amount */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-white font-medium">
-                Amount *
-              </label>
-              <button
-                type="button"
-                onClick={handleAmountModeToggle}
-                disabled={formData.token && tokenPrices[formData.token]?.unsupported}
-                className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-sm text-white transition-colors ${
-                  formData.token && tokenPrices[formData.token]?.unsupported
-                    ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                    : 'bg-gray-700 hover:bg-gray-600'
-                }`}
-              >
-                <span>{amountMode === 'token' ? 'USD' : 'Token'}</span>
-                <ArrowsRightLeftIcon className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="relative">
-              <input
-                type="number"
-                name="amount"
-                value={formData.amount}
-                onChange={handleInputChange}
-                placeholder={amountMode === 'token' ? "0.0" : "0.00"}
-                step={amountMode === 'token' ? "0.000000001" : "0.01"}
-                min="0.000000001"
-                className="w-full px-4 py-3 bg-gray-700 text-white border-gray-600 placeholder-gray-400 focus:outline-none focus:border-orange-400 pr-20"
-                required
-              />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                {amountMode === 'token' ? formData.token : 'USD'}
-              </div>
-            </div>
-            
-            {/* Conversion display */}
-            {formData.amount && formData.token && tokenPrices[formData.token] && (
-              <div className="mt-2 text-xs text-gray-400">
-                {tokenPrices[formData.token].unsupported ? (
-                  <span className="text-yellow-400">
-                    ⚠️ Price data unavailable for {formData.token}. USD conversion disabled.
-                  </span>
-                ) : amountMode === 'token' ? (
-                  <>
-                    ≈ ${convertToUSDAmount(formData.amount, formData.token)} USD
-                    {tokenPrices[formData.token].change_24h && (
-                      <span className={`ml-2 ${tokenPrices[formData.token].change_24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        ({tokenPrices[formData.token].change_24h >= 0 ? '+' : ''}{tokenPrices[formData.token].change_24h.toFixed(2)}%)
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    ≈ {convertToTokenAmount(formData.amount, formData.token)} {formData.token}
-                    {tokenPrices[formData.token].change_24h && (
-                      <span className={`ml-2 ${tokenPrices[formData.token].change_24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        ({tokenPrices[formData.token].change_24h >= 0 ? '+' : ''}{tokenPrices[formData.token].change_24h.toFixed(2)}%)
-                      </span>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
+            <label className="block text-white font-medium mb-2">
+              Amount *
+            </label>
+            <input
+              type="number"
+              name="amount"
+              value={formData.amount}
+              onChange={handleInputChange}
+              placeholder="0.0"
+              step="0.000000001"
+              min="0.000000001"
+              className="w-full px-4 py-3 bg-gray-700 text-white border-gray-600 placeholder-gray-400 focus:outline-none focus:border-orange-400"
+              required
+            />
           </div>
 
           {/* Token Selection */}
@@ -679,20 +558,7 @@ export const Send = () => {
                 </div>
                 
                 <p className="text-white/80">
-                  Send <span className="font-semibold text-white">
-                    {amountMode === 'usd' ? (
-                      <>
-                        ${formData.amount} USD
-                        {tokenPrices[formData.token] && (
-                          <span className="text-gray-400 ml-1">
-                            ({convertToTokenAmount(formData.amount, formData.token)} {formData.token})
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      formatTokenAmount(formData.amount, formData.token)
-                    )}
-                  </span>
+                  Send <span className="font-semibold text-white">{formatTokenAmount(formData.amount, formData.token)}</span>
                 </p>
                 
                 <p className="text-white/80">
