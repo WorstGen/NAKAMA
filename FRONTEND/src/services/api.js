@@ -164,6 +164,12 @@ class ApiService {
     return this.request('GET', '/api/transactions');
   }
 
+  // Price endpoints
+  getTokenPrices = async (tokens) => {
+    const tokenString = Array.isArray(tokens) ? tokens.join(',') : tokens;
+    return this.request('GET', `/api/prices?tokens=${tokenString}`);
+  }
+
   // OAuth endpoints
   authorizeOAuth = async (oauthData) => {
     return this.request('POST', '/api/oauth/authorize', oauthData);
