@@ -10,6 +10,7 @@ const cloudinary = require('cloudinary').v2;
 const { body, validationResult, sanitizeBody } = require('express-validator');
 const validator = require('validator');
 const rateLimit = require('express-rate-limit');
+const axios = require('axios');
 // Use ethers instead of web3 for better compatibility
 const { ethers } = require('ethers');
 require('dotenv').config();
@@ -573,6 +574,227 @@ const verifyWallet = async (req, res, next) => {
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Token price mapping for CoinGecko API
+const TOKEN_PRICE_MAPPING = {
+  'SOL': 'solana',
+  'ETH': 'ethereum',
+  'POL': 'matic-network',
+  'MATIC': 'matic-network',
+  'USDC': 'usd-coin',
+  'USDT': 'tether',
+  'DAI': 'dai',
+  'BNB': 'binancecoin',
+  'PORK': 'pork',
+  'PNDC': 'pndc',
+  'wPOND': 'marlin',
+  'DEAL': 'deal',
+  'CHILLDEV': 'chilldev',
+  'SKULL': 'skull',
+  'BBL': 'bbl',
+  'GARDEN': 'garden',
+  'DEMPLAR': 'demplar',
+  'Pepe': 'pepe',
+  'On': 'on',
+  'pondSOL': 'pondsol',
+  'omSOL': 'omsol'
+};
+
+// Token contract addresses for Jupiter (Solana) and 1inch (EVM)
+const TOKEN_CONTRACTS = {
+  // Solana SPL tokens (for Jupiter API)
+  'SOL': 'So11111111111111111111111111111111111111112', // Wrapped SOL
+  'USDC': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+  'USDT': 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+  'wPOND': 'CbNYA9n3927uX8ukL2E2xS6N2D1Z9keTfLJh5mOzEpa',
+  'DEAL': 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+  'CHILLDEV': 'ChillDev',
+  'SKULL': 'Skull',
+  'BBL': 'BBL',
+  'GARDEN': 'Garden',
+  'DEMPLAR': 'Demplar',
+  'Pepe': 'Pepe',
+  'On': 'On',
+  'pondSOL': 'pondSOL',
+  'omSOL': 'omSOL',
+  
+  // EVM tokens (for 1inch API)
+  'ETH': '0x0000000000000000000000000000000000000000', // Native ETH
+  'POL': '0x0000000000000000000000000000000000000000', // Native POL
+  'MATIC': '0x0000000000000000000000000000000000000000', // Native MATIC
+  'BNB': '0x0000000000000000000000000000000000000000', // Native BNB
+  'PORK': '0xb9f599ce614feb2e1bbe58f180f370d05b39344e',
+  'PNDC': '0x423f4e6138e475d85cf7ea071ac92097ed631eea'
+};
+
+// Simple in-memory cache for prices (5 minutes TTL)
+const priceCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Helper function to fetch Jupiter prices (Solana tokens)
+const fetchJupiterPrices = async (tokens) => {
+  const prices = {};
+  
+  for (const token of tokens) {
+    try {
+      const contractAddress = TOKEN_CONTRACTS[token];
+      if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+        continue; // Skip native tokens or unsupported tokens
+      }
+      
+      // Jupiter quote API to get price
+      const response = await axios.get(`https://quote-api.jup.ag/v6/quote`, {
+        params: {
+          inputMint: contractAddress,
+          outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+          amount: '1000000', // 1 token (assuming 6 decimals)
+          slippageBps: 50 // 0.5% slippage
+        },
+        timeout: 5000
+      });
+      
+      if (response.data && response.data.outAmount) {
+        // Convert from USDC amount to USD price
+        const usdPrice = parseFloat(response.data.outAmount) / 1000000; // USDC has 6 decimals
+        prices[token] = {
+          usd: usdPrice,
+          change_24h: null, // Jupiter doesn't provide 24h change
+          source: 'jupiter'
+        };
+      }
+    } catch (error) {
+      console.log(`Jupiter price fetch failed for ${token}:`, error.message);
+    }
+  }
+  
+  return prices;
+};
+
+// Helper function to fetch 1inch prices (EVM tokens)
+const fetch1inchPrices = async (tokens) => {
+  const prices = {};
+  
+  for (const token of tokens) {
+    try {
+      const contractAddress = TOKEN_CONTRACTS[token];
+      if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+        continue; // Skip native tokens or unsupported tokens
+      }
+      
+      // 1inch quote API
+      const response = await axios.get(`https://api.1inch.io/v5.0/1/quote`, {
+        params: {
+          fromTokenAddress: contractAddress,
+          toTokenAddress: '0xA0b86a33E6441e12e1A9fF2df3DC6F7eE2AB1Bc6', // USDC on Ethereum
+          amount: '1000000000000000000' // 1 token (assuming 18 decimals)
+        },
+        timeout: 5000
+      });
+      
+      if (response.data && response.data.toTokenAmount) {
+        // Convert from USDC amount to USD price
+        const usdPrice = parseFloat(response.data.toTokenAmount) / 1000000; // USDC has 6 decimals
+        prices[token] = {
+          usd: usdPrice,
+          change_24h: null, // 1inch doesn't provide 24h change
+          source: '1inch'
+        };
+      }
+    } catch (error) {
+      console.log(`1inch price fetch failed for ${token}:`, error.message);
+    }
+  }
+  
+  return prices;
+};
+
+// Get token prices with multiple API fallbacks
+app.get('/api/prices', async (req, res) => {
+  try {
+    const { tokens } = req.query;
+    
+    if (!tokens) {
+      return res.status(400).json({ error: 'Tokens parameter is required' });
+    }
+    
+    const tokenList = Array.isArray(tokens) ? tokens : tokens.split(',');
+    
+    // Check cache first
+    const cacheKey = tokenList.sort().join(',');
+    const cached = priceCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return res.json({ success: true, prices: cached.prices, cached: true });
+    }
+    
+    let prices = {};
+    
+    // Try CoinGecko first (most reliable for major tokens)
+    try {
+      const coinGeckoIds = tokenList.map(token => TOKEN_PRICE_MAPPING[token]).filter(Boolean);
+      
+      if (coinGeckoIds.length > 0) {
+        const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price`, {
+          params: {
+            ids: coinGeckoIds.join(','),
+            vs_currencies: 'usd',
+            include_24hr_change: true
+          },
+          timeout: 10000
+        });
+        
+        tokenList.forEach(token => {
+          const coinGeckoId = TOKEN_PRICE_MAPPING[token];
+          if (coinGeckoId && response.data[coinGeckoId]) {
+            prices[token] = {
+              usd: response.data[coinGeckoId].usd,
+              change_24h: response.data[coinGeckoId].usd_24h_change,
+              source: 'coingecko'
+            };
+          }
+        });
+      }
+    } catch (error) {
+      console.log('CoinGecko price fetch failed:', error.message);
+    }
+    
+    // Try Jupiter for Solana tokens not found in CoinGecko
+    const missingTokens = tokenList.filter(token => !prices[token]);
+    if (missingTokens.length > 0) {
+      const jupiterPrices = await fetchJupiterPrices(missingTokens);
+      Object.assign(prices, jupiterPrices);
+    }
+    
+    // Try 1inch for EVM tokens not found in CoinGecko
+    const stillMissingTokens = tokenList.filter(token => !prices[token]);
+    if (stillMissingTokens.length > 0) {
+      const inchPrices = await fetch1inchPrices(stillMissingTokens);
+      Object.assign(prices, inchPrices);
+    }
+    
+    // Set unsupported for tokens that couldn't be priced
+    tokenList.forEach(token => {
+      if (!prices[token]) {
+        prices[token] = {
+          usd: null,
+          change_24h: null,
+          unsupported: true,
+          source: 'none'
+        };
+      }
+    });
+    
+    // Cache the result
+    priceCache.set(cacheKey, {
+      prices,
+      timestamp: Date.now()
+    });
+    
+    res.json({ success: true, prices });
+  } catch (error) {
+    console.error('Price API error:', error);
+    res.status(500).json({ error: 'Failed to fetch token prices' });
+  }
 });
 
 // Get user profile
