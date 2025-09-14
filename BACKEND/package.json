@@ -30,7 +30,8 @@
     "dotenv": "^16.3.1",
     "cloudinary": "^1.41.0",
     "validator": "^13.11.0",
-    "bcrypt": "^5.1.1"
+    "bcrypt": "^5.1.1",
+    "axios": "^1.6.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
