@@ -1942,6 +1942,263 @@ app.post('/api/oauth/authorize', verifyWallet, async (req, res) => {
   }
 });
 
+// External profile editing page for widget users
+app.get('/profile/edit', verifyWallet, async (req, res) => {
+  try {
+    const walletAddress = req.walletAddress;
+    
+    // Find user by wallet address
+    const user = await User.findOne({
+      $or: [
+        { walletAddress: walletAddress },
+        { 'wallets.solana.address': walletAddress },
+        { 'wallets.ethereum.address': walletAddress },
+        { 'wallets.polygon.address': walletAddress },
+        { 'wallets.arbitrum.address': walletAddress },
+        { 'wallets.optimism.address': walletAddress },
+        { 'wallets.base.address': walletAddress },
+        { 'wallets.bsc.address': walletAddress }
+      ]
+    });
+
+    if (!user) {
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Profile Not Found - NAKAMA</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #000 0%, #1a1a2e 100%); color: white; margin: 0; padding: 20px; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+            .container { text-align: center; max-width: 400px; }
+            h1 { color: #ef4444; margin-bottom: 16px; }
+            p { color: #9ca3af; margin-bottom: 24px; }
+            .btn { background: #3b82f6; color: white; padding: 12px 24px; border: none; border-radius: 8px; text-decoration: none; display: inline-block; transition: background 0.2s; }
+            .btn:hover { background: #2563eb; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Profile Not Found</h1>
+            <p>No profile found for this wallet address. Please create a profile first.</p>
+            <a href="/" class="btn">Go to NAKAMA</a>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    // Serve the profile editing page
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Edit Profile - NAKAMA</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: linear-gradient(135deg, #000 0%, #1a1a2e 100%); 
+            color: white; 
+            min-height: 100vh; 
+            padding: 20px;
+          }
+          .container { max-width: 600px; margin: 0 auto; }
+          .header { text-align: center; margin-bottom: 40px; }
+          .header h1 { font-size: 2rem; margin-bottom: 8px; }
+          .header p { color: #9ca3af; }
+          .card { 
+            background: rgba(31, 41, 55, 0.8); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(55, 65, 81, 0.5); 
+            border-radius: 16px; 
+            padding: 32px; 
+            margin-bottom: 20px;
+          }
+          .form-group { margin-bottom: 24px; }
+          .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
+          .form-group input, .form-group textarea { 
+            width: 100%; 
+            padding: 12px 16px; 
+            background: rgba(31, 41, 55, 0.8); 
+            border: 1px solid rgba(55, 65, 81, 0.5); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px; 
+            transition: border-color 0.2s;
+          }
+          .form-group input:focus, .form-group textarea:focus { 
+            outline: none; 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); 
+          }
+          .form-group textarea { resize: vertical; min-height: 100px; }
+          .btn { 
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); 
+            color: white; 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            margin-right: 12px;
+          }
+          .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+          .btn-secondary { 
+            background: rgba(55, 65, 81, 0.5); 
+            border: 1px solid rgba(55, 65, 81, 0.7); 
+          }
+          .btn-secondary:hover { background: rgba(55, 65, 81, 0.7); }
+          .notification { 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            display: none;
+          }
+          .notification.success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+          .notification.error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+          .loading { opacity: 0.6; pointer-events: none; }
+          .avatar { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 12px; 
+            background: linear-gradient(135deg, #ff6b35 0%, #4ecdc4 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            font-size: 24px; 
+            color: white; 
+            margin: 0 auto 20px;
+          }
+          .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Edit Profile</h1>
+            <p>Update your NAKAMA profile information</p>
+          </div>
+
+          <div id="notification" class="notification"></div>
+
+          <div class="card">
+            <form id="profileForm">
+              <div class="avatar" id="avatar">
+                ${user.profilePicture ? `<img src="${user.profilePicture}" alt="${user.username}">` : (user.displayName || user.username).charAt(0).toUpperCase()}
+              </div>
+
+              <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" value="${user.displayName || user.username}" required>
+              </div>
+
+              <div class="form-group">
+                <label for="bio">Bio (Optional)</label>
+                <textarea id="bio" name="bio" placeholder="Tell us about yourself...">${user.bio || ''}</textarea>
+              </div>
+
+              <div class="form-group">
+                <label>Connected Wallet</label>
+                <input type="text" value="${walletAddress}" readonly style="background: rgba(31, 41, 55, 0.3); color: #9ca3af;">
+              </div>
+
+              <div style="text-align: center; margin-top: 32px;">
+                <button type="submit" class="btn">Save Changes</button>
+                <a href="/" class="btn btn-secondary" style="text-decoration: none;">Cancel</a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <script>
+          document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const notification = document.getElementById('notification');
+            
+            // Show loading state
+            form.classList.add('loading');
+            submitBtn.textContent = 'Saving...';
+            
+            try {
+              const formData = new FormData(form);
+              const profileData = {
+                username: formData.get('username'),
+                bio: formData.get('bio') || ''
+              };
+
+              // Get wallet signature for authentication
+              const message = \`Update NAKAMA profile: \${Date.now()}\`;
+              const encodedMessage = new TextEncoder().encode(message);
+              
+              let signature;
+              if (window.solana && window.solana.isPhantom) {
+                const response = await window.solana.signMessage(encodedMessage);
+                signature = Array.from(response.signature).map(b => b.toString(16).padStart(2, '0')).join('');
+              } else {
+                throw new Error('Phantom wallet not found');
+              }
+
+              const response = await fetch('/api/profile', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Public-Key': '${walletAddress}',
+                  'X-Signature': signature
+                },
+                body: JSON.stringify(profileData)
+              });
+
+              const result = await response.json();
+              
+              if (result.success) {
+                showNotification('Profile updated successfully!', 'success');
+                // Update avatar if username changed
+                const avatar = document.getElementById('avatar');
+                if (!avatar.querySelector('img')) {
+                  avatar.textContent = profileData.username.charAt(0).toUpperCase();
+                }
+              } else {
+                throw new Error(result.error || 'Failed to update profile');
+              }
+            } catch (error) {
+              console.error('Profile update failed:', error);
+              showNotification('Failed to update profile. Please try again.', 'error');
+            } finally {
+              // Remove loading state
+              form.classList.remove('loading');
+              submitBtn.textContent = 'Save Changes';
+            }
+          });
+
+          function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = \`notification \${type}\`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+              notification.style.display = 'none';
+            }, 5000);
+          }
+        </script>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('Error serving profile edit page:', error);
+    res.status(500).send('Internal server error');
+  }
+});
+
 // ===================================
 // Database Connection & Server Start
 // ===================================
