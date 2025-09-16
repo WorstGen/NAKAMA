@@ -2,7 +2,7 @@
  * NAKAMA Login Widget - Universal Authentication for Third-Party Sites
  * 
  * This widget provides wallet connection and profile creation for any website
- * Usage: <script src="https://nakama-production-1850.up.railway.app/nakama-login-widget.js"></script>
+ * Usage: <script src="assets/js/nakama-login-widget.js"></script>
  * 
  * Features:
  * - Wallet connection (Solana + EVM chains)
@@ -206,6 +206,7 @@
     // Find the website's header element
     findHeader() {
       const selectors = [
+        '.topbar-wrapper', // Specific to this site
         'header',
         '.header',
         '#header',
@@ -311,6 +312,7 @@
               </div>
               <div class="nakama-dropdown-section">
                 <div class="nakama-section-title">Quick Actions</div>
+                <button class="nakama-dropdown-btn" data-action="generate-passport">Generate Passport</button>
                 <button class="nakama-dropdown-btn" data-action="view-profile">View Profile</button>
                 <button class="nakama-dropdown-btn" data-action="disconnect">Disconnect</button>
               </div>
@@ -456,6 +458,20 @@
       if (user) {
         this.user = user;
         this.showSuccess('Connected successfully!');
+        
+        // Dispatch custom event for wallet connection
+        window.dispatchEvent(new CustomEvent('nakama-wallet-connected', {
+          detail: {
+            address: publicKey,
+            chain: 'solana',
+            user: user
+          }
+        }));
+        
+        // Auto-populate wallet inputs for Pond0x Data Hub (disabled to prevent double population)
+        // setTimeout(() => {
+        //   this.populateInputs({ triggerPassportGeneration: true });
+        // }, 500);
       } else {
         // Show profile creation modal
         this.showProfileCreationModal();
@@ -578,6 +594,20 @@
           this.closeModal();
           this.updateWidget();
           this.showSuccess('Profile created successfully!');
+          
+          // Dispatch custom event for wallet connection after profile creation
+          window.dispatchEvent(new CustomEvent('nakama-wallet-connected', {
+            detail: {
+              address: this.connectedWallets.solana.address,
+              chain: 'solana',
+              user: result.user
+            }
+          }));
+          
+          // Auto-populate wallet inputs after profile creation
+          setTimeout(() => {
+            this.populateInputs({ triggerPassportGeneration: true });
+          }, 500);
         } else {
           throw new Error(result.error || 'Failed to create profile');
         }
@@ -623,6 +653,12 @@
     // Handle dropdown actions
     handleDropdownAction(action, element) {
       switch (action) {
+        case 'toggle-menu':
+          this.toggleDropdown();
+          break;
+        case 'generate-passport':
+          this.generatePassportFromNAKAMA();
+          break;
         case 'view-profile':
           // Open the external profile editing page
           window.open(`${NAKAMA_API_BASE}/profile/edit`, '_blank');
@@ -635,6 +671,66 @@
           break;
       }
       this.closeDropdown();
+    }
+
+    // Toggle combined menu (integrate with page's mobile menu)
+    toggleCombinedMenu() {
+      const mobileDropdown = document.getElementById('mobileDropdown');
+      const hamburgerIcon = document.getElementById('hamburger-icon');
+      
+      if (mobileDropdown && hamburgerIcon) {
+        if (mobileDropdown.classList.contains('show')) {
+          mobileDropdown.classList.remove('show');
+          hamburgerIcon.textContent = '☰';
+        } else {
+          mobileDropdown.classList.add('show');
+          hamburgerIcon.textContent = '✕';
+          
+          // Add NAKAMA-specific menu items to the mobile menu
+          this.addNakamaMenuItems();
+        }
+      }
+    }
+
+    // Add NAKAMA menu items to the existing mobile menu
+    addNakamaMenuItems() {
+      const mobileMenuItems = document.querySelector('.mobile-menu-items');
+      if (!mobileMenuItems) return;
+
+      // Remove existing NAKAMA items to avoid duplicates
+      const existingNakamaItems = mobileMenuItems.querySelectorAll('.nakama-menu-item');
+      existingNakamaItems.forEach(item => item.remove());
+
+      // Add separator
+      const separator = document.createElement('div');
+      separator.className = 'nakama-menu-item nakama-menu-separator';
+      separator.innerHTML = '<hr style="margin: 1rem 0; border: none; border-top: 1px solid rgba(255,255,255,0.2);">';
+      mobileMenuItems.appendChild(separator);
+
+      // Add NAKAMA menu items
+      const nakamaItems = [
+        { text: 'Generate Passport', action: 'generate-passport' },
+        { text: 'View Profile', action: 'view-profile' },
+        { text: 'Disconnect', action: 'disconnect' }
+      ];
+
+      nakamaItems.forEach(item => {
+        const menuItem = document.createElement('a');
+        menuItem.className = 'nakama-menu-item';
+        menuItem.href = '#';
+        menuItem.textContent = item.text;
+        menuItem.setAttribute('data-nakama-action', item.action);
+        menuItem.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.handleDropdownAction(item.action);
+          // Close the mobile menu
+          const mobileDropdown = document.getElementById('mobileDropdown');
+          const hamburgerIcon = document.getElementById('hamburger-icon');
+          if (mobileDropdown) mobileDropdown.classList.remove('show');
+          if (hamburgerIcon) hamburgerIcon.textContent = '☰';
+        });
+        mobileMenuItems.appendChild(menuItem);
+      });
     }
 
     // Switch chain
@@ -708,12 +804,19 @@
       const {
         selectors = {},
         autoDetect = true,
-        chainPriority = ['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base', 'bsc']
+        chainPriority = ['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base', 'bsc'],
+        triggerPassportGeneration = true // New option for passport integration
       } = options;
 
       // Default selectors for common wallet input patterns
       const defaultSelectors = {
         solana: [
+          // Pond0x Data Hub specific selectors
+          '#wallet-input',
+          '#modalWalletInput',
+          'input[id="wallet-input"]',
+          'input[id="modalWalletInput"]',
+          // Generic selectors
           'input[name*="solana"]',
           'input[name*="sol"]',
           'input[placeholder*="solana"]',
@@ -827,8 +930,13 @@
             input.dispatchEvent(new Event('change', { bubbles: true }));
             input.dispatchEvent(new Event('input', { bubbles: true }));
             
-            // Auto-trigger form submission or button clicks
-            this.autoTriggerActions(input);
+            // Auto-trigger form submission or button clicks (disabled to prevent double submission)
+            // this.autoTriggerActions(input);
+            
+            // Special handling for Pond0x Data Hub passport generation (disabled to prevent double submission)
+            // if (triggerPassportGeneration && (input.id === 'wallet-input' || input.id === 'modalWalletInput')) {
+            //   this.triggerPassportGeneration(input);
+            // }
             
             populatedCount++;
           }
@@ -1012,6 +1120,96 @@
         }
       }
     }
+
+    // Special method for triggering Pond0x Data Hub passport generation
+    triggerPassportGeneration(input) {
+      console.log('NAKAMA: Triggering Pond0x passport generation for input:', input.id);
+      
+      // Wait a bit for the input to be processed
+      setTimeout(() => {
+        try {
+          // Check if we're on the main wallet input
+          if (input.id === 'wallet-input') {
+            // Trigger the dashboard initialization
+            if (typeof initDashboard === 'function') {
+              console.log('NAKAMA: Calling initDashboard()');
+              initDashboard();
+            } else {
+              console.log('NAKAMA: initDashboard function not found, trying alternative methods');
+              // Try to trigger the arrow button click
+              const arrowBtn = document.getElementById('arrowBtn');
+              if (arrowBtn) {
+                console.log('NAKAMA: Clicking arrow button');
+                arrowBtn.click();
+              }
+            }
+          }
+          
+          // Check if we're on the modal wallet input
+          if (input.id === 'modalWalletInput') {
+            // Enable the generate button and trigger it
+            const generateBtn = document.getElementById('generateBtn');
+            if (generateBtn && !generateBtn.disabled) {
+              console.log('NAKAMA: Clicking generate button in modal');
+              generateBtn.click();
+            } else {
+              // Try to enable the button first
+              const saveBtn = document.getElementById('saveWalletBtn');
+              if (saveBtn && !saveBtn.disabled) {
+                console.log('NAKAMA: Clicking save & generate button');
+                saveBtn.click();
+              }
+            }
+          }
+          
+          // Show success notification
+          this.showSuccess('NAKAMA: Auto-generated passport data from connected wallet!');
+          
+        } catch (error) {
+          console.error('NAKAMA: Error triggering passport generation:', error);
+        }
+      }, 1000); // Wait 1 second for the input to be fully processed
+    }
+
+    // Generate passport directly from NAKAMA profile
+    generatePassportFromNAKAMA() {
+      if (!this.user || !this.connectedWallets.solana) {
+        this.showError('No wallet connected. Please connect your wallet first.');
+        return;
+      }
+
+      const solanaAddress = this.connectedWallets.solana.address;
+      console.log('NAKAMA: Generating passport for address:', solanaAddress);
+
+      try {
+        // Find the main wallet input and populate it
+        const walletInput = document.getElementById('wallet-input');
+        if (walletInput) {
+          walletInput.value = solanaAddress;
+          
+          // Trigger wallet type detection
+          if (typeof detectWalletType === 'function') {
+            detectWalletType();
+          }
+          
+          // Trigger dashboard initialization
+          setTimeout(() => {
+            if (typeof initDashboard === 'function') {
+              console.log('NAKAMA: Calling initDashboard() for passport generation');
+              initDashboard();
+              this.showSuccess('NAKAMA: Generated passport data from your connected wallet!');
+            } else {
+              this.showError('NAKAMA: Unable to generate passport. Please try manually.');
+            }
+          }, 500);
+        } else {
+          this.showError('NAKAMA: Wallet input not found. Please refresh the page.');
+        }
+      } catch (error) {
+        console.error('NAKAMA: Error generating passport:', error);
+        this.showError('NAKAMA: Failed to generate passport. Please try again.');
+      }
+    }
   }
 
   // CSS Styles
@@ -1072,7 +1270,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: var(--nakama-profile-padding, 8px 12px);
+        padding: var(--nakama-profile-padding, 10px 15px); /* Increased from 8px 12px to 10px 15px (25% taller) */
         background: var(--nakama-profile-bg, rgba(31, 41, 55, 0.8));
         border: var(--nakama-profile-border, 1px solid rgba(55, 65, 81, 0.5));
         border-radius: var(--nakama-profile-radius, 12px);
@@ -1113,27 +1311,50 @@
       .nakama-username {
         font-size: var(--nakama-username-size, 12px);
         font-weight: var(--nakama-username-weight, 600);
-        color: var(--nakama-username-color, white);
+        color: white !important;
         line-height: 1.2;
       }
 
       .nakama-chain {
         font-size: var(--nakama-chain-size, 10px);
-        color: var(--nakama-chain-color, #9ca3af);
+        color: white !important;
         line-height: 1.2;
       }
 
+      .nakama-login-widget .nakama-chain {
+        color: white !important;
+      }
+
       .nakama-hamburger {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
+        display: none; /* Hide hamburger lines */
       }
 
       .nakama-hamburger-line {
-        width: 16px;
-        height: 2px;
-        background: var(--nakama-accent, #f97316);
-        border-radius: 1px;
+        display: none; /* Hide hamburger lines */
+      }
+
+      /* Light mode support */
+      [data-theme="light"] .nakama-login-widget .nakama-username {
+        color: #1f2937 !important;
+      }
+
+      [data-theme="light"] .nakama-login-widget .nakama-chain {
+        color: #6b7280 !important;
+      }
+
+      [data-theme="light"] .nakama-login-widget .nakama-hamburger-line {
+        background: #1f2937 !important;
+      }
+
+      /* Light mode widget background */
+      [data-theme="light"] .nakama-profile-btn {
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 1px solid rgba(209, 213, 219, 0.5) !important;
+      }
+
+      [data-theme="light"] .nakama-profile-btn:hover {
+        background: rgba(255, 255, 255, 0.95) !important;
+        border-color: rgba(209, 213, 219, 0.7) !important;
       }
 
       .nakama-dropdown {
@@ -1467,7 +1688,13 @@
     document.head.appendChild(styleElement);
   }
 
-  // Initialize widget
-  new NakamaLoginWidget();
+  // Initialize widget when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      new NakamaLoginWidget();
+    });
+  } else {
+    new NakamaLoginWidget();
+  }
 
 })();
