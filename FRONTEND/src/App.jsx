@@ -16,6 +16,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
 import { Contacts } from './pages/Contacts';
 import { Send } from './pages/Send';
+import { Swap } from './pages/Swap';
 import { Transactions } from './pages/Transactions';
 import { OAuth } from './pages/OAuth';
 import { Landing } from './pages/Landing';
@@ -126,6 +127,7 @@ const AppContent = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/send" element={<Send />} />
+          <Route path="/swap" element={<Swap />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/oauth/authorize" element={<OAuth />} />
         </Routes>
