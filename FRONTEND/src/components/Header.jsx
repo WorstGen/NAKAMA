@@ -246,6 +246,17 @@ export const Header = () => {
                       💸 Send
                     </Link>
                     <Link
+                      to="/swap"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block px-4 py-3 rounded-xl transition-all duration-200 ${
+                        isActive('/swap')
+                          ? 'bg-blue-500 text-white shadow-lg'
+                          : 'text-gray-200 hover:bg-gray-800/70 hover:text-white'
+                      }`}
+                    >
+                      🔄 Swap
+                    </Link>
+                    <Link
                       to="/transactions"
                       onClick={() => setMobileMenuOpen(false)}
                       className={`block px-4 py-3 rounded-xl transition-all duration-200 ${
