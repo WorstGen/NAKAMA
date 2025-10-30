@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Connection, PublicKey, VersionedTransaction } from '@solana/web3.js';
 
 const TOKEN_VAULTS_AFFILIATE = {
   "So11111111111111111111111111111111111111112": "9hCLuXrQrHCU9i7y648Nh7uuWKHUsKDiZ5zyBHdZPWtG",
@@ -52,18 +51,34 @@ export const Swap = () => {
   const [isSwapping, setIsSwapping] = useState(false);
   const [platformFeeBps] = useState(100);
   const [slippageBps] = useState(100);
+  const [solanaWeb3, setSolanaWeb3] = useState(null);
+  const [connection, setConnection] = useState(null);
 
-  const connection = new Connection("https://api.mainnet-beta.solana.com", 'confirmed');
-
+  // Load Solana Web3.js dynamically
   useEffect(() => {
-    checkWalletConnection();
+    const loadSolanaWeb3 = async () => {
+      try {
+        const web3 = await import('@solana/web3.js');
+        setSolanaWeb3(web3);
+        const conn = new web3.Connection("https://api.mainnet-beta.solana.com", 'confirmed');
+        setConnection(conn);
+      } catch (error) {
+        console.error("Failed to load Solana Web3:", error);
+        setStatus("⚠️ Failed to load Solana libraries");
+      }
+    };
+    loadSolanaWeb3();
   }, []);
 
   useEffect(() => {
-    if (isConnected) {
+    checkWalletConnection();
+  }, [solanaWeb3]);
+
+  useEffect(() => {
+    if (isConnected && connection) {
       updateBalance();
     }
-  }, [inputMint, isConnected]);
+  }, [inputMint, isConnected, connection]);
 
   useEffect(() => {
     if (amount && parseFloat(amount) > 0) {
@@ -74,11 +89,11 @@ export const Swap = () => {
   }, [amount, inputMint, outputMint, slippageBps, platformFeeBps]);
 
   const checkWalletConnection = async () => {
-    if (window.solana?.isConnected) {
+    if (window.solana?.isConnected && solanaWeb3) {
       const pubKey = window.solana.publicKey.toBase58();
       setWalletAddress(pubKey);
       setIsConnected(true);
-      await updateBalance();
+      if (connection) await updateBalance();
     }
   };
 
@@ -111,16 +126,16 @@ export const Swap = () => {
   };
 
   const updateBalance = async () => {
-    if (!walletAddress) return;
+    if (!walletAddress || !connection || !solanaWeb3) return;
 
     try {
       let bal = 0;
       if (inputMint === "So11111111111111111111111111111111111111112") {
-        bal = (await connection.getBalance(new PublicKey(walletAddress))) / 1e9;
+        bal = (await connection.getBalance(new solanaWeb3.PublicKey(walletAddress))) / 1e9;
       } else {
         const accounts = await connection.getParsedTokenAccountsByOwner(
-          new PublicKey(walletAddress),
-          { mint: new PublicKey(inputMint) }
+          new solanaWeb3.PublicKey(walletAddress),
+          { mint: new solanaWeb3.PublicKey(inputMint) }
         );
         if (accounts.value.length > 0) {
           bal = accounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
@@ -140,7 +155,7 @@ export const Swap = () => {
     const decimals = TOKEN_DECIMALS[inputMint] || 6;
     const amountLamports = Math.floor(uiAmount * 10 ** decimals);
 
-    const url = `https://lite-api.jup.ag/swap/v1/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountLamports}&slippageBps=${slippageBps}&platformFeeBps=${platformFeeBps}`;
+    const url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountLamports}&slippageBps=${slippageBps}`;
 
     try {
       const quote = await fetch(url).then(r => r.json());
@@ -153,7 +168,7 @@ export const Swap = () => {
   };
 
   const executeSwap = async () => {
-    if (!walletAddress) {
+    if (!walletAddress || !solanaWeb3 || !connection) {
       setStatus("❌ Connect wallet first!");
       return;
     }
@@ -176,7 +191,7 @@ export const Swap = () => {
     setIsSwapping(true);
     setStatus("⏳ Preparing transaction...");
 
-    const quoteUrl = `https://lite-api.jup.ag/swap/v1/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountLamports}&slippageBps=${slippageBps}&platformFeeBps=${platformFeeBps}`;
+    const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountLamports}&slippageBps=${slippageBps}`;
 
     try {
       const quote = await fetch(quoteUrl).then(r => r.json());
@@ -185,16 +200,13 @@ export const Swap = () => {
         userPublicKey: walletAddress,
         wrapAndUnwrapSol: true,
         quoteResponse: quote,
-        swapMode: "ExactIn",
-        dynamicComputeUnitLimit: true,
-        prioritizationFeeLamports: "auto",
-        platformFeeBps: platformFeeBps,
-        feeAccount: referralVault
+        feeAccount: referralVault,
+        prioritizationFeeLamports: "auto"
       };
 
       setStatus("⏳ Building transaction...");
 
-      const res = await fetch("https://lite-api.jup.ag/swap/v1/swap", {
+      const res = await fetch("https://quote-api.jup.ag/v6/swap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(swapBody),
@@ -211,7 +223,7 @@ export const Swap = () => {
         throw new Error("No swapTransaction returned from API");
       }
 
-      const tx = VersionedTransaction.deserialize(
+      const tx = solanaWeb3.VersionedTransaction.deserialize(
         Uint8Array.from(atob(swapRes.swapTransaction), c => c.charCodeAt(0))
       );
 
@@ -246,6 +258,17 @@ export const Swap = () => {
     setInputMint(outputMint);
     setOutputMint(temp);
   };
+
+  if (!solanaWeb3 || !connection) {
+    return (
+      <div className="min-h-screen py-8 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <p>Loading Swap...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-8">
