@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const TOKEN_VAULTS_AFFILIATE = {
   "So11111111111111111111111111111111111111112": "9hCLuXrQrHCU9i7y648Nh7uuWKHUsKDiZ5zyBHdZPWtG",
@@ -70,15 +70,66 @@ export const Swap = () => {
     loadSolanaWeb3();
   }, []);
 
+  const updateBalance = useCallback(async () => {
+    if (!walletAddress || !connection || !solanaWeb3) return;
+
+    try {
+      let bal = 0;
+      if (inputMint === "So11111111111111111111111111111111111111112") {
+        bal = (await connection.getBalance(new solanaWeb3.PublicKey(walletAddress))) / 1e9;
+      } else {
+        const accounts = await connection.getParsedTokenAccountsByOwner(
+          new solanaWeb3.PublicKey(walletAddress),
+          { mint: new solanaWeb3.PublicKey(inputMint) }
+        );
+        if (accounts.value.length > 0) {
+          bal = accounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
+        }
+      }
+      setBalance(bal);
+    } catch (err) {
+      console.error("Error fetching balance:", err);
+      setBalance(0);
+    }
+  }, [walletAddress, connection, solanaWeb3, inputMint]);
+
+  const checkWalletConnection = useCallback(async () => {
+    if (window.solana?.isConnected && solanaWeb3) {
+      const pubKey = window.solana.publicKey.toBase58();
+      setWalletAddress(pubKey);
+      setIsConnected(true);
+      if (connection) await updateBalance();
+    }
+  }, [solanaWeb3, connection, updateBalance]);
+
+  const getEstimate = useCallback(async () => {
+    const uiAmount = parseFloat(amount);
+    if (!uiAmount || uiAmount <= 0) return;
+
+    const decimals = TOKEN_DECIMALS[inputMint] || 6;
+    const amountLamports = Math.floor(uiAmount * 10 ** decimals);
+
+    const url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountLamports}&slippageBps=${slippageBps}`;
+
+    try {
+      const quote = await fetch(url).then(r => r.json());
+      const outDecimals = TOKEN_DECIMALS[outputMint] || 6;
+      setEstimate((quote.outAmount / 10 ** outDecimals).toFixed(6));
+    } catch (err) {
+      console.error("Error getting estimate:", err);
+      setEstimate(null);
+    }
+  }, [amount, inputMint, outputMint, slippageBps]);
+
   useEffect(() => {
     checkWalletConnection();
-  }, [solanaWeb3]);
+  }, [checkWalletConnection]);
 
   useEffect(() => {
     if (isConnected && connection) {
       updateBalance();
     }
-  }, [inputMint, isConnected, connection]);
+  }, [inputMint, isConnected, connection, updateBalance]);
 
   useEffect(() => {
     if (amount && parseFloat(amount) > 0) {
@@ -86,16 +137,7 @@ export const Swap = () => {
     } else {
       setEstimate(null);
     }
-  }, [amount, inputMint, outputMint, slippageBps, platformFeeBps]);
-
-  const checkWalletConnection = async () => {
-    if (window.solana?.isConnected && solanaWeb3) {
-      const pubKey = window.solana.publicKey.toBase58();
-      setWalletAddress(pubKey);
-      setIsConnected(true);
-      if (connection) await updateBalance();
-    }
-  };
+  }, [amount, getEstimate]);
 
   const connectWallet = async () => {
     if (!window.solana) {
@@ -123,48 +165,6 @@ export const Swap = () => {
     setIsConnected(false);
     setBalance(null);
     setStatus("Disconnected");
-  };
-
-  const updateBalance = async () => {
-    if (!walletAddress || !connection || !solanaWeb3) return;
-
-    try {
-      let bal = 0;
-      if (inputMint === "So11111111111111111111111111111111111111112") {
-        bal = (await connection.getBalance(new solanaWeb3.PublicKey(walletAddress))) / 1e9;
-      } else {
-        const accounts = await connection.getParsedTokenAccountsByOwner(
-          new solanaWeb3.PublicKey(walletAddress),
-          { mint: new solanaWeb3.PublicKey(inputMint) }
-        );
-        if (accounts.value.length > 0) {
-          bal = accounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
-        }
-      }
-      setBalance(bal);
-    } catch (err) {
-      console.error("Error fetching balance:", err);
-      setBalance(0);
-    }
-  };
-
-  const getEstimate = async () => {
-    const uiAmount = parseFloat(amount);
-    if (!uiAmount || uiAmount <= 0) return;
-
-    const decimals = TOKEN_DECIMALS[inputMint] || 6;
-    const amountLamports = Math.floor(uiAmount * 10 ** decimals);
-
-    const url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountLamports}&slippageBps=${slippageBps}`;
-
-    try {
-      const quote = await fetch(url).then(r => r.json());
-      const outDecimals = TOKEN_DECIMALS[outputMint] || 6;
-      setEstimate((quote.outAmount / 10 ** outDecimals).toFixed(6));
-    } catch (err) {
-      console.error("Error getting estimate:", err);
-      setEstimate(null);
-    }
   };
 
   const executeSwap = async () => {
