@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { Cog6ToothIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { createJupiterApiClient } from '@jup-ag/api';
 
 const TOKEN_VAULTS_AFFILIATE = {
   "So11111111111111111111111111111111111111112": "9hCLuXrQrHCU9i7y648Nh7uuWKHUsKDiZ5zyBHdZPWtG",
@@ -52,6 +53,7 @@ export const Swap = () => {
   const [solanaWeb3, setSolanaWeb3] = useState(null);
   const [connection, setConnection] = useState(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
+  const [jupiterApi, setJupiterApi] = useState(null);
 
   const walletAddress = user?.wallets?.solana?.address;
 
@@ -74,7 +76,12 @@ export const Swap = () => {
         setSolanaWeb3(web3);
         const conn = new web3.Connection("https://api.mainnet-beta.solana.com", 'confirmed');
         setConnection(conn);
-        console.log('Solana Web3 loaded successfully');
+        
+        // Initialize Jupiter API
+        const jupApi = createJupiterApiClient();
+        setJupiterApi(jupApi);
+        
+        console.log('Solana Web3 and Jupiter API loaded successfully');
       } catch (error) {
         console.error("Failed to load Solana Web3:", error);
         toast.error("⚠️ Failed to load Solana libraries");
@@ -121,7 +128,7 @@ export const Swap = () => {
 
   const getEstimate = useCallback(async () => {
     const uiAmount = parseFloat(amount);
-    if (!uiAmount || uiAmount <= 0) {
+    if (!uiAmount || uiAmount <= 0 || !jupiterApi) {
       setEstimate(null);
       return;
     }
@@ -129,11 +136,15 @@ export const Swap = () => {
     const decimals = TOKEN_DECIMALS[inputMint] || 6;
     const amountLamports = Math.floor(uiAmount * 10 ** decimals);
 
-    const url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountLamports}&slippageBps=${slippageBps}`;
-
     try {
-      console.log('Fetching quote from Jupiter...');
-      const quote = await fetch(url).then(r => r.json());
+      console.log('Fetching quote from Jupiter API...');
+      const quote = await jupiterApi.quoteGet({
+        inputMint,
+        outputMint,
+        amount: amountLamports,
+        slippageBps,
+      });
+      
       const outDecimals = TOKEN_DECIMALS[outputMint] || 6;
       const estimatedAmount = (quote.outAmount / 10 ** outDecimals).toFixed(6);
       console.log('Estimated output:', estimatedAmount);
@@ -142,7 +153,7 @@ export const Swap = () => {
       console.error("Error getting estimate:", err);
       setEstimate(null);
     }
-  }, [amount, inputMint, outputMint, slippageBps]);
+  }, [amount, inputMint, outputMint, slippageBps, jupiterApi]);
 
   useEffect(() => {
     if (walletAddress && connection && solanaWeb3) {
@@ -160,8 +171,8 @@ export const Swap = () => {
   }, [amount, getEstimate]);
 
   const executeSwap = async () => {
-    if (!walletAddress || !solanaWeb3 || !connection) {
-      toast.error("❌ Wallet not connected!");
+    if (!walletAddress || !solanaWeb3 || !connection || !jupiterApi) {
+      toast.error("❌ Wallet not connected or Jupiter API not ready!");
       return;
     }
 
@@ -189,40 +200,35 @@ export const Swap = () => {
     setIsSwapping(true);
     setStatus("⏳ Preparing transaction...");
 
-    const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountLamports}&slippageBps=${slippageBps}`;
-
     try {
-      const quote = await fetch(quoteUrl).then(r => r.json());
-
-      const swapBody = {
-        userPublicKey: walletAddress,
-        wrapAndUnwrapSol: true,
-        quoteResponse: quote,
-        feeAccount: referralVault,
-        prioritizationFeeLamports: "auto"
-      };
+      // Get quote using Jupiter API
+      console.log('Getting quote from Jupiter API...');
+      const quote = await jupiterApi.quoteGet({
+        inputMint,
+        outputMint,
+        amount: amountLamports,
+        slippageBps,
+      });
 
       setStatus("⏳ Building transaction...");
 
-      const res = await fetch("https://quote-api.jup.ag/v6/swap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(swapBody),
+      // Get swap transaction using Jupiter API
+      const swapResult = await jupiterApi.swapPost({
+        swapRequest: {
+          userPublicKey: walletAddress,
+          quoteResponse: quote,
+          wrapAndUnwrapSol: true,
+          feeAccount: referralVault,
+          prioritizationFeeLamports: "auto",
+        },
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Jupiter API Error (${res.status}): ${errText}`);
-      }
-
-      const swapRes = await res.json();
-
-      if (!swapRes.swapTransaction) {
-        throw new Error("No swapTransaction returned from API");
+      if (!swapResult.swapTransaction) {
+        throw new Error("No swapTransaction returned from Jupiter API");
       }
 
       const tx = solanaWeb3.VersionedTransaction.deserialize(
-        Uint8Array.from(atob(swapRes.swapTransaction), c => c.charCodeAt(0))
+        Uint8Array.from(atob(swapResult.swapTransaction), c => c.charCodeAt(0))
       );
 
       setStatus("⏳ Please approve transaction in wallet...");
@@ -295,7 +301,7 @@ export const Swap = () => {
     );
   }
 
-  if (!solanaWeb3 || !connection) {
+  if (!solanaWeb3 || !connection || !jupiterApi) {
     return (
       <div className="min-h-screen py-8 flex items-center justify-center">
         <div className="text-white text-center">
