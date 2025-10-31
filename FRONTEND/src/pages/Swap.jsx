@@ -3,9 +3,6 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { Cog6ToothIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
-// eslint-disable-next-line no-unused-vars
-import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
-
 const TOKEN_VAULTS_AFFILIATE = {
   "So11111111111111111111111111111111111111112": "9hCLuXrQrHCU9i7y648Nh7uuWKHUsKDiZ5zyBHdZPWtG",
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": "6NqvoPpSYCPEtLEukQaSNs7mS3yK6k285saH9o3vgC96",
@@ -54,16 +51,30 @@ export const Swap = () => {
   const [showWarning, setShowWarning] = useState(true);
   const [solanaWeb3, setSolanaWeb3] = useState(null);
   const [connection, setConnection] = useState(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
 
   const walletAddress = user?.wallets?.solana?.address;
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Swap Page Debug:', {
+      isAuthenticated,
+      hasUser: !!user,
+      walletAddress,
+      solanaWeb3Available: !!solanaWeb3,
+      connectionAvailable: !!connection
+    });
+  }, [isAuthenticated, user, walletAddress, solanaWeb3, connection]);
 
   useEffect(() => {
     const loadSolanaWeb3 = async () => {
       try {
+        console.log('Loading Solana Web3...');
         const web3 = await import('@solana/web3.js');
         setSolanaWeb3(web3);
         const conn = new web3.Connection("https://api.mainnet-beta.solana.com", 'confirmed');
         setConnection(conn);
+        console.log('Solana Web3 loaded successfully');
       } catch (error) {
         console.error("Failed to load Solana Web3:", error);
         toast.error("⚠️ Failed to load Solana libraries");
@@ -73,12 +84,19 @@ export const Swap = () => {
   }, []);
 
   const updateBalance = useCallback(async () => {
-    if (!walletAddress || !connection || !solanaWeb3) return;
+    if (!walletAddress || !connection || !solanaWeb3) {
+      console.log('Cannot update balance:', { walletAddress, connection: !!connection, solanaWeb3: !!solanaWeb3 });
+      return;
+    }
 
+    setLoadingBalance(true);
     try {
+      console.log('Fetching balance for:', walletAddress, 'Token:', inputMint);
       let bal = 0;
       if (inputMint === "So11111111111111111111111111111111111111112") {
-        bal = (await connection.getBalance(new solanaWeb3.PublicKey(walletAddress))) / 1e9;
+        const lamports = await connection.getBalance(new solanaWeb3.PublicKey(walletAddress));
+        bal = lamports / 1e9;
+        console.log('SOL balance:', bal);
       } else {
         const accounts = await connection.getParsedTokenAccountsByOwner(
           new solanaWeb3.PublicKey(walletAddress),
@@ -86,12 +104,18 @@ export const Swap = () => {
         );
         if (accounts.value.length > 0) {
           bal = accounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
+          console.log('Token balance:', bal);
+        } else {
+          console.log('No token account found');
         }
       }
       setBalance(bal);
     } catch (err) {
       console.error("Error fetching balance:", err);
       setBalance(0);
+      toast.error("Failed to fetch balance");
+    } finally {
+      setLoadingBalance(false);
     }
   }, [walletAddress, connection, solanaWeb3, inputMint]);
 
@@ -108,9 +132,12 @@ export const Swap = () => {
     const url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountLamports}&slippageBps=${slippageBps}`;
 
     try {
+      console.log('Fetching quote from Jupiter...');
       const quote = await fetch(url).then(r => r.json());
       const outDecimals = TOKEN_DECIMALS[outputMint] || 6;
-      setEstimate((quote.outAmount / 10 ** outDecimals).toFixed(6));
+      const estimatedAmount = (quote.outAmount / 10 ** outDecimals).toFixed(6);
+      console.log('Estimated output:', estimatedAmount);
+      setEstimate(estimatedAmount);
     } catch (err) {
       console.error("Error getting estimate:", err);
       setEstimate(null);
@@ -118,10 +145,11 @@ export const Swap = () => {
   }, [amount, inputMint, outputMint, slippageBps]);
 
   useEffect(() => {
-    if (walletAddress && connection) {
+    if (walletAddress && connection && solanaWeb3) {
+      console.log('Triggering balance update...');
       updateBalance();
     }
-  }, [inputMint, walletAddress, connection, updateBalance]);
+  }, [inputMint, walletAddress, connection, solanaWeb3, updateBalance]);
 
   useEffect(() => {
     if (amount && parseFloat(amount) > 0) {
@@ -316,6 +344,13 @@ export const Swap = () => {
             </button>
           </div>
 
+          {/* Debug Info */}
+          {walletAddress && (
+            <div className="mb-4 text-xs text-gray-500">
+              Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-6)}
+            </div>
+          )}
+
           {/* Settings Panel */}
           {showSettings && (
             <div className="mb-6 bg-gray-800/50 border border-gray-700 rounded-xl p-4">
@@ -373,7 +408,9 @@ export const Swap = () => {
                     <option key={token.mint} value={token.mint}>{token.symbol}</option>
                   ))}
                 </select>
-                {balance !== null && (
+                {loadingBalance ? (
+                  <span className="text-gray-400 text-sm">Loading...</span>
+                ) : balance !== null ? (
                   <div className="text-right">
                     <span className="text-gray-400 text-sm block">
                       Balance: {balance.toFixed(6)}
@@ -385,6 +422,8 @@ export const Swap = () => {
                       MAX
                     </button>
                   </div>
+                ) : (
+                  <span className="text-gray-500 text-sm">No balance</span>
                 )}
               </div>
               <input
