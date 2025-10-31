@@ -64,9 +64,10 @@ export const Swap = () => {
       hasUser: !!user,
       walletAddress,
       solanaWeb3Available: !!solanaWeb3,
-      connectionAvailable: !!connection
+      connectionAvailable: !!connection,
+      jupiterApiAvailable: !!jupiterApi
     });
-  }, [isAuthenticated, user, walletAddress, solanaWeb3, connection]);
+  }, [isAuthenticated, user, walletAddress, solanaWeb3, connection, jupiterApi]);
 
   useEffect(() => {
     const loadSolanaWeb3 = async () => {
@@ -78,6 +79,7 @@ export const Swap = () => {
         setConnection(conn);
         
         // Initialize Jupiter API
+        console.log('Initializing Jupiter API...');
         const jupApi = createJupiterApiClient();
         setJupiterApi(jupApi);
         
@@ -137,21 +139,30 @@ export const Swap = () => {
     const amountLamports = Math.floor(uiAmount * 10 ** decimals);
 
     try {
-      console.log('Fetching quote from Jupiter API...');
+      console.log('Fetching quote from Jupiter API...', {
+        inputMint,
+        outputMint,
+        amount: amountLamports.toString(),
+        slippageBps
+      });
+      
       const quote = await jupiterApi.quoteGet({
         inputMint,
         outputMint,
-        amount: amountLamports,
+        amount: amountLamports.toString(), // Must be string
         slippageBps,
       });
       
+      console.log('Quote received:', quote);
       const outDecimals = TOKEN_DECIMALS[outputMint] || 6;
-      const estimatedAmount = (quote.outAmount / 10 ** outDecimals).toFixed(6);
+      const estimatedAmount = (parseInt(quote.outAmount) / 10 ** outDecimals).toFixed(6);
       console.log('Estimated output:', estimatedAmount);
       setEstimate(estimatedAmount);
     } catch (err) {
       console.error("Error getting estimate:", err);
+      console.error("Full error:", JSON.stringify(err, null, 2));
       setEstimate(null);
+      toast.error("Failed to get price estimate");
     }
   }, [amount, inputMint, outputMint, slippageBps, jupiterApi]);
 
@@ -202,14 +213,21 @@ export const Swap = () => {
 
     try {
       // Get quote using Jupiter API
-      console.log('Getting quote from Jupiter API...');
+      console.log('Getting quote from Jupiter API...', {
+        inputMint,
+        outputMint,
+        amount: amountLamports.toString(),
+        slippageBps
+      });
+      
       const quote = await jupiterApi.quoteGet({
         inputMint,
         outputMint,
-        amount: amountLamports,
+        amount: amountLamports.toString(), // Must be string
         slippageBps,
       });
 
+      console.log('Quote received:', quote);
       setStatus("⏳ Building transaction...");
 
       // Get swap transaction using Jupiter API
@@ -222,6 +240,8 @@ export const Swap = () => {
           prioritizationFeeLamports: "auto",
         },
       });
+
+      console.log('Swap result received');
 
       if (!swapResult.swapTransaction) {
         throw new Error("No swapTransaction returned from Jupiter API");
@@ -252,6 +272,7 @@ export const Swap = () => {
 
     } catch (err) {
       console.error("Swap error:", err);
+      console.error("Full error:", JSON.stringify(err, null, 2));
       const errorMsg = err.message || "Transaction failed";
       toast.error(`❌ ${errorMsg}`);
       setStatus(`❌ ${errorMsg}`);
