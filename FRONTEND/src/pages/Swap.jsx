@@ -236,22 +236,27 @@ export const Swap = () => {
       console.log('Quote received:', quote);
       setStatus("⏳ Building transaction...");
 
+      // Prepare swap request
+      const swapRequestBody = {
+        userPublicKey: walletAddress,
+        quoteResponse: quote,
+        wrapAndUnwrapSol: true,
+        feeAccount: referralVault,
+        platformFeeBps: 100,
+        dynamicComputeUnitLimit: true,
+        prioritizationFeeLamports: {
+          priorityLevelWithMaxLamports: {
+            maxLamports: 10000000,
+            priorityLevel: PRIORITY_PRESETS[priorityFee].priorityLevel
+          }
+        },
+      };
+
+      console.log('Swap request body:', JSON.stringify(swapRequestBody, null, 2));
+
       // Get swap transaction using Jupiter API
       const swapResult = await jupiterApi.swapPost({
-        swapRequest: {
-          userPublicKey: walletAddress,
-          quoteResponse: quote,
-          wrapAndUnwrapSol: true,
-          feeAccount: referralVault,
-          platformFeeBps: platformFeeBps,
-          dynamicComputeUnitLimit: true,
-          prioritizationFeeLamports: {
-            priorityLevelWithMaxLamports: {
-              maxLamports: 10000000,
-              priorityLevel: PRIORITY_PRESETS[priorityFee].priorityLevel
-            }
-          },
-        },
+        swapRequest: swapRequestBody,
       });
 
       console.log('Swap result received');
