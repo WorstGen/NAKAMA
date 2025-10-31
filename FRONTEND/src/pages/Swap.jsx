@@ -35,9 +35,9 @@ const TOKENS = [
 
 const SLIPPAGE_PRESETS = [0.1, 0.5, 1.0, 2.0];
 const PRIORITY_PRESETS = {
-  low: { label: "Low", multiplier: 1, description: "Slower, cheaper" },
-  medium: { label: "Medium", multiplier: 2, description: "Balanced" },
-  high: { label: "High", multiplier: 3, description: "Faster, expensive" }
+  low: { label: "Low", priorityLevel: "low", description: "Slower, cheaper" },
+  medium: { label: "Medium", priorityLevel: "medium", description: "Balanced" },
+  high: { label: "High", priorityLevel: "high", description: "Faster, expensive" }
 };
 
 export const Swap = () => {
@@ -243,8 +243,12 @@ export const Swap = () => {
           quoteResponse: quote,
           wrapAndUnwrapSol: true,
           feeAccount: referralVault,
+          dynamicComputeUnitLimit: true,
           prioritizationFeeLamports: {
-            autoMultiplier: PRIORITY_PRESETS[priorityFee].multiplier
+            priorityLevelWithMaxLamports: {
+              maxLamports: 10000000,
+              priorityLevel: PRIORITY_PRESETS[priorityFee].priorityLevel
+            }
           },
         },
       });
@@ -450,7 +454,7 @@ export const Swap = () => {
                   ))}
                 </div>
                 <p className="text-xs text-gray-400">
-                  Priority fee multiplier: {PRIORITY_PRESETS[priorityFee].multiplier}x
+                  Priority level: {PRIORITY_PRESETS[priorityFee].priorityLevel}
                 </p>
               </div>
             </div>
