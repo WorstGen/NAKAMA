@@ -107,16 +107,16 @@ export const Dashboard = () => {
           to="/send"
           className={`bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95`}
         >
-          <PaperAirplaneIcon className={`w-6 h-6 md:w-8 md:h-8 text-blue-400 mb-2 md:mb-3`} />
+          <PaperAirplaneIcon className={`w-6 h-6 md:w-8 md:h-8 text-orange-400 mb-2 md:mb-3`} />
           <h3 className={`text-white font-semibold mb-1 md:mb-2 text-sm md:text-base`}>Send</h3>
-          <p className="text-gray-400 text-xs md:text-sm">Send SOL and SPL tokens</p>
+          <p className="text-gray-400 text-xs md:text-sm">Send tokens to friends via usernames</p>
         </Link>
 
         <Link
           to="/swap"
           className={`bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95`}
         >
-          <ArrowPathRoundedSquareIcon className={`w-6 h-6 md:w-8 md:h-8 text-purple-400 mb-2 md:mb-3`} />
+          <ArrowPathRoundedSquareIcon className={`w-6 h-6 md:w-8 md:h-8 text-blue-400 mb-2 md:mb-3`} />
           <h3 className={`text-white font-semibold mb-1 md:mb-2 text-sm md:text-base`}>Swap</h3>
           <p className="text-gray-400 text-xs md:text-sm">Swap using Pond0x Jupiter referral</p>
         </Link>
@@ -131,9 +131,9 @@ export const Dashboard = () => {
           <div className="flex items-center">
             <ClockIcon className={`w-6 h-6 md:w-8 md:h-8 text-orange-400 mb-0 mr-3 md:mr-4`} />
             <div>
-              <h3 className={`text-white font-semibold mb-0 md:mb-1 text-sm md:text-base`}>Transaction History</h3>
+              <h3 className={`text-white font-semibold mb-0 md:mb-1 text-sm md:text-base`}>Send History</h3>
               <p className="text-gray-400 text-xs md:text-sm">
-                View all your transactions and activity
+                View all your Sent transactions and messages
               </p>
             </div>
           </div>
