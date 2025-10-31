@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import toast from 'react-hot-toast';
+import { Cog6ToothIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
 const TOKEN_VAULTS_AFFILIATE = {
   "So11111111111111111111111111111111111111112": "9hCLuXrQrHCU9i7y648Nh7uuWKHUsKDiZ5zyBHdZPWtG",
@@ -32,6 +33,8 @@ const TOKENS = [
   { mint: "B5WTLaRwaUQpKk7ir1wniNB6m5o8GgMrimhKMYan2R6B", name: "PepeOnSOL", symbol: "Pepe" },
 ];
 
+const SLIPPAGE_PRESETS = [0.1, 0.5, 1.0, 2.0];
+
 export const Swap = () => {
   const { isAuthenticated, user } = useAuth();
   const { connectedChains } = usePhantomMultiChain();
@@ -44,14 +47,15 @@ export const Swap = () => {
   const [status, setStatus] = useState("");
   const [isSwapping, setIsSwapping] = useState(false);
   const [platformFeeBps] = useState(100);
-  const [slippageBps] = useState(100);
+  const [slippageBps, setSlippageBps] = useState(100);
+  const [customSlippage, setCustomSlippage] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [showWarning, setShowWarning] = useState(true);
   const [solanaWeb3, setSolanaWeb3] = useState(null);
   const [connection, setConnection] = useState(null);
 
-  // Get wallet address from user context
   const walletAddress = user?.wallets?.solana?.address;
 
-  // Load Solana Web3.js dynamically
   useEffect(() => {
     const loadSolanaWeb3 = async () => {
       try {
@@ -229,11 +233,25 @@ export const Swap = () => {
 
   const setMaxAmount = () => {
     if (balance !== null) {
-      // Leave a small amount for gas if it's SOL
       const maxAmount = inputMint === "So11111111111111111111111111111111111111112" 
         ? Math.max(0, balance - 0.01) 
         : balance;
       setAmount(maxAmount.toString());
+    }
+  };
+
+  const handleSlippageChange = (value) => {
+    const bps = Math.floor(value * 100);
+    setSlippageBps(bps);
+    setCustomSlippage("");
+  };
+
+  const handleCustomSlippageChange = (e) => {
+    const value = e.target.value;
+    setCustomSlippage(value);
+    if (value && !isNaN(value)) {
+      const bps = Math.floor(parseFloat(value) * 100);
+      setSlippageBps(bps);
     }
   };
 
@@ -262,18 +280,102 @@ export const Swap = () => {
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-xl mx-auto px-4">
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl">
-          <h1 className="text-3xl font-bold text-white mb-6 text-center">Token Swap</h1>
+        {/* Warning Banner */}
+        {showWarning && (
+          <div className="mb-4 bg-gradient-to-r from-red-900/40 to-orange-900/40 border border-red-500/50 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <ExclamationTriangleIcon className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-red-300 font-semibold mb-2">⚠️ Important Warning</h3>
+                <p className="text-red-200 text-sm mb-3">
+                  This swap feature contains AI-generated code. DO NOT use with real funds unless you have:
+                </p>
+                <ul className="text-red-200 text-sm space-y-1 mb-3 list-disc list-inside">
+                  <li>Thoroughly tested on a new test wallet</li>
+                  <li>Reviewed the code yourself or with a developer</li>
+                  <li>Understood all risks of using experimental features</li>
+                </ul>
+                <p className="text-red-200 text-sm font-semibold">
+                  Use at your own risk. No warranties or guarantees provided.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowWarning(false)}
+                className="text-red-300 hover:text-red-100 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 border border-gray-700/50 rounded-2xl p-6 shadow-2xl">
+          {/* Header with Settings */}
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Token Swap
+            </h1>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              aria-label="Settings"
+            >
+              <Cog6ToothIcon className="w-6 h-6 text-gray-400 hover:text-white" />
+            </button>
+          </div>
+
+          {/* Settings Panel */}
+          {showSettings && (
+            <div className="mb-6 bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+              <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                <Cog6ToothIcon className="w-5 h-5" />
+                Slippage Settings
+              </h3>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  {SLIPPAGE_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={() => handleSlippageChange(preset)}
+                      className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all ${
+                        slippageBps === preset * 100 && !customSlippage
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {preset}%
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={customSlippage}
+                    onChange={handleCustomSlippageChange}
+                    placeholder="Custom"
+                    step="0.1"
+                    min="0"
+                    max="50"
+                    className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
+                  />
+                  <span className="text-gray-400">%</span>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Current slippage: {(slippageBps / 100).toFixed(2)}%
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* From Token */}
           <div className="mb-4">
-            <label className="block text-gray-300 text-sm font-medium mb-2">From</label>
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-2">
+            <label className="block text-gray-400 text-sm font-medium mb-2">You Pay</label>
+            <div className="bg-gradient-to-br from-gray-800 to-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors">
+              <div className="flex justify-between items-center mb-3">
                 <select
                   value={inputMint}
                   onChange={(e) => setInputMint(e.target.value)}
-                  className="bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
+                  className="bg-gray-700/50 text-white px-4 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 font-semibold"
                 >
                   {TOKENS.map(token => (
                     <option key={token.mint} value={token.mint}>{token.symbol}</option>
@@ -286,9 +388,9 @@ export const Swap = () => {
                     </span>
                     <button
                       onClick={setMaxAmount}
-                      className="text-blue-400 text-xs hover:text-blue-300 underline"
+                      className="text-blue-400 text-xs hover:text-blue-300 underline font-medium"
                     >
-                      Max
+                      MAX
                     </button>
                   </div>
                 )}
@@ -299,16 +401,16 @@ export const Swap = () => {
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
                 step="0.000001"
-                className="w-full bg-transparent text-white text-2xl font-semibold focus:outline-none"
+                className="w-full bg-transparent text-white text-3xl font-bold focus:outline-none placeholder-gray-600"
               />
             </div>
           </div>
 
           {/* Swap Button */}
-          <div className="flex justify-center my-2">
+          <div className="flex justify-center my-3">
             <button
               onClick={swapTokens}
-              className="bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-full border border-gray-600 transition-colors"
+              className="bg-gradient-to-br from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white p-3 rounded-xl border border-gray-600 hover:border-gray-500 transition-all shadow-lg hover:shadow-xl"
               aria-label="Swap tokens"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,18 +421,18 @@ export const Swap = () => {
 
           {/* To Token */}
           <div className="mb-6">
-            <label className="block text-gray-300 text-sm font-medium mb-2">To</label>
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <label className="block text-gray-400 text-sm font-medium mb-2">You Receive</label>
+            <div className="bg-gradient-to-br from-gray-800 to-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors">
               <select
                 value={outputMint}
                 onChange={(e) => setOutputMint(e.target.value)}
-                className="bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 mb-2"
+                className="bg-gray-700/50 text-white px-4 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 font-semibold mb-3"
               >
                 {TOKENS.map(token => (
                   <option key={token.mint} value={token.mint}>{token.symbol}</option>
                 ))}
               </select>
-              <div className="text-2xl font-semibold text-gray-400">
+              <div className="text-3xl font-bold text-gray-300">
                 {estimate ? `≈ ${estimate}` : '—'}
               </div>
             </div>
@@ -340,34 +442,51 @@ export const Swap = () => {
           <button
             onClick={executeSwap}
             disabled={isSwapping || !amount || parseFloat(amount) <= 0 || balance === null}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-colors mb-4"
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:shadow-none text-lg"
           >
-            {isSwapping ? "Swapping..." : "Swap"}
+            {isSwapping ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                Swapping...
+              </span>
+            ) : "Swap Tokens"}
           </button>
 
           {/* Status Message */}
           {status && (
-            <div className={`p-4 rounded-lg text-sm ${
-              status.includes('✅') ? 'bg-green-900/30 border border-green-700 text-green-300' :
-              status.includes('❌') ? 'bg-red-900/30 border border-red-700 text-red-300' :
-              status.includes('⚠️') ? 'bg-yellow-900/30 border border-yellow-700 text-yellow-300' :
-              'bg-blue-900/30 border border-blue-700 text-blue-300'
+            <div className={`mt-4 p-4 rounded-xl text-sm font-medium ${
+              status.includes('✅') ? 'bg-green-900/30 border border-green-500/50 text-green-300' :
+              status.includes('❌') ? 'bg-red-900/30 border border-red-500/50 text-red-300' :
+              status.includes('⚠️') ? 'bg-yellow-900/30 border border-yellow-500/50 text-yellow-300' :
+              'bg-blue-900/30 border border-blue-500/50 text-blue-300'
             }`}>
               {status}
             </div>
           )}
 
           {/* Info Footer */}
-          <div className="mt-6 pt-4 border-t border-gray-700">
-            <div className="flex justify-between text-xs text-gray-400 mb-2">
+          <div className="mt-6 pt-4 border-t border-gray-700/50 space-y-3">
+            <div className="flex justify-between text-xs text-gray-400">
               <span>Platform Fee: {(platformFeeBps / 100).toFixed(2)}%</span>
               <span>Slippage: {(slippageBps / 100).toFixed(2)}%</span>
             </div>
-            <div className="text-xs text-gray-400 mb-1">
-              Wallet: {walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}
+            
+            <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <InformationCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-blue-300 text-xs font-medium mb-1">
+                    Powered by Jupiter Aggregator
+                  </p>
+                  <p className="text-blue-400/80 text-xs">
+                    This swap uses Pond0x's Jupiter referral code. A portion of fees support Pond0x development.
+                  </p>
+                </div>
+              </div>
             </div>
+            
             <div className="text-xs text-gray-500 text-center">
-              Powered by Jupiter • Pond0x Affiliate
+              Wallet: {walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}
             </div>
           </div>
         </div>
