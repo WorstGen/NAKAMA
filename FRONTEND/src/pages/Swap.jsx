@@ -3,6 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { Cog6ToothIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
+// eslint-disable-next-line no-unused-vars
+import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
+
 const TOKEN_VAULTS_AFFILIATE = {
   "So11111111111111111111111111111111111111112": "9hCLuXrQrHCU9i7y648Nh7uuWKHUsKDiZ5zyBHdZPWtG",
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": "6NqvoPpSYCPEtLEukQaSNs7mS3yK6k285saH9o3vgC96",
@@ -284,17 +287,8 @@ export const Swap = () => {
             <div className="flex items-start gap-3">
               <ExclamationTriangleIcon className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <h3 className="text-red-300 font-semibold mb-2">⚠️ Important Warning</h3>
-                <p className="text-red-200 text-sm mb-3">
-                  This swap feature contains AI-generated code. DO NOT use with real funds unless you have:
-                </p>
-                <ul className="text-red-200 text-sm space-y-1 mb-3 list-disc list-inside">
-                  <li>Thoroughly tested on a new test wallet</li>
-                  <li>Reviewed the code yourself or with a developer</li>
-                  <li>Understood all risks of using experimental features</li>
-                </ul>
                 <p className="text-red-200 text-sm font-semibold">
-                  Use at your own risk. No warranties or guarantees provided.
+                  ⚠️ Use at your own risk. No warranties or guarantees provided.
                 </p>
               </div>
               <button
