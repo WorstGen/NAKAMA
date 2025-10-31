@@ -243,6 +243,7 @@ export const Swap = () => {
           quoteResponse: quote,
           wrapAndUnwrapSol: true,
           feeAccount: referralVault,
+          platformFeeBps: platformFeeBps,
           dynamicComputeUnitLimit: true,
           prioritizationFeeLamports: {
             priorityLevelWithMaxLamports: {
