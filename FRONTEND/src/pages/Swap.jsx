@@ -63,7 +63,6 @@ export const Swap = () => {
 
   const walletAddress = user?.wallets?.solana?.address;
 
-  // Debug logging
   useEffect(() => {
     console.log('Swap Page Debug:', {
       isAuthenticated,
@@ -82,22 +81,19 @@ export const Swap = () => {
         const web3 = await import('@solana/web3.js');
         setSolanaWeb3(web3);
         
-        // Get RPC URL from environment variable
         const customRpcUrl = process.env.REACT_APP_SOLANA_RPC_URL;
         
-        // Use custom RPC with fallback options
         const rpcEndpoints = [
           customRpcUrl,
           "https://api.mainnet-beta.solana.com",
           "https://rpc.ankr.com/solana"
-        ].filter(Boolean); // Remove undefined values
+        ].filter(Boolean);
         
         let conn = null;
         for (let i = 0; i < rpcEndpoints.length; i++) {
           const endpoint = rpcEndpoints[i];
           try {
             const testConn = new web3.Connection(endpoint, 'confirmed');
-            // Test the connection
             await testConn.getSlot();
             conn = testConn;
             const rpcName = endpoint.includes('helius') ? 'Helius RPC' : 
@@ -105,7 +101,6 @@ export const Swap = () => {
                            endpoint.includes('ankr') ? 'Ankr RPC' : 'Custom RPC';
             console.log(`✅ Connected to: ${rpcName}`);
             
-            // Warn if not using primary endpoint
             if (i > 0) {
               console.warn('⚠️ Using fallback RPC endpoint');
               toast('⚠️ Using fallback RPC (may be slower)', { duration: 3000 });
@@ -125,7 +120,6 @@ export const Swap = () => {
         
         setConnection(conn);
         
-        // Initialize Jupiter API
         console.log('Initializing Jupiter API...');
         const jupApi = createJupiterApiClient();
         setJupiterApi(jupApi);
@@ -261,7 +255,6 @@ export const Swap = () => {
     setStatus("⏳ Preparing transaction...");
 
     try {
-      // Get quote using Jupiter API
       console.log('Getting quote from Jupiter API...', {
         inputMint,
         outputMint,
@@ -281,7 +274,6 @@ export const Swap = () => {
       console.log('Quote received:', quote);
       setStatus("⏳ Building transaction...");
 
-      // Prepare swap request
       const swapRequestBody = {
         userPublicKey: walletAddress,
         quoteResponse: quote,
@@ -298,7 +290,6 @@ export const Swap = () => {
 
       console.log('Swap request body:', JSON.stringify(swapRequestBody, null, 2));
 
-      // Get swap transaction using Jupiter API
       const swapResult = await jupiterApi.swapPost({
         swapRequest: swapRequestBody,
       });
@@ -318,7 +309,6 @@ export const Swap = () => {
 
       setStatus("⏳ Sending transaction...");
       
-      // Try sending with better error handling
       let sig;
       try {
         sig = await connection.sendRawTransaction(signedTx.serialize(), {
@@ -327,7 +317,6 @@ export const Swap = () => {
         });
       } catch (sendError) {
         console.error('Send transaction error:', sendError);
-        // If rate limited, try alternative RPC
         if (sendError.message && sendError.message.includes('403')) {
           toast.error("⚠️ RPC rate limited, trying alternative endpoint...");
           const altConnection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", 'confirmed');
@@ -419,7 +408,6 @@ export const Swap = () => {
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-xl mx-auto px-4">
-        {/* Warning Banner */}
         {showWarning && (
           <div className="mb-4 bg-gradient-to-r from-red-900/40 to-orange-900/40 border border-red-500/50 rounded-xl p-4">
             <div className="flex items-start gap-3">
@@ -440,7 +428,6 @@ export const Swap = () => {
         )}
 
         <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 border border-gray-700/50 rounded-2xl p-6 shadow-2xl">
-          {/* Header with Settings */}
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               Token Swap
@@ -454,14 +441,12 @@ export const Swap = () => {
             </button>
           </div>
 
-          {/* Debug Info */}
           {walletAddress && (
             <div className="mb-4 text-xs text-gray-500">
               Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-6)}
             </div>
           )}
 
-          {/* Settings Panel */}
           {showSettings && (
             <div className="mb-6 bg-gray-800/50 border border-gray-700 rounded-xl p-4">
               <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
@@ -469,7 +454,6 @@ export const Swap = () => {
                 Transaction Settings
               </h3>
               
-              {/* Slippage Settings */}
               <div className="space-y-3 mb-6">
                 <label className="text-gray-300 text-sm font-medium block">Slippage Tolerance</label>
                 <div className="flex gap-2">
@@ -505,7 +489,6 @@ export const Swap = () => {
                 </p>
               </div>
 
-              {/* Priority Fee Settings */}
               <div className="space-y-3 pt-4 border-t border-gray-700">
                 <label className="text-gray-300 text-sm font-medium block">Transaction Priority</label>
                 <div className="grid grid-cols-3 gap-2">
@@ -531,7 +514,6 @@ export const Swap = () => {
             </div>
           )}
 
-          {/* From Token */}
           <div className="mb-4">
             <label className="block text-gray-400 text-sm font-medium mb-2">You Pay</label>
             <div className="bg-gradient-to-br from-gray-800 to-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors">
@@ -574,7 +556,6 @@ export const Swap = () => {
             </div>
           </div>
 
-          {/* Swap Button */}
           <div className="flex justify-center my-3">
             <button
               onClick={swapTokens}
@@ -587,7 +568,6 @@ export const Swap = () => {
             </button>
           </div>
 
-          {/* To Token */}
           <div className="mb-6">
             <label className="block text-gray-400 text-sm font-medium mb-2">You Receive</label>
             <div className="bg-gradient-to-br from-gray-800 to-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors">
@@ -606,7 +586,6 @@ export const Swap = () => {
             </div>
           </div>
 
-          {/* Swap Button */}
           <button
             onClick={executeSwap}
             disabled={isSwapping || !amount || parseFloat(amount) <= 0 || balance === null}
@@ -620,4 +599,44 @@ export const Swap = () => {
             ) : "Swap Tokens"}
           </button>
 
-          {/* Status
+          {status && (
+            <div className={`mt-4 p-4 rounded-xl text-sm font-medium ${
+              status.includes('✅') ? 'bg-green-900/30 border border-green-500/50 text-green-300' :
+              status.includes('❌') ? 'bg-red-900/30 border border-red-500/50 text-red-300' :
+              status.includes('⚠️') ? 'bg-yellow-900/30 border border-yellow-500/50 text-yellow-300' :
+              'bg-blue-900/30 border border-blue-500/50 text-blue-300'
+            }`}>
+              {status}
+            </div>
+          )}
+
+          <div className="mt-6 pt-4 border-t border-gray-700/50 space-y-3">
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>Platform Fee: {(platformFeeBps / 100).toFixed(2)}%</span>
+              <span>Slippage: {(slippageBps / 100).toFixed(2)}%</span>
+              <span>Priority: {PRIORITY_PRESETS[priorityFee].label}</span>
+            </div>
+            
+            <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <InformationCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-blue-300 text-xs font-medium mb-1">
+                    Powered by Jupiter Aggregator
+                  </p>
+                  <p className="text-blue-400/80 text-xs">
+                    This swap uses Pond0x's Jupiter referral code. A portion of fees support Pond0x development.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="text-xs text-gray-500 text-center">
+              Wallet: {walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
