@@ -56,12 +56,20 @@ export const Landing = () => {
               <p className="text-gray-200 mb-4">
                 🎉 Great! Your wallet is connected. Ready to explore NAKAMA?
               </p>
-              <Link
-                to="/dashboard"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
-              >
-                Go to Dashboard
-              </Link>
+              <div className="space-y-3">
+                <Link
+                  to="/dashboard"
+                  className="block bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
+                >
+                  Go to Dashboard
+                </Link>
+                <Link
+                  to="/swap"
+                  className="block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
+                >
+                  🔄 Swap Tokens
+                </Link>
+              </div>
             </div>
           ) : (
             <div>
@@ -71,12 +79,20 @@ export const Landing = () => {
               <p className="text-gray-400 text-sm mb-4">
                 Switch between chains using the dropdown in the header to access different networks.
               </p>
-              <Link
-                to="/send"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
-              >
-                Go to Send
-              </Link>
+              <div className="space-y-3">
+                <Link
+                  to="/send"
+                  className="block bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
+                >
+                  Go to Send
+                </Link>
+                <Link
+                  to="/swap"
+                  className="block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
+                >
+                  🔄 Swap Tokens
+                </Link>
+              </div>
             </div>
           )}
 
@@ -96,6 +112,10 @@ export const Landing = () => {
             <div className="flex items-center space-x-2">
               <span className="text-blue-400">✅</span>
               <span>Multi-chain compatibility</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-orange-400">✅</span>
+              <span>Token swaps via Jupiter</span>
             </div>
           </div>
         </div>
