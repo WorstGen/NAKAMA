@@ -81,7 +81,8 @@ export const Swap = () => {
         console.log('Loading Solana Web3...');
         const web3 = await import('@solana/web3.js');
         setSolanaWeb3(web3);
-        const conn = new web3.Connection("https://api.mainnet-beta.solana.com", 'confirmed');
+        // Use a more reliable RPC endpoint
+        const conn = new web3.Connection("https://mainnet.helius-rpc.com/?api-key=public", 'confirmed');
         setConnection(conn);
         
         // Initialize Jupiter API
@@ -156,9 +157,9 @@ export const Swap = () => {
       const quote = await jupiterApi.quoteGet({
         inputMint,
         outputMint,
-        amount: amountLamports.toString(), // Must be string
+        amount: amountLamports.toString(),
         slippageBps,
-        platformFeeBps: 100, // Add platform fee to quote
+        platformFeeBps: 100,
       });
       
       console.log('Quote received:', quote);
@@ -232,9 +233,9 @@ export const Swap = () => {
       const quote = await jupiterApi.quoteGet({
         inputMint,
         outputMint,
-        amount: amountLamports.toString(), // Must be string
+        amount: amountLamports.toString(),
         slippageBps,
-        platformFeeBps: 100, // Must be in quote for feeAccount to work
+        platformFeeBps: 100,
       });
 
       console.log('Quote received:', quote);
@@ -276,7 +277,28 @@ export const Swap = () => {
       const signedTx = await window.solana.signTransaction(tx);
 
       setStatus("⏳ Sending transaction...");
-      const sig = await connection.sendRawTransaction(signedTx.serialize());
+      
+      // Try sending with better error handling
+      let sig;
+      try {
+        sig = await connection.sendRawTransaction(signedTx.serialize(), {
+          skipPreflight: false,
+          maxRetries: 3,
+        });
+      } catch (sendError) {
+        console.error('Send transaction error:', sendError);
+        // If rate limited, try alternative RPC
+        if (sendError.message && sendError.message.includes('403')) {
+          toast.error("⚠️ RPC rate limited, trying alternative endpoint...");
+          const altConnection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", 'confirmed');
+          sig = await altConnection.sendRawTransaction(signedTx.serialize(), {
+            skipPreflight: false,
+            maxRetries: 3,
+          });
+        } else {
+          throw sendError;
+        }
+      }
 
       setStatus(`⏳ Confirming transaction... ${sig.slice(0, 8)}...`);
 
