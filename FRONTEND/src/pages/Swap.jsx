@@ -335,7 +335,6 @@ export const Swap = () => {
 
       toast.success("✅ Swap successful!");
       setStatus(`✅ Swap successful!`);
-      setAmount("");
       await updateBalance();
 
       setTimeout(() => {
