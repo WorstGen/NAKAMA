@@ -10,14 +10,15 @@ import {
   UserGroupIcon,
   PaperAirplaneIcon,
   ClockIcon,
-  WalletIcon
+  WalletIcon,
+  ArrowPathRoundedSquareIcon
 } from '@heroicons/react/24/outline';
 
 export const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
   const { connectedChains } = usePhantomMultiChain();
   const { classes } = useTheme();
-  const currentColors = classes; // Always dark colors now
+  const currentColors = classes;
 
   const { data: contacts } = useQuery('contacts', api.getContacts, {
     enabled: isAuthenticated,
@@ -28,7 +29,6 @@ export const Dashboard = () => {
   });
 
   const getTransactionType = (tx) => {
-    // Get all user addresses from the user object (more reliable than connectedChains)
     const myAddresses = [];
     
     if (user?.wallets?.solana?.address) myAddresses.push(user.wallets.solana.address);
@@ -39,7 +39,6 @@ export const Dashboard = () => {
     if (user?.wallets?.base?.address) myAddresses.push(user.wallets.base.address);
     if (user?.wallets?.bsc?.address) myAddresses.push(user.wallets.bsc.address);
     
-    // Fallback to connected chains if user wallets not available
     if (myAddresses.length === 0) {
       const chainAddresses = Object.values(connectedChains)
         .filter(chain => chain?.address)
@@ -47,7 +46,6 @@ export const Dashboard = () => {
       myAddresses.push(...chainAddresses);
     }
     
-    // Check if the transaction's fromAddress matches any of our addresses
     const isFromMe = myAddresses.includes(tx.fromAddress);
     return isFromMe ? 'sent' : 'received';
   };
@@ -118,20 +116,33 @@ export const Dashboard = () => {
           to="/swap"
           className={`bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95`}
         >
-          <PaperAirplaneIcon className={`w-6 h-6 md:w-8 md:h-8 text-blue-400 mb-2 md:mb-3`} />
+          <ArrowsRightLeftIcon className={`w-6 h-6 md:w-8 md:h-8 text-purple-400 mb-2 md:mb-3`} />
           <h3 className={`text-white font-semibold mb-1 md:mb-2 text-sm md:text-base`}>Swap</h3>
           <p className="text-gray-400 text-xs md:text-sm">Swap using Pond0x Jupiter referral</p>
         </Link>
+      </div>
 
+      {/* Transactions - Full Width */}
+      <div className="mb-6 md:mb-8">
         <Link
           to="/transactions"
-          className={`bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95`}
+          className={`bg-gray-800 hover:bg-gray-700 backdrop-blur-md rounded-xl p-4 md:p-6 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 flex items-center justify-between`}
         >
-          <ClockIcon className={`w-6 h-6 md:w-8 md:h-8 text-orange-400 mb-2 md:mb-3`} />
-          <h3 className={`text-white font-semibold mb-1 md:mb-2 text-sm md:text-base`}>History</h3>
-          <p className="text-gray-400 text-xs md:text-sm">
-            {transactions?.transactions?.length || 0} transactions
-          </p>
+          <div className="flex items-center">
+            <ClockIcon className={`w-6 h-6 md:w-8 md:h-8 text-orange-400 mb-0 mr-3 md:mr-4`} />
+            <div>
+              <h3 className={`text-white font-semibold mb-0 md:mb-1 text-sm md:text-base`}>Transaction History</h3>
+              <p className="text-gray-400 text-xs md:text-sm">
+                View all your transactions and activity
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="text-orange-400 font-bold text-lg md:text-2xl">
+              {transactions?.transactions?.length || 0}
+            </span>
+            <p className="text-gray-400 text-xs md:text-sm">transactions</p>
+          </div>
         </Link>
       </div>
 
