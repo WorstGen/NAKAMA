@@ -149,7 +149,8 @@ export const Swap = () => {
         inputMint,
         outputMint,
         amount: amountLamports.toString(),
-        slippageBps
+        slippageBps,
+        platformFeeBps: 100
       });
       
       const quote = await jupiterApi.quoteGet({
@@ -157,6 +158,7 @@ export const Swap = () => {
         outputMint,
         amount: amountLamports.toString(), // Must be string
         slippageBps,
+        platformFeeBps: 100, // Add platform fee to quote
       });
       
       console.log('Quote received:', quote);
@@ -223,7 +225,8 @@ export const Swap = () => {
         inputMint,
         outputMint,
         amount: amountLamports.toString(),
-        slippageBps
+        slippageBps,
+        platformFeeBps: 100
       });
       
       const quote = await jupiterApi.quoteGet({
@@ -231,6 +234,7 @@ export const Swap = () => {
         outputMint,
         amount: amountLamports.toString(), // Must be string
         slippageBps,
+        platformFeeBps: 100, // Must be in quote for feeAccount to work
       });
 
       console.log('Quote received:', quote);
@@ -242,7 +246,6 @@ export const Swap = () => {
         quoteResponse: quote,
         wrapAndUnwrapSol: true,
         feeAccount: referralVault,
-        platformFeeBps: 100,
         dynamicComputeUnitLimit: true,
         prioritizationFeeLamports: {
           priorityLevelWithMaxLamports: {
