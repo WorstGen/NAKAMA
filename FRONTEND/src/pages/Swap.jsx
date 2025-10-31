@@ -34,6 +34,11 @@ const TOKENS = [
 ];
 
 const SLIPPAGE_PRESETS = [0.1, 0.5, 1.0, 2.0];
+const PRIORITY_PRESETS = {
+  low: { label: "Low", multiplier: 1, description: "Slower, cheaper" },
+  medium: { label: "Medium", multiplier: 2, description: "Balanced" },
+  high: { label: "High", multiplier: 3, description: "Faster, expensive" }
+};
 
 export const Swap = () => {
   const { isAuthenticated, user } = useAuth();
@@ -48,6 +53,7 @@ export const Swap = () => {
   const [platformFeeBps] = useState(100);
   const [slippageBps, setSlippageBps] = useState(100);
   const [customSlippage, setCustomSlippage] = useState("");
+  const [priorityFee, setPriorityFee] = useState("medium");
   const [showSettings, setShowSettings] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [solanaWeb3, setSolanaWeb3] = useState(null);
@@ -237,7 +243,9 @@ export const Swap = () => {
           quoteResponse: quote,
           wrapAndUnwrapSol: true,
           feeAccount: referralVault,
-          prioritizationFeeLamports: "auto",
+          prioritizationFeeLamports: {
+            autoMultiplier: PRIORITY_PRESETS[priorityFee].multiplier
+          },
         },
       });
 
@@ -381,11 +389,14 @@ export const Swap = () => {
           {/* Settings Panel */}
           {showSettings && (
             <div className="mb-6 bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-              <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                 <Cog6ToothIcon className="w-5 h-5" />
-                Slippage Settings
+                Transaction Settings
               </h3>
-              <div className="space-y-3">
+              
+              {/* Slippage Settings */}
+              <div className="space-y-3 mb-6">
+                <label className="text-gray-300 text-sm font-medium block">Slippage Tolerance</label>
                 <div className="flex gap-2">
                   {SLIPPAGE_PRESETS.map((preset) => (
                     <button
@@ -416,6 +427,30 @@ export const Swap = () => {
                 </div>
                 <p className="text-xs text-gray-400">
                   Current slippage: {(slippageBps / 100).toFixed(2)}%
+                </p>
+              </div>
+
+              {/* Priority Fee Settings */}
+              <div className="space-y-3 pt-4 border-t border-gray-700">
+                <label className="text-gray-300 text-sm font-medium block">Transaction Priority</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {Object.entries(PRIORITY_PRESETS).map(([key, preset]) => (
+                    <button
+                      key={key}
+                      onClick={() => setPriorityFee(key)}
+                      className={`py-3 px-2 rounded-lg font-medium transition-all ${
+                        priorityFee === key
+                          ? 'bg-purple-500 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      <div className="text-sm font-semibold">{preset.label}</div>
+                      <div className="text-xs opacity-80 mt-0.5">{preset.description}</div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400">
+                  Priority fee multiplier: {PRIORITY_PRESETS[priorityFee].multiplier}x
                 </p>
               </div>
             </div>
@@ -527,6 +562,7 @@ export const Swap = () => {
             <div className="flex justify-between text-xs text-gray-400">
               <span>Platform Fee: {(platformFeeBps / 100).toFixed(2)}%</span>
               <span>Slippage: {(slippageBps / 100).toFixed(2)}%</span>
+              <span>Priority: {PRIORITY_PRESETS[priorityFee].label}</span>
             </div>
             
             <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3">
