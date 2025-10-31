@@ -81,8 +81,48 @@ export const Swap = () => {
         console.log('Loading Solana Web3...');
         const web3 = await import('@solana/web3.js');
         setSolanaWeb3(web3);
-        // Use a more reliable RPC endpoint
-        const conn = new web3.Connection("https://mainnet.helius-rpc.com/?api-key=public", 'confirmed');
+        
+        // Get RPC URL from environment variable
+        const customRpcUrl = process.env.REACT_APP_SOLANA_RPC_URL;
+        
+        // Use custom RPC with fallback options
+        const rpcEndpoints = [
+          customRpcUrl,
+          "https://api.mainnet-beta.solana.com",
+          "https://rpc.ankr.com/solana"
+        ].filter(Boolean); // Remove undefined values
+        
+        let conn = null;
+        for (let i = 0; i < rpcEndpoints.length; i++) {
+          const endpoint = rpcEndpoints[i];
+          try {
+            const testConn = new web3.Connection(endpoint, 'confirmed');
+            // Test the connection
+            await testConn.getSlot();
+            conn = testConn;
+            const rpcName = endpoint.includes('helius') ? 'Helius RPC' : 
+                           endpoint.includes('mainnet-beta') ? 'Official Solana RPC' : 
+                           endpoint.includes('ankr') ? 'Ankr RPC' : 'Custom RPC';
+            console.log(`✅ Connected to: ${rpcName}`);
+            
+            // Warn if not using primary endpoint
+            if (i > 0) {
+              console.warn('⚠️ Using fallback RPC endpoint');
+              toast('⚠️ Using fallback RPC (may be slower)', { duration: 3000 });
+            }
+            break;
+          } catch (err) {
+            const rpcName = endpoint.includes('helius') ? 'Helius' : 
+                           endpoint.includes('mainnet-beta') ? 'Official Solana' : 
+                           endpoint.includes('ankr') ? 'Ankr' : 'Custom RPC';
+            console.warn(`❌ Failed to connect to ${rpcName}:`, err.message);
+          }
+        }
+        
+        if (!conn) {
+          throw new Error("Failed to connect to any RPC endpoint");
+        }
+        
         setConnection(conn);
         
         // Initialize Jupiter API
@@ -90,7 +130,7 @@ export const Swap = () => {
         const jupApi = createJupiterApiClient();
         setJupiterApi(jupApi);
         
-        console.log('Solana Web3 and Jupiter API loaded successfully');
+        console.log('✅ Solana Web3 and Jupiter API loaded successfully');
       } catch (error) {
         console.error("Failed to load Solana Web3:", error);
         toast.error("⚠️ Failed to load Solana libraries");
@@ -580,46 +620,4 @@ export const Swap = () => {
             ) : "Swap Tokens"}
           </button>
 
-          {/* Status Message */}
-          {status && (
-            <div className={`mt-4 p-4 rounded-xl text-sm font-medium ${
-              status.includes('✅') ? 'bg-green-900/30 border border-green-500/50 text-green-300' :
-              status.includes('❌') ? 'bg-red-900/30 border border-red-500/50 text-red-300' :
-              status.includes('⚠️') ? 'bg-yellow-900/30 border border-yellow-500/50 text-yellow-300' :
-              'bg-blue-900/30 border border-blue-500/50 text-blue-300'
-            }`}>
-              {status}
-            </div>
-          )}
-
-          {/* Info Footer */}
-          <div className="mt-6 pt-4 border-t border-gray-700/50 space-y-3">
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>Platform Fee: {(platformFeeBps / 100).toFixed(2)}%</span>
-              <span>Slippage: {(slippageBps / 100).toFixed(2)}%</span>
-              <span>Priority: {PRIORITY_PRESETS[priorityFee].label}</span>
-            </div>
-            
-            <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3">
-              <div className="flex items-start gap-2">
-                <InformationCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-blue-300 text-xs font-medium mb-1">
-                    Powered by Jupiter Aggregator
-                  </p>
-                  <p className="text-blue-400/80 text-xs">
-                    This swap uses Pond0x's Jupiter referral code. A portion of fees support Pond0x development.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="text-xs text-gray-500 text-center">
-              Wallet: {walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+          {/* Status
