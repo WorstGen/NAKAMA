@@ -37,7 +37,6 @@ const SLIPPAGE_PRESETS = [0.1, 0.5, 1.0, 2.0];
 
 export const Swap = () => {
   const { isAuthenticated, user } = useAuth();
-  const { connectedChains } = usePhantomMultiChain();
   
   const [inputMint, setInputMint] = useState("So11111111111111111111111111111111111111112");
   const [outputMint, setOutputMint] = useState("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
