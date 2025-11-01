@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
-import { Cog6ToothIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { Cog6ToothIcon, ExclamationTriangleIcon, InformationCircleIcon, UserIcon } from '@heroicons/react/24/outline';
 import { createJupiterApiClient } from '@jup-ag/api';
+import { useQuery } from 'react-query';
+import { api } from '../services/api';
 
 const TOKEN_VAULTS_AFFILIATE = {
   "So11111111111111111111111111111111111111112": "9hCLuXrQrHCU9i7y648Nh7uuWKHUsKDiZ5zyBHdZPWtG",
@@ -40,9 +42,13 @@ const PRIORITY_PRESETS = {
   high: { label: "High", priorityLevel: "high", description: "Faster, expensive" }
 };
 
+const CHUNK_SIZE = 8; // Optimal chunk size for signing and sending
+const SEND_DELAY_MS = 200; // Delay between individual transaction sends
+
 export const Swap = () => {
   const { isAuthenticated, user } = useAuth();
   
+  const [activeTab, setActiveTab] = useState('swap');
   const [inputMint, setInputMint] = useState("So11111111111111111111111111111111111111112");
   const [outputMint, setOutputMint] = useState("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
   const [amount, setAmount] = useState("");
@@ -63,8 +69,16 @@ export const Swap = () => {
   const [repeatCount, setRepeatCount] = useState(1);
   const [showRepeatSettings, setShowRepeatSettings] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, signatures: [] });
+  
+  const [recipientInput, setRecipientInput] = useState("");
+  const [resolvedAddress, setResolvedAddress] = useState(null);
+  const [isResolvingAddress, setIsResolvingAddress] = useState(false);
 
   const walletAddress = user?.wallets?.solana?.address;
+
+  const { data: contacts } = useQuery('contacts', api.getContacts, {
+    enabled: isAuthenticated,
+  });
 
   useEffect(() => {
     console.log('Swap Page Debug:', {
@@ -135,6 +149,48 @@ export const Swap = () => {
     };
     loadSolanaWeb3();
   }, []);
+
+  const resolveRecipient = useCallback(async (input) => {
+    if (!input || !solanaWeb3) return;
+    
+    setIsResolvingAddress(true);
+    try {
+      if (input.startsWith('@')) {
+        const username = input.substring(1);
+        const response = await api.getUserByUsername(username);
+        if (response?.user?.wallets?.solana?.address) {
+          setResolvedAddress(response.user.wallets.solana.address);
+          toast.success(`Resolved @${username} to address`);
+        } else {
+          setResolvedAddress(null);
+          toast.error(`User @${username} has no Solana address`);
+        }
+      } else {
+        try {
+          new solanaWeb3.PublicKey(input);
+          setResolvedAddress(input);
+        } catch {
+          setResolvedAddress(null);
+          toast.error('Invalid Solana address');
+        }
+      }
+    } catch (error) {
+      console.error('Error resolving recipient:', error);
+      setResolvedAddress(null);
+      toast.error('Failed to resolve recipient');
+    } finally {
+      setIsResolvingAddress(false);
+    }
+  }, [solanaWeb3]);
+
+  useEffect(() => {
+    if (activeTab === 'send' && recipientInput) {
+      const debounce = setTimeout(() => {
+        resolveRecipient(recipientInput);
+      }, 500);
+      return () => clearTimeout(debounce);
+    }
+  }, [recipientInput, activeTab, resolveRecipient]);
 
   const updateBalance = useCallback(async () => {
     if (!walletAddress || !connection || !solanaWeb3) {
@@ -220,12 +276,12 @@ export const Swap = () => {
   }, [inputMint, walletAddress, connection, solanaWeb3, updateBalance]);
 
   useEffect(() => {
-    if (amount && parseFloat(amount) > 0) {
+    if (amount && parseFloat(amount) > 0 && activeTab === 'swap') {
       getEstimate();
     } else {
       setEstimate(null);
     }
-  }, [amount, getEstimate]);
+  }, [amount, getEstimate, activeTab]);
 
   const executeSwap = async () => {
     if (!walletAddress || !solanaWeb3 || !connection || !jupiterApi) {
@@ -245,8 +301,8 @@ export const Swap = () => {
     }
 
     const count = parseInt(repeatCount);
-    if (!count || count < 1 || count > 100) {
-      toast.error("❌ Repeat count must be between 1 and 100");
+    if (!count || count < 1 || count > 50) {
+      toast.error("❌ Repeat count must be between 1 and 50");
       return;
     }
 
@@ -260,96 +316,145 @@ export const Swap = () => {
       return;
     }
 
+    let destinationWallet = walletAddress;
+    
+    if (activeTab === 'send') {
+      if (!resolvedAddress) {
+        toast.error("❌ Please enter a valid recipient");
+        return;
+      }
+      destinationWallet = resolvedAddress;
+    }
+
     setIsSwapping(true);
     setBatchProgress({ current: 0, total: count, signatures: [] });
-    setStatus(`⏳ Preparing ${count} transaction${count > 1 ? 's' : ''}...`);
 
     try {
-      const transactions = [];
-      for (let i = 0; i < count; i++) {
-        setStatus(`⏳ Building transaction ${i + 1}/${count}...`);
-        
-        const quote = await jupiterApi.quoteGet({
-          inputMint,
-          outputMint,
-          amount: amountLamports.toString(),
-          slippageBps,
-          platformFeeBps: 100,
-        });
+      const totalChunks = Math.ceil(count / CHUNK_SIZE);
+      let allSignatures = [];
 
-        const swapRequestBody = {
-          userPublicKey: walletAddress,
-          quoteResponse: quote,
-          wrapAndUnwrapSol: true,
-          feeAccount: referralVault,
-          dynamicComputeUnitLimit: true,
-          prioritizationFeeLamports: {
-            priorityLevelWithMaxLamports: {
-              maxLamports: 10000000,
-              priorityLevel: PRIORITY_PRESETS[priorityFee].priorityLevel
-            }
-          },
-        };
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const chunkStart = chunkIndex * CHUNK_SIZE;
+        const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, count);
+        const chunkCount = chunkEnd - chunkStart;
 
-        const swapResult = await jupiterApi.swapPost({
-          swapRequest: swapRequestBody,
-        });
+        setStatus(`⏳ Building transactions ${chunkStart + 1}-${chunkEnd}/${count}...`);
 
-        if (!swapResult.swapTransaction) {
-          throw new Error(`No transaction returned for swap ${i + 1}`);
-        }
+        // Build transactions for this chunk
+        const chunkTransactions = [];
+        for (let i = 0; i < chunkCount; i++) {
+          const txNum = chunkStart + i + 1;
+          setStatus(`⏳ Building transaction ${txNum}/${count}...`);
 
-        const tx = solanaWeb3.VersionedTransaction.deserialize(
-          Uint8Array.from(atob(swapResult.swapTransaction), c => c.charCodeAt(0))
-        );
-
-        transactions.push(tx);
-      }
-
-      setStatus(`⏳ Please approve ${count} transaction${count > 1 ? 's' : ''} in wallet...`);
-      const signedTxs = await window.solana.signAllTransactions(transactions);
-
-      const signatures = [];
-      for (let i = 0; i < signedTxs.length; i++) {
-        setBatchProgress(prev => ({ ...prev, current: i + 1 }));
-        setStatus(`⏳ Sending transaction ${i + 1}/${count}...`);
-
-        try {
-          const sig = await connection.sendRawTransaction(signedTxs[i].serialize(), {
-            skipPreflight: false,
-            maxRetries: 3,
+          const quote = await jupiterApi.quoteGet({
+            inputMint,
+            outputMint,
+            amount: amountLamports.toString(),
+            slippageBps,
+            platformFeeBps: 100,
           });
 
-          signatures.push(sig);
-          setStatus(`⏳ Confirming transaction ${i + 1}/${count}... ${sig.slice(0, 8)}...`);
+          const swapRequestBody = {
+            userPublicKey: walletAddress,
+            quoteResponse: quote,
+            wrapAndUnwrapSol: true,
+            feeAccount: referralVault,
+            dynamicComputeUnitLimit: true,
+            prioritizationFeeLamports: {
+              priorityLevelWithMaxLamports: {
+                maxLamports: 10000000,
+                priorityLevel: PRIORITY_PRESETS[priorityFee].priorityLevel
+              }
+            },
+          };
 
-          await connection.confirmTransaction(sig, "confirmed");
+          if (activeTab === 'send' && destinationWallet !== walletAddress) {
+            swapRequestBody.destinationTokenAccount = destinationWallet;
+          }
+
+          const swapResult = await jupiterApi.swapPost({
+            swapRequest: swapRequestBody,
+          });
+
+          if (!swapResult.swapTransaction) {
+            throw new Error(`No transaction returned for swap ${txNum}`);
+          }
+
+          const tx = solanaWeb3.VersionedTransaction.deserialize(
+            Uint8Array.from(atob(swapResult.swapTransaction), c => c.charCodeAt(0))
+          );
+
+          chunkTransactions.push(tx);
+        }
+
+        // Sign all transactions in this chunk
+        setStatus(`🔏 Sign chunk ${chunkIndex + 1}/${totalChunks} (${chunkCount} txs) in wallet...`);
+        const signedChunk = await window.solana.signAllTransactions(chunkTransactions);
+
+        // Send transactions from this chunk sequentially
+        for (let i = 0; i < signedChunk.length; i++) {
+          const txNum = chunkStart + i + 1;
+          const globalProgress = chunkStart + i + 1;
           
-          setBatchProgress(prev => ({ 
-            ...prev, 
-            signatures: [...prev.signatures, sig] 
-          }));
+          setBatchProgress(prev => ({ ...prev, current: globalProgress }));
+          setStatus(`⏳ Sending ${txNum}/${count}...`);
 
-        } catch (txError) {
-          console.error(`Transaction ${i + 1} failed:`, txError);
-          toast.error(`⚠️ Transaction ${i + 1}/${count} failed: ${txError.message}`);
+          try {
+            const sig = await connection.sendRawTransaction(signedChunk[i].serialize(), {
+              skipPreflight: true,
+              maxRetries: 2,
+            });
+
+            allSignatures.push(sig);
+            setStatus(`⏳ Sent ${txNum}/${count}: ${sig.slice(0, 8)}...`);
+
+            // Start confirmation in background
+            connection.confirmTransaction(sig, "confirmed").catch(err => {
+              console.warn(`Confirmation warning for tx ${txNum}:`, err.message);
+            });
+
+            setBatchProgress(prev => ({ 
+              ...prev, 
+              signatures: [...prev.signatures, sig] 
+            }));
+
+            // Small delay between sends to avoid rate limiting
+            if (i < signedChunk.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, SEND_DELAY_MS));
+            }
+
+          } catch (txError) {
+            console.error(`Transaction ${txNum} failed:`, txError);
+            toast.error(`⚠️ Tx ${txNum}/${count} failed`);
+          }
+        }
+
+        // Brief pause between chunks (except after last chunk)
+        if (chunkIndex < totalChunks - 1) {
+          setStatus(`⏸️ Preparing next chunk... (${chunkEnd}/${count} completed)`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
 
-      const successCount = signatures.length;
-      toast.success(`✅ ${successCount}/${count} swap${successCount > 1 ? 's' : ''} successful!`);
-      setStatus(`✅ Completed ${successCount}/${count} swaps!`);
+      const successCount = allSignatures.length;
+      if (activeTab === 'send') {
+        toast.success(`✅ ${successCount}/${count} swap & send${successCount > 1 ? 's' : ''} completed!`);
+        setStatus(`✅ Completed ${successCount}/${count} swap & sends!`);
+      } else {
+        toast.success(`✅ ${successCount}/${count} swap${successCount > 1 ? 's' : ''} completed!`);
+        setStatus(`✅ Completed ${successCount}/${count} swaps!`);
+      }
+      
       await updateBalance();
 
-      if (signatures.length > 0) {
+      if (allSignatures.length > 0) {
         setTimeout(() => {
-          window.open(`https://solscan.io/tx/${signatures[0]}`, '_blank');
+          window.open(`https://solscan.io/tx/${allSignatures[0]}`, '_blank');
         }, 500);
       }
 
     } catch (err) {
       console.error("Batch swap error:", err);
-      console.error("Full error:", JSON.stringify(err, null, 2));
       const errorMsg = err.message || "Batch transaction failed";
       toast.error(`❌ ${errorMsg}`);
       setStatus(`❌ ${errorMsg}`);
@@ -449,9 +554,79 @@ export const Swap = () => {
             </button>
           </div>
 
+          {/* Tabs */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setActiveTab('swap')}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                activeTab === 'swap'
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              Swap to Self
+            </button>
+            <button
+              onClick={() => setActiveTab('send')}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'send'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              <UserIcon className="w-5 h-5" />
+              Swap & Send
+            </button>
+          </div>
+
           {walletAddress && (
             <div className="mb-4 text-xs text-gray-500">
               Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-6)}
+            </div>
+          )}
+
+          {/* Recipient Field for Send Tab */}
+          {activeTab === 'send' && (
+            <div className="mb-4 bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
+              <label className="block text-purple-200 text-sm font-medium mb-2">Send swapped tokens to</label>
+              <input
+                type="text"
+                value={recipientInput}
+                onChange={(e) => setRecipientInput(e.target.value)}
+                placeholder="@username or Solana address"
+                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:outline-none focus:border-purple-500 placeholder-gray-400"
+              />
+              {isResolvingAddress && (
+                <p className="text-purple-300 text-xs mt-2">Resolving...</p>
+              )}
+              {resolvedAddress && (
+                <div className="mt-2 bg-green-900/20 border border-green-500/30 rounded-lg p-2">
+                  <p className="text-green-300 text-xs">
+                    ✓ Resolved to: {resolvedAddress.slice(0, 8)}...{resolvedAddress.slice(-6)}
+                  </p>
+                </div>
+              )}
+              {contacts?.contacts?.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-purple-200 text-xs mb-2">Or select from contacts:</p>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {contacts.contacts.map((contact) => (
+                      <button
+                        key={contact.username}
+                        type="button"
+                        onClick={() => setRecipientInput(`@${contact.username}`)}
+                        className={`w-full text-left px-3 py-2 rounded transition-colors text-sm ${
+                          recipientInput === `@${contact.username}`
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                        }`}
+                      >
+                        @{contact.displayName || contact.username}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -535,22 +710,27 @@ export const Swap = () => {
                   <>
                     <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
                       <p className="text-gray-400 text-xs mb-2">
-                        Execute multiple identical swaps in one batch. Sign all transactions once, then they execute consecutively.
+                        Execute multiple identical swaps in optimized chunks. Sign {CHUNK_SIZE} at a time for maximum efficiency.
                       </p>
                       <div className="flex items-center gap-2 mt-3">
                         <input
                           type="number"
                           value={repeatCount}
-                          onChange={(e) => setRepeatCount(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
+                          onChange={(e) => setRepeatCount(Math.min(50, Math.max(1, parseInt(e.target.value) || 1)))}
                           min="1"
-                          max="100"
+                          max="50"
                           className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
                         />
                         <span className="text-gray-400 text-sm">swaps</span>
                       </div>
                       <p className="text-xs text-yellow-400 mt-2">
-                        ⚠️ Max 100 swaps per batch. Each swap uses the amount you entered above.
+                        ⚠️ Max 50 swaps. Each swap counts separately for vault fees.
                       </p>
+                      {repeatCount > CHUNK_SIZE && (
+                        <p className="text-xs text-blue-400 mt-1">
+                          ℹ️ Will process in {Math.ceil(repeatCount / CHUNK_SIZE)} chunks of {CHUNK_SIZE} transactions
+                        </p>
+                      )}
                     </div>
                   </>
                 )}
@@ -613,7 +793,9 @@ export const Swap = () => {
           </div>
 
           <div className="mb-6">
-            <label className="block text-gray-400 text-sm font-medium mb-2">You Receive</label>
+            <label className="block text-gray-400 text-sm font-medium mb-2">
+              {activeTab === 'send' ? 'They Receive' : 'You Receive'}
+            </label>
             <div className="bg-gradient-to-br from-gray-800 to-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors">
               <select
                 value={outputMint}
@@ -632,7 +814,7 @@ export const Swap = () => {
 
           <button
             onClick={executeSwap}
-            disabled={isSwapping || !amount || parseFloat(amount) <= 0 || balance === null}
+            disabled={isSwapping || !amount || parseFloat(amount) <= 0 || balance === null || (activeTab === 'send' && !resolvedAddress)}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:shadow-none text-lg"
           >
             {isSwapping ? (
@@ -640,7 +822,11 @@ export const Swap = () => {
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                 {batchProgress.total > 0 ? `Swapping ${batchProgress.current}/${batchProgress.total}...` : 'Swapping...'}
               </span>
-            ) : repeatCount > 1 ? `Batch Swap (${repeatCount}x)` : "Swap Tokens"}
+            ) : activeTab === 'send' ? (
+              repeatCount > 1 ? `Batch Swap & Send (${repeatCount}x)` : "Swap & Send Tokens"
+            ) : (
+              repeatCount > 1 ? `Batch Swap (${repeatCount}x)` : "Swap Tokens"
+            )}
           </button>
 
           {batchProgress.total > 0 && (
