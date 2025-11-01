@@ -157,18 +157,39 @@ export const Swap = () => {
     try {
       if (input.startsWith('@')) {
         const username = input.substring(1);
-        const response = await api.getUserByUsername(username);
-        if (response?.user?.wallets?.solana?.address) {
-          setResolvedAddress(response.user.wallets.solana.address);
-          toast.success(`Resolved @${username} to address`);
-        } else {
+        console.log('Resolving username:', username);
+        
+        try {
+          const response = await api.getUserByUsername(username);
+          console.log('API response:', response);
+          
+          if (response?.user?.wallets?.solana?.address) {
+            const address = response.user.wallets.solana.address;
+            console.log('Resolved address:', address);
+            setResolvedAddress(address);
+            toast.success(`✓ Resolved @${username}`);
+          } else if (response?.wallets?.solana?.address) {
+            // Try alternate response structure
+            const address = response.wallets.solana.address;
+            console.log('Resolved address (alt structure):', address);
+            setResolvedAddress(address);
+            toast.success(`✓ Resolved @${username}`);
+          } else {
+            console.error('No Solana address in response:', response);
+            setResolvedAddress(null);
+            toast.error(`@${username} has no Solana wallet`);
+          }
+        } catch (apiError) {
+          console.error('API error:', apiError);
           setResolvedAddress(null);
-          toast.error(`User @${username} has no Solana address`);
+          toast.error(`User @${username} not found`);
         }
       } else {
+        // Direct address input
         try {
           new solanaWeb3.PublicKey(input);
           setResolvedAddress(input);
+          toast.success('✓ Valid address');
         } catch {
           setResolvedAddress(null);
           toast.error('Invalid Solana address');
@@ -289,8 +310,8 @@ export const Swap = () => {
       return;
     }
 
-    if (!window.solana || !window.solana.signAllTransactions) {
-      toast.error("❌ Phantom wallet not available or doesn't support batch signing");
+    if (!window.solana || !window.solana.signTransaction) {
+      toast.error("❌ Phantom wallet not available");
       return;
     }
 
@@ -330,22 +351,16 @@ export const Swap = () => {
     setBatchProgress({ current: 0, total: count, signatures: [] });
 
     try {
-      const totalChunks = Math.ceil(count / CHUNK_SIZE);
       let allSignatures = [];
 
-      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-        const chunkStart = chunkIndex * CHUNK_SIZE;
-        const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, count);
-        const chunkCount = chunkEnd - chunkStart;
-
-        setStatus(`⏳ Building transactions ${chunkStart + 1}-${chunkEnd}/${count}...`);
-
-        // Build transactions for this chunk
-        const chunkTransactions = [];
-        for (let i = 0; i < chunkCount; i++) {
-          const txNum = chunkStart + i + 1;
-          setStatus(`⏳ Building transaction ${txNum}/${count}...`);
-
+      // Process each swap individually to ensure separate transactions
+      for (let i = 0; i < count; i++) {
+        const txNum = i + 1;
+        setBatchProgress(prev => ({ ...prev, current: txNum }));
+        
+        try {
+          // Get a fresh quote for each swap
+          setStatus(`⏳ Getting quote for swap ${txNum}/${count}...`);
           const quote = await jupiterApi.quoteGet({
             inputMint,
             outputMint,
@@ -354,6 +369,8 @@ export const Swap = () => {
             platformFeeBps: 100,
           });
 
+          // Build the swap transaction
+          setStatus(`⏳ Building transaction ${txNum}/${count}...`);
           const swapRequestBody = {
             userPublicKey: walletAddress,
             quoteResponse: quote,
@@ -380,77 +397,76 @@ export const Swap = () => {
             throw new Error(`No transaction returned for swap ${txNum}`);
           }
 
+          // Deserialize and sign the transaction
           const tx = solanaWeb3.VersionedTransaction.deserialize(
             Uint8Array.from(atob(swapResult.swapTransaction), c => c.charCodeAt(0))
           );
 
-          chunkTransactions.push(tx);
-        }
+          setStatus(`🔏 Please sign transaction ${txNum}/${count} in wallet...`);
+          const signedTx = await window.solana.signTransaction(tx);
 
-        // Sign all transactions in this chunk
-        setStatus(`🔏 Sign chunk ${chunkIndex + 1}/${totalChunks} (${chunkCount} txs) in wallet...`);
-        const signedChunk = await window.solana.signAllTransactions(chunkTransactions);
+          // Send the transaction immediately after signing
+          setStatus(`⏳ Sending transaction ${txNum}/${count}...`);
+          const sig = await connection.sendRawTransaction(signedTx.serialize(), {
+            skipPreflight: true,
+            maxRetries: 2,
+          });
 
-        // Send transactions from this chunk sequentially
-        for (let i = 0; i < signedChunk.length; i++) {
-          const txNum = chunkStart + i + 1;
-          const globalProgress = chunkStart + i + 1;
-          
-          setBatchProgress(prev => ({ ...prev, current: globalProgress }));
-          setStatus(`⏳ Sending ${txNum}/${count}...`);
+          allSignatures.push(sig);
+          setStatus(`✅ Sent ${txNum}/${count}: ${sig.slice(0, 8)}...`);
 
-          try {
-            const sig = await connection.sendRawTransaction(signedChunk[i].serialize(), {
-              skipPreflight: true,
-              maxRetries: 2,
-            });
+          // Log the signature for verification
+          console.log(`Transaction ${txNum} signature:`, sig);
+          console.log(`View at: https://solscan.io/tx/${sig}`);
 
-            allSignatures.push(sig);
-            setStatus(`⏳ Sent ${txNum}/${count}: ${sig.slice(0, 8)}...`);
+          // Start confirmation in background
+          connection.confirmTransaction(sig, "confirmed").catch(err => {
+            console.warn(`Confirmation warning for tx ${txNum}:`, err.message);
+          });
 
-            // Start confirmation in background
-            connection.confirmTransaction(sig, "confirmed").catch(err => {
-              console.warn(`Confirmation warning for tx ${txNum}:`, err.message);
-            });
+          setBatchProgress(prev => ({ 
+            ...prev, 
+            signatures: [...prev.signatures, sig] 
+          }));
 
-            setBatchProgress(prev => ({ 
-              ...prev, 
-              signatures: [...prev.signatures, sig] 
-            }));
-
-            // Small delay between sends to avoid rate limiting
-            if (i < signedChunk.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, SEND_DELAY_MS));
-            }
-
-          } catch (txError) {
-            console.error(`Transaction ${txNum} failed:`, txError);
-            toast.error(`⚠️ Tx ${txNum}/${count} failed`);
+          // Small delay between swaps to avoid rate limiting and allow blockchain to process
+          if (i < count - 1) {
+            await new Promise(resolve => setTimeout(resolve, SEND_DELAY_MS));
           }
-        }
 
-        // Brief pause between chunks (except after last chunk)
-        if (chunkIndex < totalChunks - 1) {
-          setStatus(`⏸️ Preparing next chunk... (${chunkEnd}/${count} completed)`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (txError) {
+          console.error(`Transaction ${txNum} failed:`, txError);
+          toast.error(`⚠️ Swap ${txNum}/${count} failed: ${txError.message?.slice(0, 50) || 'Unknown error'}`);
+          
+          // Ask user if they want to continue with remaining swaps
+          if (i < count - 1) {
+            const continueSwaps = window.confirm(`Swap ${txNum} failed. Continue with remaining ${count - txNum} swaps?`);
+            if (!continueSwaps) {
+              break;
+            }
+          }
         }
       }
 
       const successCount = allSignatures.length;
-      if (activeTab === 'send') {
-        toast.success(`✅ ${successCount}/${count} swap & send${successCount > 1 ? 's' : ''} completed!`);
-        setStatus(`✅ Completed ${successCount}/${count} swap & sends!`);
-      } else {
-        toast.success(`✅ ${successCount}/${count} swap${successCount > 1 ? 's' : ''} completed!`);
-        setStatus(`✅ Completed ${successCount}/${count} swaps!`);
-      }
-      
-      await updateBalance();
+      if (successCount > 0) {
+        if (activeTab === 'send') {
+          toast.success(`✅ ${successCount}/${count} swap & send${successCount > 1 ? 's' : ''} completed!`);
+          setStatus(`✅ Completed ${successCount}/${count} swap & sends! Check Solscan for each transaction.`);
+        } else {
+          toast.success(`✅ ${successCount}/${count} swap${successCount > 1 ? 's' : ''} completed!`);
+          setStatus(`✅ Completed ${successCount}/${count} swaps! Check Solscan for each transaction.`);
+        }
+        
+        await updateBalance();
 
-      if (allSignatures.length > 0) {
+        // Open the first transaction
         setTimeout(() => {
           window.open(`https://solscan.io/tx/${allSignatures[0]}`, '_blank');
         }, 500);
+      } else {
+        toast.error("❌ No swaps completed successfully");
+        setStatus("❌ All swaps failed");
       }
 
     } catch (err) {
@@ -710,7 +726,7 @@ export const Swap = () => {
                   <>
                     <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
                       <p className="text-gray-400 text-xs mb-2">
-                        Execute multiple identical swaps in optimized chunks. Sign {CHUNK_SIZE} at a time for maximum efficiency.
+                        Execute multiple swaps sequentially. Each swap is a separate transaction with separate vault fees.
                       </p>
                       <div className="flex items-center gap-2 mt-3">
                         <input
@@ -724,13 +740,11 @@ export const Swap = () => {
                         <span className="text-gray-400 text-sm">swaps</span>
                       </div>
                       <p className="text-xs text-yellow-400 mt-2">
-                        ⚠️ Max 50 swaps. Each swap counts separately for vault fees.
+                        ⚠️ Max 50 swaps. You'll sign each transaction individually.
                       </p>
-                      {repeatCount > CHUNK_SIZE && (
-                        <p className="text-xs text-blue-400 mt-1">
-                          ℹ️ Will process in {Math.ceil(repeatCount / CHUNK_SIZE)} chunks of {CHUNK_SIZE} transactions
-                        </p>
-                      )}
+                      <p className="text-xs text-blue-400 mt-1">
+                        ℹ️ Each swap = separate transaction = separate vault fee payment
+                      </p>
                     </div>
                   </>
                 )}
