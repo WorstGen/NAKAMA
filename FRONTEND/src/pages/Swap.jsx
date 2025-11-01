@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
-import { Cog6ToothIcon, ExclamationTriangleIcon, InformationCircleIcon, UserIcon } from '@heroicons/react/24/outline';
+import { Cog6ToothIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { createJupiterApiClient } from '@jup-ag/api';
-import { useQuery } from 'react-query';
-import { api } from '../services/api';
 
 const TOKEN_VAULTS_AFFILIATE = {
   "So11111111111111111111111111111111111111112": "9hCLuXrQrHCU9i7y648Nh7uuWKHUsKDiZ5zyBHdZPWtG",
@@ -42,12 +40,9 @@ const PRIORITY_PRESETS = {
   high: { label: "High", priorityLevel: "high", description: "Faster, expensive" }
 };
 
-const SEND_DELAY_MS = 200; // Delay between individual transaction sends
-
 export const Swap = () => {
   const { isAuthenticated, user } = useAuth();
   
-  const [activeTab, setActiveTab] = useState('swap');
   const [inputMint, setInputMint] = useState("So11111111111111111111111111111111111111112");
   const [outputMint, setOutputMint] = useState("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
   const [amount, setAmount] = useState("");
@@ -65,20 +60,8 @@ export const Swap = () => {
   const [connection, setConnection] = useState(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [jupiterApi, setJupiterApi] = useState(null);
-  const [repeatCount, setRepeatCount] = useState(1);
-  const [showRepeatSettings, setShowRepeatSettings] = useState(false);
-  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, signatures: [] });
-  
-  const [recipientInput, setRecipientInput] = useState("");
-  const [resolvedAddress, setResolvedAddress] = useState(null);
-  const [resolvedUser, setResolvedUser] = useState(null); // Store full user info
-  const [isResolvingAddress, setIsResolvingAddress] = useState(false);
 
   const walletAddress = user?.wallets?.solana?.address;
-
-  const { data: contacts } = useQuery('contacts', api.getContacts, {
-    enabled: isAuthenticated,
-  });
 
   useEffect(() => {
     console.log('Swap Page Debug:', {
@@ -149,95 +132,6 @@ export const Swap = () => {
     };
     loadSolanaWeb3();
   }, []);
-
-  const resolveRecipient = useCallback(async (input) => {
-    if (!input || !solanaWeb3) return;
-    
-    setIsResolvingAddress(true);
-    try {
-      if (input.startsWith('@')) {
-        const username = input.substring(1);
-        console.log('Resolving username:', username);
-        
-        try {
-          const response = await api.searchUser(username);
-          console.log('API response:', response);
-          
-          // The API returns walletAddress directly for Solana
-          const address = response?.walletAddress || 
-                         response?.user?.wallets?.solana?.address || 
-                         response?.wallets?.solana?.address;
-          
-          if (address) {
-            // Validate it's a real Solana address
-            try {
-              new solanaWeb3.PublicKey(address);
-              console.log('Resolved address:', address);
-              setResolvedAddress(address);
-              setResolvedUser({
-                username: response.username || username,
-                displayName: response.displayName || username,
-                profilePicture: response.profilePicture,
-                isVerified: response.isVerified
-              });
-              toast.success(`✓ Resolved @${username}`);
-            } catch {
-              console.error('Invalid address format:', address);
-              setResolvedAddress(null);
-              setResolvedUser(null);
-              toast.error('Invalid address format from server');
-            }
-          } else {
-            console.error('No Solana address in response:', response);
-            setResolvedAddress(null);
-            setResolvedUser(null);
-            toast.error(`@${username} has no Solana wallet`);
-          }
-        } catch (apiError) {
-          console.error('API error:', apiError);
-          setResolvedAddress(null);
-          setResolvedUser(null);
-          
-          // Better error messages based on error type
-          if (apiError.response?.status === 404) {
-            toast.error(`User @${username} not found`);
-          } else if (apiError.response?.status === 401) {
-            toast.error('Please log in to search users');
-          } else {
-            toast.error(`Failed to find @${username}`);
-          }
-        }
-      } else {
-        // Direct address input
-        try {
-          new solanaWeb3.PublicKey(input);
-          setResolvedAddress(input);
-          setResolvedUser(null); // No user info for direct addresses
-          toast.success('✓ Valid address');
-        } catch {
-          setResolvedAddress(null);
-          setResolvedUser(null);
-          toast.error('Invalid Solana address');
-        }
-      }
-    } catch (error) {
-      console.error('Error resolving recipient:', error);
-      setResolvedAddress(null);
-      setResolvedUser(null);
-      toast.error('Failed to resolve recipient');
-    } finally {
-      setIsResolvingAddress(false);
-    }
-  }, [solanaWeb3]);
-
-  useEffect(() => {
-    if (activeTab === 'send' && recipientInput) {
-      const debounce = setTimeout(() => {
-        resolveRecipient(recipientInput);
-      }, 500);
-      return () => clearTimeout(debounce);
-    }
-  }, [recipientInput, activeTab, resolveRecipient]);
 
   const updateBalance = useCallback(async () => {
     if (!walletAddress || !connection || !solanaWeb3) {
@@ -323,12 +217,12 @@ export const Swap = () => {
   }, [inputMint, walletAddress, connection, solanaWeb3, updateBalance]);
 
   useEffect(() => {
-    if (amount && parseFloat(amount) > 0 && activeTab === 'swap') {
+    if (amount && parseFloat(amount) > 0) {
       getEstimate();
     } else {
       setEstimate(null);
     }
-  }, [amount, getEstimate, activeTab]);
+  }, [amount, getEstimate]);
 
   const executeSwap = async () => {
     if (!walletAddress || !solanaWeb3 || !connection || !jupiterApi) {
@@ -347,12 +241,6 @@ export const Swap = () => {
       return;
     }
 
-    const count = parseInt(repeatCount);
-    if (!count || count < 1 || count > 50) {
-      toast.error("❌ Repeat count must be between 1 and 50");
-      return;
-    }
-
     const decimals = TOKEN_DECIMALS[inputMint] || 6;
     const amountLamports = Math.floor(uiAmount * 10 ** decimals);
     const referralVault = TOKEN_VAULTS_AFFILIATE[inputMint];
@@ -363,148 +251,104 @@ export const Swap = () => {
       return;
     }
 
-    let destinationWallet = walletAddress;
-    
-    if (activeTab === 'send') {
-      if (!resolvedAddress) {
-        toast.error("❌ Please enter a valid recipient");
-        return;
-      }
-      destinationWallet = resolvedAddress;
-    }
-
     setIsSwapping(true);
-    setBatchProgress({ current: 0, total: count, signatures: [] });
+    setStatus("⏳ Preparing transaction...");
 
     try {
-      let allSignatures = [];
+      console.log('Getting quote from Jupiter API...', {
+        inputMint,
+        outputMint,
+        amount: amountLamports.toString(),
+        slippageBps,
+        platformFeeBps: 100
+      });
+      
+      const quote = await jupiterApi.quoteGet({
+        inputMint,
+        outputMint,
+        amount: amountLamports.toString(),
+        slippageBps,
+        platformFeeBps: 100,
+      });
 
-      // Process each swap individually to ensure separate transactions
-      for (let i = 0; i < count; i++) {
-        const txNum = i + 1;
-        setBatchProgress(prev => ({ ...prev, current: txNum }));
-        
-        try {
-          // Get a fresh quote for each swap
-          setStatus(`⏳ Getting quote for swap ${txNum}/${count}...`);
-          const quote = await jupiterApi.quoteGet({
-            inputMint,
-            outputMint,
-            amount: amountLamports.toString(),
-            slippageBps,
-            platformFeeBps: 100,
-          });
+      console.log('Quote received:', quote);
+      setStatus("⏳ Building transaction...");
 
-          // Build the swap transaction
-          setStatus(`⏳ Building transaction ${txNum}/${count}...`);
-          const swapRequestBody = {
-            userPublicKey: walletAddress,
-            quoteResponse: quote,
-            wrapAndUnwrapSol: true,
-            feeAccount: referralVault,
-            dynamicComputeUnitLimit: true,
-            prioritizationFeeLamports: {
-              priorityLevelWithMaxLamports: {
-                maxLamports: 10000000,
-                priorityLevel: PRIORITY_PRESETS[priorityFee].priorityLevel
-              }
-            },
-          };
-
-          if (activeTab === 'send' && destinationWallet !== walletAddress) {
-            swapRequestBody.destinationTokenAccount = destinationWallet;
+      const swapRequestBody = {
+        userPublicKey: walletAddress,
+        quoteResponse: quote,
+        wrapAndUnwrapSol: true,
+        feeAccount: referralVault,
+        dynamicComputeUnitLimit: true,
+        prioritizationFeeLamports: {
+          priorityLevelWithMaxLamports: {
+            maxLamports: 10000000,
+            priorityLevel: PRIORITY_PRESETS[priorityFee].priorityLevel
           }
+        },
+      };
 
-          const swapResult = await jupiterApi.swapPost({
-            swapRequest: swapRequestBody,
-          });
+      console.log('Swap request body:', JSON.stringify(swapRequestBody, null, 2));
 
-          if (!swapResult.swapTransaction) {
-            throw new Error(`No transaction returned for swap ${txNum}`);
-          }
+      const swapResult = await jupiterApi.swapPost({
+        swapRequest: swapRequestBody,
+      });
 
-          // Deserialize and sign the transaction
-          const tx = solanaWeb3.VersionedTransaction.deserialize(
-            Uint8Array.from(atob(swapResult.swapTransaction), c => c.charCodeAt(0))
-          );
+      console.log('Swap result received');
 
-          setStatus(`🔏 Please sign transaction ${txNum}/${count} in wallet...`);
-          const signedTx = await window.solana.signTransaction(tx);
-
-          // Send the transaction immediately after signing
-          setStatus(`⏳ Sending transaction ${txNum}/${count}...`);
-          const sig = await connection.sendRawTransaction(signedTx.serialize(), {
-            skipPreflight: true,
-            maxRetries: 2,
-          });
-
-          allSignatures.push(sig);
-          setStatus(`✅ Sent ${txNum}/${count}: ${sig.slice(0, 8)}...`);
-
-          // Log the signature for verification
-          console.log(`Transaction ${txNum} signature:`, sig);
-          console.log(`View at: https://solscan.io/tx/${sig}`);
-
-          // Start confirmation in background
-          connection.confirmTransaction(sig, "confirmed").catch(err => {
-            console.warn(`Confirmation warning for tx ${txNum}:`, err.message);
-          });
-
-          setBatchProgress(prev => ({ 
-            ...prev, 
-            signatures: [...prev.signatures, sig] 
-          }));
-
-          // Small delay between swaps to avoid rate limiting and allow blockchain to process
-          if (i < count - 1) {
-            await new Promise(resolve => setTimeout(resolve, SEND_DELAY_MS));
-          }
-
-        } catch (txError) {
-          console.error(`Transaction ${txNum} failed:`, txError);
-          toast.error(`⚠️ Swap ${txNum}/${count} failed: ${txError.message?.slice(0, 50) || 'Unknown error'}`);
-          
-          // Ask user if they want to continue with remaining swaps
-          if (i < count - 1) {
-            const continueSwaps = window.confirm(`Swap ${txNum} failed. Continue with remaining ${count - txNum} swaps?`);
-            if (!continueSwaps) {
-              break;
-            }
-          }
-        }
+      if (!swapResult.swapTransaction) {
+        throw new Error("No swapTransaction returned from Jupiter API");
       }
 
-      const successCount = allSignatures.length;
-      if (successCount > 0) {
-        if (activeTab === 'send') {
-          toast.success(`✅ ${successCount}/${count} swap & send${successCount > 1 ? 's' : ''} completed!`);
-          setStatus(`✅ Completed ${successCount}/${count} swap & sends! Check Solscan for each transaction.`);
+      const tx = solanaWeb3.VersionedTransaction.deserialize(
+        Uint8Array.from(atob(swapResult.swapTransaction), c => c.charCodeAt(0))
+      );
+
+      setStatus("⏳ Please approve transaction in wallet...");
+      const signedTx = await window.solana.signTransaction(tx);
+
+      setStatus("⏳ Sending transaction...");
+      
+      let sig;
+      try {
+        sig = await connection.sendRawTransaction(signedTx.serialize(), {
+          skipPreflight: false,
+          maxRetries: 3,
+        });
+      } catch (sendError) {
+        console.error('Send transaction error:', sendError);
+        if (sendError.message && sendError.message.includes('403')) {
+          toast.error("⚠️ RPC rate limited, trying alternative endpoint...");
+          const altConnection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", 'confirmed');
+          sig = await altConnection.sendRawTransaction(signedTx.serialize(), {
+            skipPreflight: false,
+            maxRetries: 3,
+          });
         } else {
-          toast.success(`✅ ${successCount}/${count} swap${successCount > 1 ? 's' : ''} completed!`);
-          setStatus(`✅ Completed ${successCount}/${count} swaps! Check Solscan for each transaction.`);
+          throw sendError;
         }
-        
-        await updateBalance();
-
-        // Open the first transaction
-        setTimeout(() => {
-          window.open(`https://solscan.io/tx/${allSignatures[0]}`, '_blank');
-        }, 500);
-      } else {
-        toast.error("❌ No swaps completed successfully");
-        setStatus("❌ All swaps failed");
       }
+
+      setStatus(`⏳ Confirming transaction... ${sig.slice(0, 8)}...`);
+
+      await connection.confirmTransaction(sig, "confirmed");
+
+      toast.success("✅ Swap successful!");
+      setStatus(`✅ Swap successful!`);
+      await updateBalance();
+
+      setTimeout(() => {
+        window.open(`https://solscan.io/tx/${sig}`, '_blank');
+      }, 500);
 
     } catch (err) {
-      console.error("Batch swap error:", err);
-      const errorMsg = err.message || "Batch transaction failed";
+      console.error("Swap error:", err);
+      console.error("Full error:", JSON.stringify(err, null, 2));
+      const errorMsg = err.message || "Transaction failed";
       toast.error(`❌ ${errorMsg}`);
       setStatus(`❌ ${errorMsg}`);
     } finally {
       setIsSwapping(false);
-      setTimeout(() => {
-        setBatchProgress({ current: 0, total: 0, signatures: [] });
-      }, 5000);
     }
   };
 
@@ -596,108 +440,9 @@ export const Swap = () => {
             </button>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => setActiveTab('swap')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
-                activeTab === 'swap'
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
-            >
-              Swap to Self
-            </button>
-            <button
-              onClick={() => setActiveTab('send')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'send'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
-            >
-              <UserIcon className="w-5 h-5" />
-              Swap & Send
-            </button>
-          </div>
-
           {walletAddress && (
             <div className="mb-4 text-xs text-gray-500">
               Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-6)}
-            </div>
-          )}
-
-          {/* Recipient Field for Send Tab */}
-          {activeTab === 'send' && (
-            <div className="mb-4 bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
-              <label className="block text-purple-200 text-sm font-medium mb-2">Send swapped tokens to</label>
-              <input
-                type="text"
-                value={recipientInput}
-                onChange={(e) => setRecipientInput(e.target.value)}
-                placeholder="@username or Solana address"
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:outline-none focus:border-purple-500 placeholder-gray-400"
-              />
-              {isResolvingAddress && (
-                <p className="text-purple-300 text-xs mt-2">Resolving...</p>
-              )}
-              {resolvedAddress && resolvedUser && (
-                <div className="mt-3 bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                  <div className="flex items-center gap-3">
-                    {resolvedUser.profilePicture && (
-                      <img 
-                        src={resolvedUser.profilePicture} 
-                        alt={resolvedUser.displayName}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-green-300 font-semibold">
-                          {resolvedUser.displayName}
-                        </p>
-                        {resolvedUser.isVerified && (
-                          <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      <p className="text-green-400 text-xs">@{resolvedUser.username}</p>
-                    </div>
-                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-              {resolvedAddress && !resolvedUser && (
-                <div className="mt-2 bg-green-900/20 border border-green-500/30 rounded-lg p-2">
-                  <p className="text-green-300 text-xs">
-                    ✓ Valid address: {resolvedAddress.slice(0, 8)}...{resolvedAddress.slice(-6)}
-                  </p>
-                </div>
-              )}
-              {contacts?.contacts?.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-purple-200 text-xs mb-2">Or select from contacts:</p>
-                  <div className="max-h-32 overflow-y-auto space-y-1">
-                    {contacts.contacts.map((contact) => (
-                      <button
-                        key={contact.username}
-                        type="button"
-                        onClick={() => setRecipientInput(`@${contact.username}`)}
-                        className={`w-full text-left px-3 py-2 rounded transition-colors text-sm ${
-                          recipientInput === `@${contact.username}`
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                        }`}
-                      >
-                        @{contact.displayName || contact.username}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -743,7 +488,7 @@ export const Swap = () => {
                 </p>
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-gray-700 mb-6">
+              <div className="space-y-3 pt-4 border-t border-gray-700">
                 <label className="text-gray-300 text-sm font-medium block">Transaction Priority</label>
                 <div className="grid grid-cols-3 gap-2">
                   {Object.entries(PRIORITY_PRESETS).map(([key, preset]) => (
@@ -764,45 +509,6 @@ export const Swap = () => {
                 <p className="text-xs text-gray-400">
                   Priority level: {PRIORITY_PRESETS[priorityFee].priorityLevel}
                 </p>
-              </div>
-
-              <div className="space-y-3 pt-4 border-t border-gray-700">
-                <div className="flex items-center justify-between">
-                  <label className="text-gray-300 text-sm font-medium">Batch Swap</label>
-                  <button
-                    onClick={() => setShowRepeatSettings(!showRepeatSettings)}
-                    className="text-blue-400 hover:text-blue-300 text-xs"
-                  >
-                    {showRepeatSettings ? 'Hide' : 'Show'}
-                  </button>
-                </div>
-                
-                {showRepeatSettings && (
-                  <>
-                    <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
-                      <p className="text-gray-400 text-xs mb-2">
-                        Execute multiple swaps sequentially. Each swap is a separate transaction with separate vault fees.
-                      </p>
-                      <div className="flex items-center gap-2 mt-3">
-                        <input
-                          type="number"
-                          value={repeatCount}
-                          onChange={(e) => setRepeatCount(Math.min(50, Math.max(1, parseInt(e.target.value) || 1)))}
-                          min="1"
-                          max="50"
-                          className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
-                        />
-                        <span className="text-gray-400 text-sm">swaps</span>
-                      </div>
-                      <p className="text-xs text-yellow-400 mt-2">
-                        ⚠️ Max 50 swaps. You'll sign each transaction individually.
-                      </p>
-                      <p className="text-xs text-blue-400 mt-1">
-                        ℹ️ Each swap = separate transaction = separate vault fee payment
-                      </p>
-                    </div>
-                  </>
-                )}
               </div>
             </div>
           )}
@@ -862,9 +568,7 @@ export const Swap = () => {
           </div>
 
           <div className="mb-6">
-            <label className="block text-gray-400 text-sm font-medium mb-2">
-              {activeTab === 'send' ? 'They Receive' : 'You Receive'}
-            </label>
+            <label className="block text-gray-400 text-sm font-medium mb-2">You Receive</label>
             <div className="bg-gradient-to-br from-gray-800 to-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors">
               <select
                 value={outputMint}
@@ -883,55 +587,16 @@ export const Swap = () => {
 
           <button
             onClick={executeSwap}
-            disabled={isSwapping || !amount || parseFloat(amount) <= 0 || balance === null || (activeTab === 'send' && !resolvedAddress)}
+            disabled={isSwapping || !amount || parseFloat(amount) <= 0 || balance === null}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:shadow-none text-lg"
           >
             {isSwapping ? (
               <span className="flex items-center justify-center gap-2">
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                {batchProgress.total > 0 ? `Swapping ${batchProgress.current}/${batchProgress.total}...` : 'Swapping...'}
+                Swapping...
               </span>
-            ) : activeTab === 'send' ? (
-              repeatCount > 1 ? `Batch Swap & Send (${repeatCount}x)` : "Swap & Send Tokens"
-            ) : (
-              repeatCount > 1 ? `Batch Swap (${repeatCount}x)` : "Swap Tokens"
-            )}
+            ) : "Swap Tokens"}
           </button>
-
-          {batchProgress.total > 0 && (
-            <div className="mt-4 bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-300 text-sm font-medium">Batch Progress</span>
-                <span className="text-blue-400 text-sm font-bold">
-                  {batchProgress.current}/{batchProgress.total}
-                </span>
-              </div>
-              <div className="w-full bg-gray-700 rounded-full h-2 mb-3">
-                <div
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
-                ></div>
-              </div>
-              {batchProgress.signatures.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-gray-400 text-xs mb-2">Completed transactions:</p>
-                  <div className="max-h-32 overflow-y-auto space-y-1">
-                    {batchProgress.signatures.map((sig, idx) => (
-                      <a
-                        key={sig}
-                        href={`https://solscan.io/tx/${sig}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-xs text-blue-400 hover:text-blue-300 truncate"
-                      >
-                        #{idx + 1}: {sig.slice(0, 16)}...{sig.slice(-8)}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {status && (
             <div className={`mt-4 p-4 rounded-xl text-sm font-medium ${
