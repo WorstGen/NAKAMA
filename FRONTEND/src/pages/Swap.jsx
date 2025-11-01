@@ -42,7 +42,6 @@ const PRIORITY_PRESETS = {
   high: { label: "High", priorityLevel: "high", description: "Faster, expensive" }
 };
 
-const CHUNK_SIZE = 8; // Optimal chunk size for signing and sending
 const SEND_DELAY_MS = 200; // Delay between individual transaction sends
 
 export const Swap = () => {
@@ -160,20 +159,26 @@ export const Swap = () => {
         console.log('Resolving username:', username);
         
         try {
-          const response = await api.getUserByUsername(username);
+          const response = await api.searchUser(username);
           console.log('API response:', response);
           
-          if (response?.user?.wallets?.solana?.address) {
-            const address = response.user.wallets.solana.address;
-            console.log('Resolved address:', address);
-            setResolvedAddress(address);
-            toast.success(`✓ Resolved @${username}`);
-          } else if (response?.wallets?.solana?.address) {
-            // Try alternate response structure
-            const address = response.wallets.solana.address;
-            console.log('Resolved address (alt structure):', address);
-            setResolvedAddress(address);
-            toast.success(`✓ Resolved @${username}`);
+          // Check various possible response structures
+          const address = response?.user?.wallets?.solana?.address || 
+                         response?.wallets?.solana?.address ||
+                         response?.solana?.address;
+          
+          if (address) {
+            // Validate it's a real Solana address
+            try {
+              new solanaWeb3.PublicKey(address);
+              console.log('Resolved address:', address);
+              setResolvedAddress(address);
+              toast.success(`✓ Resolved @${username}`);
+            } catch {
+              console.error('Invalid address format:', address);
+              setResolvedAddress(null);
+              toast.error('Invalid address format from server');
+            }
           } else {
             console.error('No Solana address in response:', response);
             setResolvedAddress(null);
@@ -182,7 +187,15 @@ export const Swap = () => {
         } catch (apiError) {
           console.error('API error:', apiError);
           setResolvedAddress(null);
-          toast.error(`User @${username} not found`);
+          
+          // Better error messages based on error type
+          if (apiError.response?.status === 404) {
+            toast.error(`User @${username} not found`);
+          } else if (apiError.response?.status === 401) {
+            toast.error('Please log in to search users');
+          } else {
+            toast.error(`Failed to find @${username}`);
+          }
         }
       } else {
         // Direct address input
