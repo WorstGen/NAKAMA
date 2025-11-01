@@ -60,6 +60,9 @@ export const Swap = () => {
   const [connection, setConnection] = useState(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [jupiterApi, setJupiterApi] = useState(null);
+  const [repeatCount, setRepeatCount] = useState(1);
+  const [showRepeatSettings, setShowRepeatSettings] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, signatures: [] });
 
   const walletAddress = user?.wallets?.solana?.address;
 
@@ -230,14 +233,20 @@ export const Swap = () => {
       return;
     }
 
-    if (!window.solana || !window.solana.signTransaction) {
-      toast.error("❌ Phantom wallet not available");
+    if (!window.solana || !window.solana.signAllTransactions) {
+      toast.error("❌ Phantom wallet not available or doesn't support batch signing");
       return;
     }
 
     const uiAmount = parseFloat(amount);
     if (!uiAmount || uiAmount <= 0) {
       toast.error("❌ Enter a valid amount");
+      return;
+    }
+
+    const count = parseInt(repeatCount);
+    if (!count || count < 1 || count > 100) {
+      toast.error("❌ Repeat count must be between 1 and 100");
       return;
     }
 
@@ -252,103 +261,103 @@ export const Swap = () => {
     }
 
     setIsSwapping(true);
-    setStatus("⏳ Preparing transaction...");
+    setBatchProgress({ current: 0, total: count, signatures: [] });
+    setStatus(`⏳ Preparing ${count} transaction${count > 1 ? 's' : ''}...`);
 
     try {
-      console.log('Getting quote from Jupiter API...', {
-        inputMint,
-        outputMint,
-        amount: amountLamports.toString(),
-        slippageBps,
-        platformFeeBps: 100
-      });
-      
-      const quote = await jupiterApi.quoteGet({
-        inputMint,
-        outputMint,
-        amount: amountLamports.toString(),
-        slippageBps,
-        platformFeeBps: 100,
-      });
+      const transactions = [];
+      for (let i = 0; i < count; i++) {
+        setStatus(`⏳ Building transaction ${i + 1}/${count}...`);
+        
+        const quote = await jupiterApi.quoteGet({
+          inputMint,
+          outputMint,
+          amount: amountLamports.toString(),
+          slippageBps,
+          platformFeeBps: 100,
+        });
 
-      console.log('Quote received:', quote);
-      setStatus("⏳ Building transaction...");
+        const swapRequestBody = {
+          userPublicKey: walletAddress,
+          quoteResponse: quote,
+          wrapAndUnwrapSol: true,
+          feeAccount: referralVault,
+          dynamicComputeUnitLimit: true,
+          prioritizationFeeLamports: {
+            priorityLevelWithMaxLamports: {
+              maxLamports: 10000000,
+              priorityLevel: PRIORITY_PRESETS[priorityFee].priorityLevel
+            }
+          },
+        };
 
-      const swapRequestBody = {
-        userPublicKey: walletAddress,
-        quoteResponse: quote,
-        wrapAndUnwrapSol: true,
-        feeAccount: referralVault,
-        dynamicComputeUnitLimit: true,
-        prioritizationFeeLamports: {
-          priorityLevelWithMaxLamports: {
-            maxLamports: 10000000,
-            priorityLevel: PRIORITY_PRESETS[priorityFee].priorityLevel
-          }
-        },
-      };
+        const swapResult = await jupiterApi.swapPost({
+          swapRequest: swapRequestBody,
+        });
 
-      console.log('Swap request body:', JSON.stringify(swapRequestBody, null, 2));
+        if (!swapResult.swapTransaction) {
+          throw new Error(`No transaction returned for swap ${i + 1}`);
+        }
 
-      const swapResult = await jupiterApi.swapPost({
-        swapRequest: swapRequestBody,
-      });
+        const tx = solanaWeb3.VersionedTransaction.deserialize(
+          Uint8Array.from(atob(swapResult.swapTransaction), c => c.charCodeAt(0))
+        );
 
-      console.log('Swap result received');
-
-      if (!swapResult.swapTransaction) {
-        throw new Error("No swapTransaction returned from Jupiter API");
+        transactions.push(tx);
       }
 
-      const tx = solanaWeb3.VersionedTransaction.deserialize(
-        Uint8Array.from(atob(swapResult.swapTransaction), c => c.charCodeAt(0))
-      );
+      setStatus(`⏳ Please approve ${count} transaction${count > 1 ? 's' : ''} in wallet...`);
+      const signedTxs = await window.solana.signAllTransactions(transactions);
 
-      setStatus("⏳ Please approve transaction in wallet...");
-      const signedTx = await window.solana.signTransaction(tx);
+      const signatures = [];
+      for (let i = 0; i < signedTxs.length; i++) {
+        setBatchProgress(prev => ({ ...prev, current: i + 1 }));
+        setStatus(`⏳ Sending transaction ${i + 1}/${count}...`);
 
-      setStatus("⏳ Sending transaction...");
-      
-      let sig;
-      try {
-        sig = await connection.sendRawTransaction(signedTx.serialize(), {
-          skipPreflight: false,
-          maxRetries: 3,
-        });
-      } catch (sendError) {
-        console.error('Send transaction error:', sendError);
-        if (sendError.message && sendError.message.includes('403')) {
-          toast.error("⚠️ RPC rate limited, trying alternative endpoint...");
-          const altConnection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", 'confirmed');
-          sig = await altConnection.sendRawTransaction(signedTx.serialize(), {
+        try {
+          const sig = await connection.sendRawTransaction(signedTxs[i].serialize(), {
             skipPreflight: false,
             maxRetries: 3,
           });
-        } else {
-          throw sendError;
+
+          signatures.push(sig);
+          setStatus(`⏳ Confirming transaction ${i + 1}/${count}... ${sig.slice(0, 8)}...`);
+
+          await connection.confirmTransaction(sig, "confirmed");
+          
+          setBatchProgress(prev => ({ 
+            ...prev, 
+            signatures: [...prev.signatures, sig] 
+          }));
+
+        } catch (txError) {
+          console.error(`Transaction ${i + 1} failed:`, txError);
+          toast.error(`⚠️ Transaction ${i + 1}/${count} failed: ${txError.message}`);
         }
       }
 
-      setStatus(`⏳ Confirming transaction... ${sig.slice(0, 8)}...`);
-
-      await connection.confirmTransaction(sig, "confirmed");
-
-      toast.success("✅ Swap successful!");
-      setStatus(`✅ Swap successful!`);
+      const successCount = signatures.length;
+      toast.success(`✅ ${successCount}/${count} swap${successCount > 1 ? 's' : ''} successful!`);
+      setStatus(`✅ Completed ${successCount}/${count} swaps!`);
       await updateBalance();
 
-      setTimeout(() => {
-        window.open(`https://solscan.io/tx/${sig}`, '_blank');
-      }, 500);
+      if (signatures.length > 0) {
+        setTimeout(() => {
+          window.open(`https://solscan.io/tx/${signatures[0]}`, '_blank');
+        }, 500);
+      }
 
     } catch (err) {
-      console.error("Swap error:", err);
+      console.error("Batch swap error:", err);
       console.error("Full error:", JSON.stringify(err, null, 2));
-      const errorMsg = err.message || "Transaction failed";
+      const errorMsg = err.message || "Batch transaction failed";
       toast.error(`❌ ${errorMsg}`);
       setStatus(`❌ ${errorMsg}`);
     } finally {
       setIsSwapping(false);
+      setTimeout(() => {
+        setBatchProgress({ current: 0, total: 0, signatures: [] });
+      }, 5000);
     }
   };
 
@@ -488,7 +497,7 @@ export const Swap = () => {
                 </p>
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-gray-700">
+              <div className="space-y-3 pt-4 border-t border-gray-700 mb-6">
                 <label className="text-gray-300 text-sm font-medium block">Transaction Priority</label>
                 <div className="grid grid-cols-3 gap-2">
                   {Object.entries(PRIORITY_PRESETS).map(([key, preset]) => (
@@ -509,6 +518,42 @@ export const Swap = () => {
                 <p className="text-xs text-gray-400">
                   Priority level: {PRIORITY_PRESETS[priorityFee].priorityLevel}
                 </p>
+              </div>
+
+              <div className="space-y-3 pt-4 border-t border-gray-700">
+                <div className="flex items-center justify-between">
+                  <label className="text-gray-300 text-sm font-medium">Batch Swap</label>
+                  <button
+                    onClick={() => setShowRepeatSettings(!showRepeatSettings)}
+                    className="text-blue-400 hover:text-blue-300 text-xs"
+                  >
+                    {showRepeatSettings ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                
+                {showRepeatSettings && (
+                  <>
+                    <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
+                      <p className="text-gray-400 text-xs mb-2">
+                        Execute multiple identical swaps in one batch. Sign all transactions once, then they execute consecutively.
+                      </p>
+                      <div className="flex items-center gap-2 mt-3">
+                        <input
+                          type="number"
+                          value={repeatCount}
+                          onChange={(e) => setRepeatCount(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
+                          min="1"
+                          max="100"
+                          className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
+                        />
+                        <span className="text-gray-400 text-sm">swaps</span>
+                      </div>
+                      <p className="text-xs text-yellow-400 mt-2">
+                        ⚠️ Max 100 swaps per batch. Each swap uses the amount you entered above.
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -593,10 +638,45 @@ export const Swap = () => {
             {isSwapping ? (
               <span className="flex items-center justify-center gap-2">
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                Swapping...
+                {batchProgress.total > 0 ? `Swapping ${batchProgress.current}/${batchProgress.total}...` : 'Swapping...'}
               </span>
-            ) : "Swap Tokens"}
+            ) : repeatCount > 1 ? `Batch Swap (${repeatCount}x)` : "Swap Tokens"}
           </button>
+
+          {batchProgress.total > 0 && (
+            <div className="mt-4 bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-300 text-sm font-medium">Batch Progress</span>
+                <span className="text-blue-400 text-sm font-bold">
+                  {batchProgress.current}/{batchProgress.total}
+                </span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2 mb-3">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                ></div>
+              </div>
+              {batchProgress.signatures.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-gray-400 text-xs mb-2">Completed transactions:</p>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {batchProgress.signatures.map((sig, idx) => (
+                      <a
+                        key={sig}
+                        href={`https://solscan.io/tx/${sig}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-xs text-blue-400 hover:text-blue-300 truncate"
+                      >
+                        #{idx + 1}: {sig.slice(0, 16)}...{sig.slice(-8)}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {status && (
             <div className={`mt-4 p-4 rounded-xl text-sm font-medium ${
