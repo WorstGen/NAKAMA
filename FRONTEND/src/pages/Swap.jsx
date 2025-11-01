@@ -71,6 +71,7 @@ export const Swap = () => {
   
   const [recipientInput, setRecipientInput] = useState("");
   const [resolvedAddress, setResolvedAddress] = useState(null);
+  const [resolvedUser, setResolvedUser] = useState(null); // Store full user info
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
 
   const walletAddress = user?.wallets?.solana?.address;
@@ -162,10 +163,10 @@ export const Swap = () => {
           const response = await api.searchUser(username);
           console.log('API response:', response);
           
-          // Check various possible response structures
-          const address = response?.user?.wallets?.solana?.address || 
-                         response?.wallets?.solana?.address ||
-                         response?.solana?.address;
+          // The API returns walletAddress directly for Solana
+          const address = response?.walletAddress || 
+                         response?.user?.wallets?.solana?.address || 
+                         response?.wallets?.solana?.address;
           
           if (address) {
             // Validate it's a real Solana address
@@ -173,20 +174,29 @@ export const Swap = () => {
               new solanaWeb3.PublicKey(address);
               console.log('Resolved address:', address);
               setResolvedAddress(address);
+              setResolvedUser({
+                username: response.username || username,
+                displayName: response.displayName || username,
+                profilePicture: response.profilePicture,
+                isVerified: response.isVerified
+              });
               toast.success(`✓ Resolved @${username}`);
             } catch {
               console.error('Invalid address format:', address);
               setResolvedAddress(null);
+              setResolvedUser(null);
               toast.error('Invalid address format from server');
             }
           } else {
             console.error('No Solana address in response:', response);
             setResolvedAddress(null);
+            setResolvedUser(null);
             toast.error(`@${username} has no Solana wallet`);
           }
         } catch (apiError) {
           console.error('API error:', apiError);
           setResolvedAddress(null);
+          setResolvedUser(null);
           
           // Better error messages based on error type
           if (apiError.response?.status === 404) {
@@ -202,15 +212,18 @@ export const Swap = () => {
         try {
           new solanaWeb3.PublicKey(input);
           setResolvedAddress(input);
+          setResolvedUser(null); // No user info for direct addresses
           toast.success('✓ Valid address');
         } catch {
           setResolvedAddress(null);
+          setResolvedUser(null);
           toast.error('Invalid Solana address');
         }
       }
     } catch (error) {
       console.error('Error resolving recipient:', error);
       setResolvedAddress(null);
+      setResolvedUser(null);
       toast.error('Failed to resolve recipient');
     } finally {
       setIsResolvingAddress(false);
@@ -628,10 +641,39 @@ export const Swap = () => {
               {isResolvingAddress && (
                 <p className="text-purple-300 text-xs mt-2">Resolving...</p>
               )}
-              {resolvedAddress && (
+              {resolvedAddress && resolvedUser && (
+                <div className="mt-3 bg-green-900/20 border border-green-500/30 rounded-lg p-3">
+                  <div className="flex items-center gap-3">
+                    {resolvedUser.profilePicture && (
+                      <img 
+                        src={resolvedUser.profilePicture} 
+                        alt={resolvedUser.displayName}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-green-300 font-semibold">
+                          {resolvedUser.displayName}
+                        </p>
+                        {resolvedUser.isVerified && (
+                          <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className="text-green-400 text-xs">@{resolvedUser.username}</p>
+                    </div>
+                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+              {resolvedAddress && !resolvedUser && (
                 <div className="mt-2 bg-green-900/20 border border-green-500/30 rounded-lg p-2">
                   <p className="text-green-300 text-xs">
-                    ✓ Resolved to: {resolvedAddress.slice(0, 8)}...{resolvedAddress.slice(-6)}
+                    ✓ Valid address: {resolvedAddress.slice(0, 8)}...{resolvedAddress.slice(-6)}
                   </p>
                 </div>
               )}
