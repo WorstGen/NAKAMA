@@ -2,16 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useAuth, useTheme } from '../contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
-import { api } from '../services/api';
-import toast from 'react-hot-toast';
 
 export const Landing = () => {
   const { isAnyChainConnected, walletAddress } = usePhantomMultiChain();
-  const { user, isAuthenticated, login } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { classes } = useTheme();
   const currentColors = classes;
   const [isLoading, setIsLoading] = useState(true);
-  const [isRegistering, setIsRegistering] = useState(false);
+
+  // Note: Auto-authentication is now handled in AuthContext
+  // This component just monitors the state changes
 
   // Add loading state to prevent premature redirects
   useEffect(() => {
@@ -22,26 +22,8 @@ export const Landing = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Note: Auto-authentication is now handled in AuthContext
-  // This component just monitors the state changes
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div style={{
-        backgroundColor: '#000000',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  // Show registration state
-  if (isRegistering) {
+  // Show loading while authentication is happening
+  if (isLoading || authLoading) {
     return (
       <div style={{
         backgroundColor: '#000000',
@@ -52,8 +34,9 @@ export const Landing = () => {
       }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <div className="text-white text-xl">Connecting wallet...</div>
-          <p className="text-gray-400 text-sm mt-2">Please wait while we set up your account</p>
+          <div className="text-white text-xl">
+            {authLoading ? 'Authenticating wallet...' : 'Loading...'}
+          </div>
         </div>
       </div>
     );
