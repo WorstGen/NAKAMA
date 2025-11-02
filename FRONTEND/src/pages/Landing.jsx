@@ -22,38 +22,8 @@ export const Landing = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Auto-authenticate new wallets when they connect
-  useEffect(() => {
-    const handleNewWalletConnection = async () => {
-      // Only proceed if wallet is connected but not authenticated
-      if (isAnyChainConnected && walletAddress && !isAuthenticated && !isRegistering) {
-        console.log('🔍 New wallet detected:', walletAddress);
-        console.log('🔍 Attempting authentication...');
-        
-        setIsRegistering(true);
-        
-        try {
-          // Try to login/register the wallet
-          if (login) {
-            console.log('🔐 Calling login function...');
-            await login();
-            console.log('✅ Login successful');
-          } else {
-            console.warn('⚠️ Login function not available in AuthContext');
-          }
-        } catch (error) {
-          console.error('❌ Auto-authentication failed:', error);
-          toast.error('Failed to authenticate wallet. Please try reconnecting.');
-        } finally {
-          setIsRegistering(false);
-        }
-      }
-    };
-
-    // Small delay to ensure wallet connection is fully established
-    const timer = setTimeout(handleNewWalletConnection, 1000);
-    return () => clearTimeout(timer);
-  }, [isAnyChainConnected, walletAddress, isAuthenticated, login, isRegistering]);
+  // Note: Auto-authentication is now handled in AuthContext
+  // This component just monitors the state changes
 
   // Show loading state while checking authentication
   if (isLoading) {
