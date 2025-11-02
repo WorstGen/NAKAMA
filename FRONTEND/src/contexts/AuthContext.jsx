@@ -1,447 +1,171 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useWallet } from './WalletContext';
-import { usePhantomMultiChain } from './PhantomMultiChainContext';
-import { useWalletConnect } from './WalletConnectContext';
-import { api } from '../services/api';
-import bs58 from 'bs58';
-import toast from 'react-hot-toast';
+import React, { useEffect, useState } from 'react';
+import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
+import { useAuth, useTheme } from '../contexts/AuthContext';
+import { Navigate, Link } from 'react-router-dom';
 
-// Theme Context
-export const ThemeContext = createContext();
+export const Landing = () => {
+  const { isAnyChainConnected, walletAddress } = usePhantomMultiChain();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { classes } = useTheme();
+  const currentColors = classes;
+  const [isLoading, setIsLoading] = useState(true);
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
-
-export const ThemeProvider = ({ children }) => {
-  const isDark = true;
-
+  // Add loading state to prevent premature redirects
   useEffect(() => {
-    document.documentElement.classList.add('dark');
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, []);
 
-  const colors = {
-    bg: 'bg-black',
-    surface: 'bg-gray-900',
-    surfaceHover: 'bg-gray-800',
-    text: 'text-white',
-    textSecondary: 'text-gray-200',
-    textMuted: 'text-gray-400',
-    border: 'border-gray-700',
-    accent: 'text-orange-400',
-    accentBg: 'bg-orange-500',
-    accentHover: 'bg-orange-600',
-    secondary: 'text-blue-400',
-    secondaryBg: 'bg-blue-500',
-    secondaryHover: 'bg-blue-600',
-    card: 'bg-gray-800 border-gray-700',
-    input: 'bg-gray-700 text-white border-gray-600',
-    inputBorder: 'border-gray-600',
-    container: 'bg-black min-h-screen',
-    header: 'bg-black/90 border-gray-800',
-    button: 'bg-orange-500 hover:bg-orange-600 text-white',
-    buttonSecondary: 'bg-blue-500 hover:bg-blue-600 text-white'
-  };
+  // Note: Auto-authentication is now handled in AuthContext
+  // This component just monitors the state changes
 
-  const theme = {
-    isDark,
-    colors: {
-      dark: colors
-    },
-    classes: colors
-  };
+  // Show loading while authentication is happening
+  if (isLoading || authLoading) {
+    return (
+      <div style={{
+        backgroundColor: '#000000',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <div className="text-white text-xl">
+            {authLoading ? 'Authenticating wallet...' : 'Loading...'}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  return (
-    <ThemeContext.Provider value={theme}>
-      {children}
-    </ThemeContext.Provider>
-  );
-};
+  // Only redirect if fully authenticated AND has user profile
+  if (isAuthenticated && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
-const AuthContext = createContext();
-
-export const useAuth = () => useContext(AuthContext);
-
-export const AuthProvider = ({ children }) => {
-  const { publicKey, connected } = useWallet();
-  const { getActiveWallet, isAnyChainConnected } = usePhantomMultiChain();
-  const { 
-    isConnected: walletConnectConnected, 
-    address: walletConnectAddress, 
-    getSignMessage: walletConnectSignMessage
-  } = useWalletConnect();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [authToken, setAuthToken] = useState(null);
-  const [lastAuthAttempt, setLastAuthAttempt] = useState(0);
-  const [activeWalletType, setActiveWalletType] = useState(null);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-  const authenticate = useCallback(async () => {
-    // Prevent concurrent authentication attempts
-    if (isAuthenticating) {
-      console.log('⏳ Authentication already in progress, skipping...');
-      return;
-    }
-
-    // Check cooldown period to prevent rate limiting
-    const now = Date.now();
-    const timeSinceLastAttempt = now - lastAuthAttempt;
-    const cooldownPeriod = 2000; // 2 seconds
-    
-    if (timeSinceLastAttempt < cooldownPeriod) {
-      console.log('⏳ Authentication skipped: cooldown period active');
-      return;
-    }
-    
-    setLastAuthAttempt(now);
-    setIsAuthenticating(true);
-    
-    // Check for wallet connections
-    let activePublicKey, activeSignMessage;
-    
-    const activeWallet = getActiveWallet();
-    const isEVMChain = activeWallet?.address?.startsWith('0x');
-    
-    // Priority 1: Direct Solana connection
-    if (window.solana && window.solana.isConnected && window.solana.publicKey) {
-      console.log('🔐 Using direct Solana connection');
-      activePublicKey = window.solana.publicKey;
-      activeSignMessage = window.solana.signMessage;
-      setActiveWalletType('phantom');
-    }
-    // Priority 2: EVM connection
-    else if ((isEVMChain || (publicKey && typeof publicKey === 'string' && publicKey.startsWith('0x'))) && window.ethereum) {
-      console.log('🔐 Using EVM connection for authentication');
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (accounts && accounts.length > 0) {
-        activePublicKey = accounts[0];
-        activeSignMessage = async (message) => {
-          const messageHex = '0x' + Buffer.from(message).toString('hex');
-          return await window.ethereum.request({
-            method: 'personal_sign',
-            params: [messageHex, accounts[0]]
-          });
-        };
-        setActiveWalletType('phantom');
-      }
-    }
-    // Priority 3: PhantomMultiChain context
-    else {
-      activePublicKey = activeWallet?.publicKey;
-      activeSignMessage = activeWallet?.signMessage;
-      console.log('🔐 Using PhantomMultiChain context');
-      setActiveWalletType('phantom');
-    }
-    
-    if (!activePublicKey || !activeSignMessage) {
-      console.log('⚠️ Authentication skipped: missing publicKey or signMessage');
-      setIsAuthenticating(false);
-      return;
-    }
-
-    setLoading(true);
-    console.log('🔐 Starting authentication process...');
-
-    try {
-      const address = activePublicKey.toString();
-      if (!address || (address.length !== 44 && address.length !== 42)) {
-        throw new Error('Invalid wallet address format');
-      }
-
-      const message = `Sign this message to authenticate with SolConnect: ${Date.now()}`;
-      let signature;
-
-      try {
-        const messageBytes = new TextEncoder().encode(message);
-        let signPromise;
-        
-        if (typeof activeSignMessage === 'function') {
-          try {
-            signPromise = activeSignMessage(messageBytes);
-          } catch (e) {
-            console.log('Uint8Array failed, trying Buffer...');
-            const messageBuffer = Buffer.from(messageBytes);
-            signPromise = activeSignMessage(messageBuffer);
-          }
-        } else {
-          throw new Error('signMessage is not a function');
-        }
-
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Wallet signing timeout')), 30000)
-        );
-
-        signature = await Promise.race([signPromise, timeoutPromise]);
-      } catch (signError) {
-        console.error('❌ Wallet signing failed:', signError);
-        if (signError.message?.includes('timeout')) {
-          throw new Error('Wallet signing timed out. Please try again.');
-        } else if (signError.message?.includes('User rejected')) {
-          throw new Error('Signature request was rejected.');
-        }
-        throw new Error(`Wallet signing failed: ${signError.message}`);
-      }
-
-      if (!signature) {
-        throw new Error('No signature received from wallet');
-      }
-
-      // Handle different signature formats
-      let signatureArray;
-      let encodedSignature;
-
-      if (typeof signature === 'object' && signature.signature) {
-        signatureArray = signature.signature;
-        encodedSignature = bs58.encode(signatureArray);
-      } else if (typeof signature === 'string' && signature.startsWith('0x')) {
-        const hexString = signature.slice(2);
-        signatureArray = new Uint8Array(
-          hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
-        );
-        encodedSignature = bs58.encode(signatureArray);
-      } else {
-        signatureArray = signature instanceof Uint8Array ? signature : new Uint8Array(signature);
-        encodedSignature = bs58.encode(signatureArray);
-      }
-
-      if (!(signatureArray instanceof Uint8Array)) {
-        throw new Error('Invalid signature format - expected Uint8Array');
-      }
-
-      if (signatureArray.length !== 64 && signatureArray.length !== 65) {
-        throw new Error(`Invalid signature length: ${signatureArray.length} bytes`);
-      }
-
-      api.setAuthHeaders({
-        'X-Signature': encodedSignature,
-        'X-Message': message,
-        'X-Public-Key': activePublicKey.toString()
-      });
-
-      // Try to fetch profile with retry
-      let profile;
-      const maxRetries = 3;
-
-      for (let retryCount = 0; retryCount < maxRetries; retryCount++) {
-        try {
-          profile = await api.getProfile();
-          break;
-        } catch (profileError) {
-          console.error(`Profile fetch attempt ${retryCount + 1} failed:`, profileError);
-          if (retryCount === maxRetries - 1) {
-            throw profileError;
-          }
-          const delay = Math.min(2000 * Math.pow(2, retryCount), 10000);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-
-      if (!profile.exists) {
-        console.log('✨ New wallet detected - no existing profile');
-        const activeWallet = getActiveWallet();
-        const isEVMAddress = activeWallet?.address?.startsWith('0x');
-        
-        if (isEVMAddress) {
-          console.log('📝 EVM address - checking for auto-registration...');
-          try {
-            const retryProfile = await api.getProfile();
-            if (retryProfile.exists) {
-              setUser(retryProfile);
-              setAuthToken('authenticated');
-              toast.success(`Welcome back, @${retryProfile.username}!`);
-              return;
-            }
-          } catch (retryError) {
-            console.log('No profile after retry');
-          }
-        }
-        
-        setUser(null);
-        setAuthToken('authenticated');
-        console.log('✅ New wallet authenticated - ready for profile creation');
-        toast.success('Welcome! Please create your profile to get started.');
-      } else {
-        setUser(profile);
-        setAuthToken('authenticated');
-        console.log('✅ Existing user authenticated:', profile.username);
-        toast.success(`Welcome back, @${profile.username}!`);
-      }
-
-    } catch (error) {
-      console.error('❌ Authentication failed:', error);
-
-      let errorMessage = 'Authentication failed. Please try again.';
-
-      if (error.message?.includes('timeout')) {
-        errorMessage = 'Wallet signing timed out. Please try again.';
-      } else if (error.message?.includes('rejected')) {
-        errorMessage = 'Signature request was rejected.';
-      } else if (error.message?.includes('Too many requests')) {
-        errorMessage = 'Too many requests. Please wait a moment.';
-      }
-
-      if (error?.error === 'Profile not found' || error?.message?.includes('Profile not found')) {
-        const activeWallet = getActiveWallet();
-        const isEVMAddress = activeWallet?.address?.startsWith('0x');
-        
-        if (isEVMAddress) {
-          setUser(null);
-          setAuthToken('authenticated');
-        } else {
-          setUser(null);
-          setAuthToken('authenticated');
-          toast.success('Welcome! Please create your profile to get started.');
-        }
-      } else if (error?.status === 401) {
-        toast.error('Authentication failed. Please try reconnecting.');
-        api.clearAuthHeaders();
-        setAuthToken(null);
-      } else {
-        toast.error(errorMessage);
-        setUser(null);
-        setAuthToken(null);
-        api.clearAuthHeaders();
-      }
-    } finally {
-      setLoading(false);
-      setIsAuthenticating(false);
-    }
-  }, [getActiveWallet, lastAuthAttempt, publicKey, isAuthenticating]);
-
-  const logout = () => {
-    setUser(null);
-    setAuthToken(null);
-    api.clearAuthHeaders();
-    console.log('👋 User logged out');
-  };
-
-  // CRITICAL: Auto-authenticate when wallet connects
-  useEffect(() => {
-    const directSolanaConnected = window.solana && window.solana.isConnected && window.solana.publicKey;
-    const isConnected = connected || isAnyChainConnected || directSolanaConnected;
-    const activeWallet = getActiveWallet();
-    const hasPublicKey = publicKey || activeWallet?.address || directSolanaConnected;
-    
-    console.log('🔍 Auth Monitor:', {
-      isConnected,
-      hasPublicKey: !!hasPublicKey,
-      hasAuthToken: !!authToken,
-      hasUser: !!user,
-      isAuthenticating
-    });
-    
-    // AUTO-AUTHENTICATE: If wallet connected but not authenticated
-    if (isConnected && hasPublicKey && !authToken && !isAuthenticating) {
-      console.log('🚀 Auto-authenticating new wallet connection...');
-      authenticate();
-    }
-    
-    // Logout if disconnected
-    if (!isConnected && !hasPublicKey && !user && !api.hasAuthHeaders()) {
-      console.log('👋 No connection - logging out');
-      logout();
-    }
-  }, [connected, isAnyChainConnected, publicKey, authToken, user, isAuthenticating, authenticate]);
-
-  const addEVM = useCallback(async () => {
-    if (!user) {
-      throw new Error('No user authenticated. Please connect with Solana first.');
-    }
-
-    try {
-      let evmAddress = null;
-      let signMessage = null;
-
-      if (walletConnectConnected && walletConnectAddress) {
-        console.log('Using WalletConnect for EVM registration');
-        evmAddress = walletConnectAddress;
-        signMessage = walletConnectSignMessage();
-      } else if (window.ethereum) {
-        console.log('Using window.ethereum for EVM registration');
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        
-        try {
-          await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '0x1' }]
-          });
-        } catch (switchError) {
-          console.log('Could not switch to Ethereum mainnet:', switchError);
-        }
-
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (!accounts || accounts.length === 0) {
-          throw new Error('No EVM account connected');
-        }
-
-        evmAddress = accounts[0];
-        signMessage = async (message) => {
-          const messageHex = '0x' + Buffer.from(message).toString('hex');
-          return await window.ethereum.request({
-            method: 'personal_sign',
-            params: [messageHex, evmAddress]
-          });
-        };
-      } else {
-        throw new Error('No EVM wallet available.');
-      }
-
-      const message = `Add EVM address to NAKAMA profile: ${Date.now()}`;
-      const signature = await signMessage(Buffer.from(message));
-
-      let encodedSignature;
-      if (typeof signature === 'string' && signature.startsWith('0x')) {
-        const hexString = signature.slice(2);
-        const signatureArray = new Uint8Array(
-          hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
-        );
-        encodedSignature = bs58.encode(signatureArray);
-      } else {
-        encodedSignature = signature;
-      }
-
-      api.setAuthHeaders({
-        'X-Signature': encodedSignature,
-        'X-Message': message,
-        'X-Public-Key': evmAddress
-      });
-
-      const response = await api.addEVM(user._id);
-      
-      if (response.success) {
-        setUser(response.user);
-        toast.success('EVM address added successfully!');
-        return response.user;
-      } else {
-        throw new Error(response.error || 'Failed to add EVM address');
-      }
-    } catch (error) {
-      console.error('Add EVM address error:', error);
-      toast.error(error.message || 'Failed to add EVM address');
-      throw error;
-    }
-  }, [user, setUser, walletConnectConnected, walletConnectAddress, walletConnectSignMessage]);
-
-  const value = {
-    user,
-    setUser,
-    loading,
-    authToken,
-    authenticate,
-    logout,
-    addEVM,
-    activeWalletType,
-    isAuthenticated: !!authToken // Changed: authenticated if we have token (even without user profile)
+  const containerStyle = {
+    backgroundColor: '#000000',
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'background-color 0.5s ease'
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <div style={containerStyle}>
+      <div className="text-center">
+        <div className="mb-8">
+          <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow-md px-4" style={{ color: '#e5e7eb' }}>
+            Connect with friends to make secure SOL and SPL token transfers using only a username.
+            Build your on chain social network with unique usernames and profiles.
+          </p>
+        </div>
+
+        <div className={`${currentColors.card} backdrop-blur-md rounded-2xl p-6 md:p-8 max-w-sm md:max-w-md mx-auto shadow-2xl border`}>
+          <h2 className="text-xl md:text-2xl font-semibold text-white mb-6">Get Started</h2>
+
+          {!isAnyChainConnected ? (
+            <div>
+              <p className="text-gray-200 mb-4">
+                Click the "Connect Wallet" button in the header above to get started with your Solana wallet!
+              </p>
+              <p className="text-gray-400 text-sm mb-4">
+                Make sure you are using Phantom wallet on mobile or have the Phantom wallet extension installed on your browser.
+              </p>
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 mt-4">
+                <p className="text-orange-300 text-xs">
+                  💡 First time? Your wallet will be automatically registered when you connect!
+                </p>
+              </div>
+            </div>
+          ) : isAuthenticated && user ? (
+            <div>
+              <p className="text-gray-200 mb-4">
+                🎉 Great! Your wallet is connected. Ready to explore NAKAMA?
+              </p>
+              <Link
+                to="/dashboard"
+                className="inline-block bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg"
+              >
+                Go to Dashboard
+              </Link>
+            </div>
+          ) : isAuthenticated && !user ? (
+            <div>
+              <p className="text-gray-200 mb-4">
+                🎉 Great! Your wallet is connected. Create your profile to get started!
+              </p>
+              <Link
+                to="/profile"
+                className="inline-block bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base md:text-lg mb-3"
+              >
+                Create Profile
+              </Link>
+              <p className="text-gray-400 text-sm">
+                Or go directly to{' '}
+                <Link to="/send" className="text-blue-400 hover:text-blue-300 underline">
+                  Send
+                </Link>
+              </p>
+            </div>
+          ) : isAnyChainConnected && !isAuthenticated ? (
+            <div>
+              <p className="text-gray-200 mb-4">
+                ⏳ Wallet detected, setting up your account...
+              </p>
+              <div className="animate-pulse bg-white/5 rounded-lg p-4">
+                <p className="text-gray-400 text-sm">
+                  Please wait while we authenticate your wallet
+                </p>
+              </div>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-4 text-blue-400 hover:text-blue-300 text-sm underline"
+              >
+                Click here if nothing happens
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p className="text-gray-200 mb-4">
+                Connect your wallet to access NAKAMA features
+              </p>
+            </div>
+          )}
+
+          <div className="mt-6 text-gray-400 text-sm space-y-2">
+            <div className="flex items-center space-x-2">
+              <span className="text-orange-400">✅</span>
+              <span>Secure wallet authentication</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-blue-400">✅</span>
+              <span>Username-based transfers</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-orange-400">✅</span>
+              <span>Contact book management</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-blue-400">✅</span>
+              <span>Multi-chain compatibility</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Debug info for development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4 text-xs text-gray-500">
+            <p>Debug: Connected={isAnyChainConnected ? 'Yes' : 'No'} | Auth={isAuthenticated ? 'Yes' : 'No'} | User={user ? 'Yes' : 'No'}</p>
+            <p>Wallet: {walletAddress || 'None'}</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
