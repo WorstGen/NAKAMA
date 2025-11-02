@@ -2,23 +2,58 @@ import React, { useEffect, useState } from 'react';
 import { usePhantomMultiChain } from '../contexts/PhantomMultiChainContext';
 import { useAuth, useTheme } from '../contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
+import { api } from '../services/api';
+import toast from 'react-hot-toast';
 
 export const Landing = () => {
-  const { isAnyChainConnected } = usePhantomMultiChain();
-  const { user, isAuthenticated } = useAuth();
+  const { isAnyChainConnected, walletAddress } = usePhantomMultiChain();
+  const { user, isAuthenticated, login } = useAuth();
   const { classes } = useTheme();
   const currentColors = classes;
   const [isLoading, setIsLoading] = useState(true);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   // Add loading state to prevent premature redirects
   useEffect(() => {
-    // Give time for auth context to initialize
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 500);
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Auto-authenticate new wallets when they connect
+  useEffect(() => {
+    const handleNewWalletConnection = async () => {
+      // Only proceed if wallet is connected but not authenticated
+      if (isAnyChainConnected && walletAddress && !isAuthenticated && !isRegistering) {
+        console.log('🔍 New wallet detected:', walletAddress);
+        console.log('🔍 Attempting authentication...');
+        
+        setIsRegistering(true);
+        
+        try {
+          // Try to login/register the wallet
+          if (login) {
+            console.log('🔐 Calling login function...');
+            await login();
+            console.log('✅ Login successful');
+          } else {
+            console.warn('⚠️ Login function not available in AuthContext');
+          }
+        } catch (error) {
+          console.error('❌ Auto-authentication failed:', error);
+          toast.error('Failed to authenticate wallet. Please try reconnecting.');
+        } finally {
+          setIsRegistering(false);
+        }
+      }
+    };
+
+    // Small delay to ensure wallet connection is fully established
+    const timer = setTimeout(handleNewWalletConnection, 1000);
+    return () => clearTimeout(timer);
+  }, [isAnyChainConnected, walletAddress, isAuthenticated, login, isRegistering]);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -31,6 +66,25 @@ export const Landing = () => {
         justifyContent: 'center'
       }}>
         <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show registration state
+  if (isRegistering) {
+    return (
+      <div style={{
+        backgroundColor: '#000000',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <div className="text-white text-xl">Connecting wallet...</div>
+          <p className="text-gray-400 text-sm mt-2">Please wait while we set up your account</p>
+        </div>
       </div>
     );
   }
@@ -70,6 +124,11 @@ export const Landing = () => {
               <p className="text-gray-400 text-sm mb-4">
                 Make sure you are using Phantom wallet on mobile or have the Phantom wallet extension installed on your browser.
               </p>
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 mt-4">
+                <p className="text-orange-300 text-xs">
+                  💡 First time? Your wallet will be automatically registered when you connect!
+                </p>
+              </div>
             </div>
           ) : isAuthenticated && user ? (
             <div>
@@ -101,6 +160,23 @@ export const Landing = () => {
                 </Link>
               </p>
             </div>
+          ) : isAnyChainConnected && !isAuthenticated ? (
+            <div>
+              <p className="text-gray-200 mb-4">
+                ⏳ Wallet detected, setting up your account...
+              </p>
+              <div className="animate-pulse bg-white/5 rounded-lg p-4">
+                <p className="text-gray-400 text-sm">
+                  Please wait while we authenticate your wallet
+                </p>
+              </div>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-4 text-blue-400 hover:text-blue-300 text-sm underline"
+              >
+                Click here if nothing happens
+              </button>
+            </div>
           ) : (
             <div>
               <p className="text-gray-200 mb-4">
@@ -128,6 +204,14 @@ export const Landing = () => {
             </div>
           </div>
         </div>
+
+        {/* Debug info for development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4 text-xs text-gray-500">
+            <p>Debug: Connected={isAnyChainConnected ? 'Yes' : 'No'} | Auth={isAuthenticated ? 'Yes' : 'No'} | User={user ? 'Yes' : 'No'}</p>
+            <p>Wallet: {walletAddress || 'None'}</p>
+          </div>
+        )}
       </div>
     </div>
   );
