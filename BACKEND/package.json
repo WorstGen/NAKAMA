@@ -31,6 +31,7 @@
     "cloudinary": "^1.41.0",
     "validator": "^13.11.0",
     "bcrypt": "^5.1.1"
+    "ws": "^8.14.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
